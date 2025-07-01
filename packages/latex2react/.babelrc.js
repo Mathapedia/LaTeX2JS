@@ -11,6 +11,6 @@ module.exports = (api) => {
       'babel-plugin-styled-components',
       'macros'
     ],
-    presets: useESModules ? ['@babel/react'] : ['@babel/env', '@babel/react']
+    presets: useESModules ? ['@babel/react', '@babel/preset-typescript'] : ['@babel/env', '@babel/react', '@babel/preset-typescript']
   };
 };

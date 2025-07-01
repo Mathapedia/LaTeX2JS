@@ -1,4 +1,4 @@
 module.exports = {
   babelrcRoots: 'packages/*',
-  presets: ['@pyramation/env'],
+  presets: ['@pyramation/env', '@babel/preset-typescript'],
 };

@@ -1,10 +1,10 @@
 {
-  "lerna": "3.4.2",
+  "lerna": "7.4.0",
   "useWorkspaces": true,
   "conventionalCommits": true,
-  "npmClient": "yarn",
+  "npmClient": "pnpm",
   "npmClientArgs": [
-    "--no-lockfile"
+    "--no-frozen-lockfile"
   ],
   "packages": [
     "packages/*",

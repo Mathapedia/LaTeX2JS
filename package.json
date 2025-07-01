@@ -9,15 +9,16 @@
     "commit": "git-cz",
     "build": "lerna run prepare --parallel",
     "bootstrap": "lerna bootstrap --use-workspaces",
-    "lint": "npm run lint:js && npm run lint:style",
-    "lint:js": "eslint --ignore-path .gitignore 'packages/**/*.js'",
-    "lint:fix": "eslint --ignore-path .gitignore 'packages/**/*.js' --fix",
+    "lint": "pnpm run lint:js && pnpm run lint:style",
+    "lint:js": "eslint --ignore-path .gitignore 'packages/**/*.{js,ts,tsx}'",
+    "lint:fix": "eslint --ignore-path .gitignore 'packages/**/*.{js,ts,tsx}' --fix",
     "lint:style": "stylelint 'packages/**/*.js'",
-    "build:serve": "bin/build-all.sh && npm run serve",
+    "build:serve": "bin/build-all.sh && pnpm run serve",
     "serve": "serve website/latex2js.com/static",
-    "pretest": "yarn lint",
+    "pretest": "pnpm lint",
     "test:watch": "jest --watch",
-    "test": "jest"
+    "test": "jest",
+    "type-check": "tsc --noEmit"
   },
   "commitlint": {
     "extends": [
@@ -30,43 +31,40 @@
     }
   },
   "devDependencies": {
-    "@babel/cli": "7.10.1",
-    "@babel/core": "7.10.2",
-    "@commitlint/cli": "8.3.5",
-    "@commitlint/config-conventional": "8.3.4",
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.0",
+    "@babel/preset-typescript": "^7.23.0",
+    "@commitlint/cli": "^18.0.0",
+    "@commitlint/config-conventional": "^18.0.0",
     "@pyramation/babel-preset-env": "0.1.0",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
     "babel-core": "7.0.0-bridge.0",
-    "babel-eslint": "10.1.0",
-    "babel-jest": "^24.9.0",
-    "commitizen": "4.1.2",
-    "commitlint": "8.3.5",
-    "cz-conventional-changelog": "3.2.0",
-    "eslint": "6.8.0",
-    "eslint-config-prettier": "^6.10.0",
-    "eslint-config-react-app": "5.2.1",
-    "eslint-plugin-prettier": "^3.1.2",
-    "eslint-plugin-react": "^7.18.3",
-    "eslint-plugin-react-hooks": "4.0.4",
-    "husky": "4.2.5",
-    "jest": "25.1.0",
-    "lerna": "3.22.1",
-    "lint-staged": "10.2.9",
-    "prettier": "2.0.5",
-    "stylelint": "13.6.0",
-    "stylelint-config-recommended": "3.0.0",
-    "stylelint-config-styled-components": "0.1.1",
-    "stylelint-processor-styled-components": "1.10.0"
+    "babel-jest": "^29.7.0",
+    "commitizen": "^4.3.0",
+    "commitlint": "^18.0.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^8.0.0",
+    "jest": "^29.7.0",
+    "lerna": "^7.4.0",
+    "prettier": "^3.0.0",
+    "stylelint": "^15.11.0",
+    "stylelint-config-recommended": "^13.0.0",
+    "stylelint-config-styled-components": "^0.1.1",
+    "stylelint-processor-styled-components": "^1.10.0",
+    "typescript": "^5.2.0"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged",
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
-  },
-  "lint-staged": {
-    "*.js": [
-      "stylelint '*.js'"
-    ]
   },
   "workspaces": [
     "packages/*",
