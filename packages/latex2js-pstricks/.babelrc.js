@@ -12,6 +12,6 @@ module.exports = (api) => {
       ['@babel/plugin-transform-modules-commonjs', {strictMode: false}],
       'macros'
     ],
-    presets: useESModules ? [] : ['@babel/env']
+    presets: useESModules ? ['@babel/preset-typescript'] : ['@babel/env', '@babel/preset-typescript']
   };
 };

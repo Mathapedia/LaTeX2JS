@@ -10,6 +10,6 @@ module.exports = (api) => {
       '@babel/proposal-export-default-from',
       'macros'
     ],
-    presets: useESModules ? [] : ['@babel/env']
+    presets: useESModules ? ['@babel/preset-typescript'] : ['@babel/env', '@babel/preset-typescript']
   };
 };

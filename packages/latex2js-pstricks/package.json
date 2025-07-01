@@ -7,6 +7,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "main": "main/index.js",
   "module": "module/index.js",
+  "types": "main/index.d.ts",
   "directories": {
     "lib": "src",
     "test": "__tests__"
@@ -23,17 +24,18 @@
     "url": "https://github.com/pyramation/latex2js"
   },
   "scripts": {
-    "build:main": "BABEL_ENV=production babel src --out-dir main --delete-dir-on-start",
-    "build:module": "MODULE=true babel src --out-dir module --delete-dir-on-start",
-    "build": "npm run build:module && npm run build:main",
-    "prepare": "npm run build",
-    "lint": "npm run lint:js && npm run lint:style",
-    "lint:js": "eslint src --ext .js",
-    "lint:fix": "eslint src --fix",
+    "build:main": "BABEL_ENV=production babel src --out-dir main --delete-dir-on-start --extensions '.js,.ts,.tsx'",
+    "build:module": "MODULE=true babel src --out-dir module --delete-dir-on-start --extensions '.js,.ts,.tsx'",
+    "build": "pnpm run build:module && pnpm run build:main",
+    "prepare": "pnpm run build",
+    "lint": "pnpm run lint:js && pnpm run lint:style",
+    "lint:js": "eslint src --ext .js,.ts,.tsx",
+    "lint:fix": "eslint src --fix --ext .js,.ts,.tsx",
     "lint:style": "stylelint 'src/**/*.js'",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:debug": "node --inspect node_modules/.bin/jest --runInBand"
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
+    "type-check": "tsc --noEmit"
   },
   "bugs": {
     "url": "https://github.com/pyramation/latex2js/issues"
