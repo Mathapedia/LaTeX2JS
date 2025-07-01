@@ -10,9 +10,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "lint": "eslint --ext .js,.ts,.vue --ignore-path .gitignore .",
-    "lint:fix": "eslint --ext .js,.ts,.vue --ignore-path .gitignore . --fix"
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
     "@nuxt/devtools": "latest",
@@ -22,11 +20,6 @@
     "vue-router": "^4.2.0"
   },
   "devDependencies": {
-    "@nuxt/eslint-config": "^0.2.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.50.0",
-    "eslint-plugin-vue": "^9.17.0",
     "typescript": "^5.2.0"
   }
 }

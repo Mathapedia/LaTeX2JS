@@ -32,14 +32,10 @@
     "mathjax"
   ],
   "scripts": {
-    "build:main": "BABEL_ENV=production babel src --out-dir main --delete-dir-on-start --extensions '.js,.ts,.tsx'",
-    "build:module": "MODULE=true babel src --out-dir module --delete-dir-on-start --extensions '.js,.ts,.tsx'",
+    "build:main": "tsc --project tsconfig.build.json --outDir main",
+    "build:module": "tsc --project tsconfig.build.json --outDir module --module esnext",
     "build": "pnpm run build:module && pnpm run build:main",
     "prepare": "pnpm run build",
-    "lint": "pnpm run lint:js && pnpm run lint:style",
-    "lint:js": "eslint src --ext .js,.ts,.tsx",
-    "lint:fix": "eslint src --fix --ext .js,.ts,.tsx",
-    "lint:style": "stylelint 'src/**/*.js'",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
@@ -49,29 +45,12 @@
     "url": "https://github.com/pyramation/latex2js/issues"
   },
   "devDependencies": {
-    "@babel/cli": "^7.23.0",
-    "@babel/core": "^7.23.0",
-    "@babel/plugin-transform-runtime": "^7.23.0",
-    "@babel/preset-env": "^7.23.0",
-    "@babel/preset-react": "^7.22.0",
-    "@babel/preset-typescript": "^7.23.0",
     "@types/jest": "^29.5.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "babel-core": "7.0.0-bridge.0",
-    "babel-plugin-macros": "^3.1.0",
-    "eslint": "^8.50.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-prettier": "^5.0.0",
-    "eslint-plugin-react": "^7.33.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
     "jest": "^29.7.0",
-    "prettier": "^3.0.0",
-    "regenerator-runtime": "^0.13.5",
+    "ts-jest": "^29.1.0",
     "typescript": "^5.2.0"
   },
   "dependencies": {
-    "@babel/runtime": "^7.4.2",
     "load-script": "^1.0.0"
   }
 }

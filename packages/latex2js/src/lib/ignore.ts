@@ -1,4 +1,4 @@
-export default [
+const ignore: RegExp[] = [
   /^\%/,
   /\\begin\{document\}/,
   /\\end\{document\}/,
@@ -19,3 +19,5 @@ export default [
   /\\begin\{center\}/,
   /\\end\{center\}/
 ];
+
+export default ignore;

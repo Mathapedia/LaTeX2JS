@@ -25,12 +25,6 @@
     "react-scripts": "^5.0.1",
     "typescript": "^5.2.0"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
   "browserslist": {
     "production": [
       ">0.2%",

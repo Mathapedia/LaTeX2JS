@@ -1,8 +1,8 @@
 module.exports = {
-  projects: ['<rootDir>/packages/*/jest.config.js'],
-  coverageDirectory: '<rootDir>/coverage',
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
+  roots: ['<rootDir>/src', '<rootDir>/test'],
+  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
