@@ -1,7 +1,8 @@
 'use client';
 
 import '../../../../packages/latex2js/latex2js.css';
-import { LaTeX } from '@latex2js/react';
+
+import { LaTeX } from '../../../../packages/react/main/index.js';
 
 console.log('LaTeX import:', LaTeX);
 console.log('LaTeX type:', typeof LaTeX);
