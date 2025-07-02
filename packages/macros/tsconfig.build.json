@@ -4,7 +4,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "module": "commonjs",
+    "target": "es2017"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "main", "module"]

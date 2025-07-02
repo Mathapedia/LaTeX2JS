@@ -6,7 +6,6 @@
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/react#readme",
   "license": "SEE LICENSE IN LICENSE",
   "main": "main/index.js",
-  "module": "module/index.js",
   "types": "main/index.d.ts",
   "directories": {
     "lib": "src",
