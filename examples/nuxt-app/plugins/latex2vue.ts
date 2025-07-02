@@ -1,4 +1,3 @@
-import { createApp } from 'vue';
 import VueLaTeX2JS from '@latex2js/vue';
 
 export default defineNuxtPlugin((nuxtApp) => {
