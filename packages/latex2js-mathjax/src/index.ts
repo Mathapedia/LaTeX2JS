@@ -1,4 +1,5 @@
 import loadScript from 'load-script';
+
 export const DEFAULT_SCRIPT =
   process.env.MATHJAX_CDN ||
   'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/MathJax.js';
@@ -28,7 +29,7 @@ export const DEFAULT_OPTIONS = {
 };
 
 export const getMathJax = () =>
-  typeof MathJax === 'undefined' ? undefined : MathJax;
+  typeof (globalThis as any).MathJax === 'undefined' ? undefined : (globalThis as any).MathJax;
 
 export const loadMathJax = (
   callback = () => {},
@@ -36,7 +37,9 @@ export const loadMathJax = (
   options = DEFAULT_OPTIONS
 ) => {
   const onLoad = () => {
-    MathJax.Hub.Config(options);
+    if ((globalThis as any).MathJax) {
+      (globalThis as any).MathJax.Hub.Config(options);
+    }
     callback();
   };
   if (!script) {
