@@ -1,8 +1,6 @@
-import { X, Y } from 'latex2js-utils';
-import * as d3 from 'd3';
 
 // http://mathforum.org/library/drmath/view/54146.html
-function arrow(x1, y1, x2, y2) {
+function arrow(x1: number, y1: number, x2: number, y2: number) {
   var t = Math.PI / 6;
 
   // d is the length of the arrowhead line
@@ -42,8 +40,9 @@ function arrow(x1, y1, x2, y2) {
   return context.join(' ');
 }
 
-const psgraph = {
-  getSize() {
+const psgraph: any = {
+  env: null as any,
+  getSize(): { width: number; height: number } {
     const padding = 20;
     this.env.scale = 1;
     const goalWidth =
@@ -52,8 +51,8 @@ const psgraph = {
     if (goalWidth <= this.env.w * this.env.xunit) {
       this.env.scale = goalWidth / this.env.w / this.env.xunit;
     }
-    const width = this.env.w * this.env.xunit;
-    const height = this.env.h * this.env.yunit;
+    const width: number = this.env.w * this.env.xunit;
+    const height: number = this.env.h * this.env.yunit;
 
     return {
       width,
@@ -61,7 +60,7 @@ const psgraph = {
     };
   },
 
-  psframe(svg) {
+  psframe(svg: any): void {
     svg
       .append('svg:line')
       .attr('x1', this.x1)
@@ -102,7 +101,7 @@ const psgraph = {
       .style('stroke', 'rgb(0,0,0)')
       .style('stroke-opacity', 1);
   },
-  pscircle: function (svg) {
+  pscircle: function (svg: any): void {
     svg
       .append('svg:circle')
       .attr('cx', this.cx)
@@ -114,25 +113,25 @@ const psgraph = {
       .style('stroke-opacity', 1);
   },
 
-  psplot(svg) {
+  psplot(svg: any): void {
     var context = [];
     context.push('M');
     if (this.fillstyle === 'solid') {
       context.push(this.data[0]);
-      context.push(Y.call(this.global, 0));
+      context.push(0); // Y coordinate for baseline
     } else {
       context.push(this.data[0]);
       context.push(this.data[1]);
     }
     context.push('L');
 
-    this.data.forEach(data=> {
+    this.data.forEach((data: any) => {
       context.push(data);
     })
 
     if (this.fillstyle === 'solid') {
       context.push(this.data[this.data.length - 2]);
-      context.push(Y.call(this.global, 0));
+      context.push(0); // Y coordinate for baseline
       context.push('Z');
     }
 
@@ -146,14 +145,14 @@ const psgraph = {
       .style('stroke', this.linecolor);
   },
 
-  pspolygon(svg) {
+  pspolygon(svg: any): void {
     var context = [];
     context.push('M');
     context.push(this.data[0]);
     context.push(this.data[1]);
     context.push('L');
 
-    this.data.forEach(data=> {
+    this.data.forEach((data: any) => {
       context.push(data);
     });
     context.push('Z');
@@ -167,7 +166,7 @@ const psgraph = {
       .style('stroke', 'black');
   },
 
-  psarc(svg) {
+  psarc(svg: any): void {
     // http://www.w3.org/TR/SVG/paths.html#PathDataEllipticalArcCommands
     var context = [];
     context.push('M');
@@ -198,13 +197,13 @@ const psgraph = {
       .style('stroke', 'black');
   },
 
-  psaxes(svg) {
+  psaxes(svg: any): void {
     var xaxis = [this.bottomLeft[0], this.topRight[0]];
     var yaxis = [this.bottomLeft[1], this.topRight[1]];
 
     var origin = this.origin;
 
-    function line(x1, y1, x2, y2) {
+    function line(x1: number, y1: number, x2: number, y2: number): void {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
@@ -213,14 +212,14 @@ const psgraph = {
         .style('stroke-opacity', 1);
     }
 
-    var xticks = function () {
+    var xticks = function (this: any) {
       // draw ticks
       for (var x = xaxis[0]; x <= xaxis[1]; x += this.dx) {
         line(x, origin[1] - 5, x, origin[1] + 5);
       }
     };
 
-    var yticks = function () {
+    var yticks = function (this: any) {
       // draw ticks
       for (var y = yaxis[0]; y <= yaxis[1]; y += this.dy) {
         line(origin[0] - 5, y, origin[0] + 5, y);
@@ -269,11 +268,11 @@ const psgraph = {
         .style('stroke', 'black');
     }
   },
-  psline(svg) {
+  psline(svg: any): void {
     var linewidth = this.linewidth,
       linecolor = this.linecolor;
 
-    function solid(x1, y1, x2, y2) {
+    function solid(x1: number, y1: number, x2: number, y2: number): void {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
@@ -282,7 +281,7 @@ const psgraph = {
         .style('stroke-opacity', 1);
     }
 
-    function dashed(x1, y1, x2, y2) {
+    function dashed(x1: number, y1: number, x2: number, y2: number): void {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
@@ -292,7 +291,7 @@ const psgraph = {
         .style('stroke-opacity', 1);
     }
 
-    function dotted(x1, y1, x2, y2) {
+    function dotted(x1: number, y1: number, x2: number, y2: number): void {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
@@ -362,11 +361,11 @@ const psgraph = {
     }
   },
 
-  userline(svg) {
+  userline(svg: any): void {
     var linewidth = this.linewidth,
       linecolor = this.linecolor;
 
-    function solid(x1, y1, x2, y2) {
+    function solid(x1: number, y1: number, x2: number, y2: number): void {
       svg
         .append('svg:path')
         .attr('class', 'userline')
@@ -376,7 +375,7 @@ const psgraph = {
         .style('stroke-opacity', 1);
     }
 
-    function dashed(x1, y1, x2, y2) {
+    function dashed(x1: number, y1: number, x2: number, y2: number): void {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
@@ -387,7 +386,7 @@ const psgraph = {
         .style('stroke-opacity', 1);
     }
 
-    function dotted(x1, y1, x2, y2) {
+    function dotted(x1: number, y1: number, x2: number, y2: number): void {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
@@ -462,7 +461,7 @@ const psgraph = {
     }
   },
 
-  rput(el) {
+  rput(el: any): void {
     const div = document.createElement('div');
 
     const x = this.x;
@@ -488,13 +487,13 @@ const psgraph = {
       div.style.left = `${x - w}px`;
     };
 
-    MathJax.Hub.Queue(['Typeset', MathJax.Hub, div], [done]);
+    (window as any).MathJax.Hub.Queue(['Typeset', (window as any).MathJax.Hub, div], [done]);
 
     // using the queue works, but looks hackier in the UI than this setTimeout does in code
     // setTimeout(done, 1100);
   },
 
-  pspicture(svg) {
+  pspicture(svg: any): void {
     var env = this.env;
     var el = this.$el;
 
@@ -502,7 +501,7 @@ const psgraph = {
       const plot = this.plot[key];
       if (key.match(/rput/)) return;
       if (psgraph.hasOwnProperty(key)) {
-        plot.forEach((data) => {
+        plot.forEach((data: any) => {
           data.data.global = env;
           // give access to pspicture!
           psgraph[key].call(data.data, svg);
@@ -512,9 +511,9 @@ const psgraph = {
 
     svg.on(
       'touchmove',
-      function () {
-        d3.event.preventDefault();
-        var touchcoords = d3.touches(this)[0];
+      function (this: any, event: any) {
+        event.preventDefault();
+        var touchcoords = event.touches ? event.touches[0] : [0, 0];
         userEvent(touchcoords);
       },
       false
@@ -522,23 +521,23 @@ const psgraph = {
 
     svg.on(
       'mousemove',
-      function () {
-        var coords = d3.mouse(this);
+      function (this: any, event: any) {
+        var coords = [event.offsetX || 0, event.offsetY || 0];
         userEvent(coords);
       },
       false
     );
 
     const plots = this.plot;
-    function userEvent(coords) {
+    function userEvent(coords: any): void {
       svg.selectAll('.userline').remove();
       svg.selectAll('.psplot').remove();
-      var currentEnvironment = {};
+      var currentEnvironment: { [key: string]: any } = {};
       // find special vars
       Object.entries(plots || {})
-      .forEach(([k, plot]) => {
+      .forEach(([k, plot]: [string, any]) => {
         if (k.match(/uservariable/)) {
-          plot.forEach(data=> {
+          plot.forEach((data: any) => {
             data.env.userx = coords[0];
             data.env.usery = coords[1];
             var dd = data.fn.call(data.env, data.match);
@@ -547,11 +546,11 @@ const psgraph = {
         }
       });
       Object.entries(plots || {})
-      .forEach(([k, plot]) => {
+      .forEach(([k, plot]: [string, any]) => {
         if (k.match(/psplot/)) {
-          plot.forEach(data=>{
+          plot.forEach((data: any) => {
             Object.entries(currentEnvironment || {})
-            .forEach(([name, variable]) => {
+            .forEach(([name, variable]: [string, any]) => {
               data.env.variables[name] = variable;
             });
             var d = data.fn.call(data.env, data.match);
@@ -562,7 +561,7 @@ const psgraph = {
           });
         }
         if (k.match(/userline/)) {
-          plot.forEach(data=>{
+          plot.forEach((data: any) => {
             var d = data.fn.call(data.env, data.match);
             data.env.x2 = coords[0];
             // / env.xunit;
@@ -593,7 +592,7 @@ const psgraph = {
     }
 
     // rput
-    this.plot.rput.forEach((rput) => {
+    this.plot.rput.forEach((rput: any) => {
       psgraph.rput.call(rput.data, el);
     });
   }

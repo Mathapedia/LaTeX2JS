@@ -22,7 +22,7 @@ class Parser {
     ]);
   }
   parse(text: string): any[] {
-    if (!text) return {};
+    if (!text) return [];
     var lines = text.split('\n');
     this.parseEnvText(lines);
     this.parseEnv(lines);
@@ -48,7 +48,7 @@ class Parser {
 
   pushLine(line: string): void {
     var add = true;
-    this.Ignore.forEach((exp) => {
+    this.Ignore.forEach((exp: RegExp) => {
       if (exp.test(line)) {
         add = false;
       }
@@ -96,12 +96,11 @@ class Parser {
       lines: []
     };
     const Delimiters = this.Delimiters;
-    var print = false;
 
     lines.forEach((line) => {
       var isDelim = false;
-      Object.entries(Delimiters).forEach(([env, type]) => {
-        Object.entries(type).forEach(([k, delim]) => {
+      Object.entries(Delimiters).forEach(([env, type]: [string, any]) => {
+        Object.entries(type).forEach(([k, delim]: [string, any]) => {
           if (line.match(delim)) {
             isDelim = true;
             if (k.match(/begin/)) {
@@ -145,8 +144,8 @@ class Parser {
     const Delimiters = this.Delimiters;
     lines.forEach((line, i) => {
       var isDelim = false;
-      Object.entries(Delimiters).forEach(([env, type]) => {
-        Object.entries(type).forEach(([k, delim]) => {
+      Object.entries(Delimiters).forEach(([env, type]: [string, any]) => {
+        Object.entries(type).forEach(([k, delim]: [string, any]) => {
           if (line.match(delim)) {
             isDelim = true;
             if (k.match(/begin/)) {
@@ -194,7 +193,7 @@ class Parser {
     return false;
   }
 
-  parsePSVariables(line: string, exp: RegExp, plot: any, k: string, env: any): void {
+  parsePSVariables(line: string, exp: RegExp, _plot: any, k: string, env: any): void {
     var match = line.match(exp);
     if (match) {
       if (k.match(/uservariable/)) {
@@ -206,13 +205,13 @@ class Parser {
   }
 
   parsePSTricks(lines: string[], env: any): any {
-    var plot = {};
+    var plot: { [key: string]: any[] } = {};
     const entries = Object.entries(this.PSTricks.Expressions);
-    entries.forEach(([k, exp]) => {
+    entries.forEach(([k, _exp]) => {
       plot[k] = [];
     });
     lines.forEach((line) => {
-      entries.forEach(([k, exp]) => {
+      entries.forEach(([k, exp]: [string, any]) => {
         this.parsePSVariables(line, exp, plot, k, env);
         this.parsePSExpression(line, exp, plot, k, env);
       });
@@ -239,12 +238,12 @@ class Parser {
   parseText(line: string): string {
     var contents = line;
     // TEXT
-    Object.entries(this.Text.Expressions).forEach(([k, exp]) => {
+    Object.entries(this.Text.Expressions).forEach(([k, exp]: [string, any]) => {
       contents = this.parseTextExpression(line, exp, k, contents);
     });
 
     // HEADERS
-    Object.entries(this.Headers.Expressions).forEach(([k, exp]) => {
+    Object.entries(this.Headers.Expressions).forEach(([k, exp]: [string, any]) => {
       contents = this.parseHeadersExpression(line, exp, k, contents);
     });
 

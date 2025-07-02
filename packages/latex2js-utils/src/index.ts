@@ -1,13 +1,13 @@
-export const simplerepl = function (regex, replace) {
-  return function (m, contents) {
+export const simplerepl = function (regex: RegExp, replace: string) {
+  return function (_m: any, contents: string) {
     return contents.replace(regex, replace);
   };
 };
 
-export const matchrepl = function (regex, callback) {
-  return function (m, contents) {
+export const matchrepl = function (regex: RegExp, callback: (match: RegExpMatchArray) => string) {
+  return function (m: any, contents: string) {
     if (Array.isArray(m)) {
-      m.forEach((match) => {
+      m.forEach((match: any) => {
         var m2 = match.match(regex);
         contents = contents.replace(m2.input, callback(m2));
       });
@@ -16,7 +16,7 @@ export const matchrepl = function (regex, callback) {
   };
 };
 
-export const convertUnits = function (value) {
+export const convertUnits = function (value: string) {
   var m = null;
   if ((m = value.match(/([^c]+)\s*cm/))) {
     var num1 = Number(m[1]);
@@ -44,11 +44,11 @@ export const RE = {
 
 // OPTIONS
 // converts [showorigin=false,labels=none, Dx=3.14] to {showorigin: 'false', labels: 'none', Dx: '3.14'}
-export const parseOptions = function (opts) {
+export const parseOptions = function (opts: string) {
   var options = opts.replace(/[\]\[]/g, '');
   var all = options.split(',');
-  var obj = {};
-  all.forEach((option) => {
+  var obj: { [key: string]: string } = {};
+  all.forEach((option: string) => {
     var kv = option.split('=');
     if (kv.length == 2) {
       obj[kv[0].trim()] = kv[1].trim();
@@ -57,7 +57,7 @@ export const parseOptions = function (opts) {
   return obj;
 };
 
-export const parseArrows = function (m) {
+export const parseArrows = function (m: string) {
   var lineType = m;
   var arrows = [0, 0];
   var dots = [0, 0];
@@ -88,12 +88,12 @@ export const parseArrows = function (m) {
   };
 };
 
-export const evaluate = function (exp) {
+export const evaluate = function (this: any, exp: string) {
   var num = Number(exp);
   if (isNaN(num)) {
     var expression = '';
     this.variables = this.variables || {};
-    Object.keys(this.variables).map(name=>{
+    Object.keys(this.variables).map((name: string) => {
       const val = this.variables[name];
       expression += 'var ' + name + ' = ' + val + ';';
     })
@@ -104,18 +104,18 @@ export const evaluate = function (exp) {
   }
 };
 
-export const X = function (v) {
+export const X = function (this: any, v: number | string) {
   return (this.w - (this.x1 - Number(v))) * this.xunit;
 };
 
-export const Xinv = function (v) {
+export const Xinv = function (this: any, v: number | string) {
   return Number(v) / this.xunit - this.w + this.x1;
 };
 
-export const Y = function (v) {
+export const Y = function (this: any, v: number | string) {
   return (this.y1 - Number(v)) * this.yunit;
 };
 
-export const Yinv = function (v) {
+export const Yinv = function (this: any, v: number | string) {
   return this.y1 - Number(v) / this.yunit;
 };

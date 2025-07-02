@@ -1,7 +1,7 @@
 import LaTeX2JS from 'latex2js';
 import latex from './latex.vue';
 
-const install = (Vue, config) => {
+const install = (Vue: any, config?: any) => {
   if (config) {
     if (config.options) {
       latex.props.globalOptions.default = () => config.options;

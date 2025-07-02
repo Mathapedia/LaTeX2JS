@@ -44,7 +44,7 @@ export default class LaTeX2HTML5 {
     this.Delimiters[name] = delim;
   }
 
-  addView(name: string, options: any): void {
+  addView(name: string, _options: any): void {
     this.addEnvironment(name);
     // var view = {};
     // this.Views[name] = this.BaseEnvView.extend(options);
@@ -56,13 +56,13 @@ export default class LaTeX2HTML5 {
   }
 
   addHeaders(name: string, begin?: string, end?: string): void {
-    var exp = {};
+    var exp: { [key: string]: RegExp } = {};
     var beginHash = name + 'begin';
     var endHash = name + 'end';
     exp[beginHash] = new RegExp('\\\\begin\\{' + name + '\\}');
     exp[endHash] = new RegExp('\\\\end\\{' + name + '\\}');
     Object.assign(this.Headers.Expressions, exp);
-    var fns = {};
+    var fns: { [key: string]: Function } = {};
     fns[beginHash] = function () {
       return begin || '';
     };
