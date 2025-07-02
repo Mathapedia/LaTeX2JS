@@ -1,21 +1,5 @@
-import loadScript from 'load-script';
-
-declare const process: any;
-
-export const DEFAULT_SCRIPT =
-  process.env.MATHJAX_CDN ||
-  'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/MathJax.js';
-
-export const DEFAULT_OPTIONS = {
-  TeX: { extensions: ['AMSmath.js', 'AMSsymbols.js'] },
-  extensions: ['tex2jax.js'],
-  showProcessingMessages: false,
-  jax: ['input/TeX', 'output/HTML-CSS'],
-  messageStyle: 'none',
-  showMathMenu: false,
-  showMathMenuMSIE: false,
-  tex2jax: {
-    processEnvironments: true,
+export const DEFAULT_CONFIG = {
+  tex: {
     inlineMath: [
       ['$', '$'],
       ['\\(', '\\)']
@@ -24,28 +8,64 @@ export const DEFAULT_OPTIONS = {
       ['$$', '$$'],
       ['\\[', '\\]']
     ],
-    preview: 'none',
-    processEscapes: true
+    processEscapes: true,
+    processEnvironments: true,
+    packages: ['base', 'ams', 'newcommand', 'configmacros']
   },
-  'HTML-CSS': { linebreaks: { automatic: true, width: 'container' } }
+  chtml: {
+    linebreaks: { automatic: true, width: 'container' }
+  },
+  startup: {
+    ready: () => {
+    }
+  }
 };
 
-export const getMathJax = () =>
-  typeof (globalThis as any).MathJax === 'undefined' ? undefined : (globalThis as any).MathJax;
+let mathJaxInstance: any = null;
 
-export const loadMathJax = (
-  callback = () => {},
-  script = DEFAULT_SCRIPT,
-  options = DEFAULT_OPTIONS
-) => {
-  const onLoad = () => {
-    if ((globalThis as any).MathJax) {
-      (globalThis as any).MathJax.Hub.Config(options);
-    }
+export const getMathJax = () => mathJaxInstance || (globalThis as any).MathJax;
+
+export const loadMathJax = async (callback = () => {}, config = DEFAULT_CONFIG) => {
+  if (typeof window === 'undefined') {
     callback();
-  };
-  if (!script) {
-    return onLoad();
+    return;
   }
-  loadScript(script, onLoad);
+
+  if ((globalThis as any).MathJax) {
+    mathJaxInstance = (globalThis as any).MathJax;
+    callback();
+    return;
+  }
+
+  try {
+    (globalThis as any).MathJax = {
+      ...config,
+      startup: {
+        ...config.startup,
+        ready: () => {
+          mathJaxInstance = (globalThis as any).MathJax;
+          if (config.startup?.ready) {
+            config.startup.ready();
+          }
+          callback();
+        }
+      }
+    };
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+    script.async = true;
+    script.onload = () => {
+    };
+    script.onerror = () => {
+      console.error('Failed to load MathJax from CDN');
+      callback();
+    };
+    
+    document.head.appendChild(script);
+    
+  } catch (error) {
+    console.error('Failed to load MathJax:', error);
+    callback();
+  }
 };
