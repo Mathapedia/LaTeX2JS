@@ -1,5 +1,7 @@
-module.exports = {
-  projects: ['<rootDir>/packages/*/jest.config.js'],
+import type { Config } from 'jest';
+
+const config: Config = {
+  projects: ['<rootDir>/packages/*/jest.config.ts'],
   coverageDirectory: '<rootDir>/coverage',
   preset: 'ts-jest',
   testEnvironment: 'node',
@@ -8,3 +10,5 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
 };
+
+export default config;

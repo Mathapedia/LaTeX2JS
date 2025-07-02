@@ -46,7 +46,6 @@ p.quotation {
   max-width: 870px;
   margin-right: auto;
   margin-left: auto;
-  *zoom: 1;
 }
 
 @media (min-width: 768px) and (max-width: 979px) {

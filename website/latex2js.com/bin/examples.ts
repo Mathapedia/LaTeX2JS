@@ -1,5 +1,5 @@
-const glob = require('glob').sync;
-const fs = require('fs');
+import { sync as glob } from 'glob';
+import * as fs from 'fs';
 
 const t = [];
 glob(__dirname + '/../examples/tex/*.tex').forEach(tex => {

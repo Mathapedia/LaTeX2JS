@@ -66,8 +66,8 @@
     "latex2js-macros": "^2.1.0",
     "latex2js-mathjax": "^2.1.0",
     "latex2js-pstricks": "^2.1.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
