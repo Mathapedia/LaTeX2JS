@@ -61,7 +61,7 @@ importers:
     dependencies:
       '@latex2js/react':
         specifier: workspace:*
-        version: link:../../packages/latex2react
+        version: link:../../packages/react
       next:
         specifier: 15.3.4
         version: 15.3.4(@babel/core@7.27.7)(babel-plugin-macros@3.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -104,7 +104,7 @@ importers:
     dependencies:
       '@latex2js/vue':
         specifier: workspace:*
-        version: link:../../packages/latex2vue
+        version: link:../../packages/vue
       '@nuxt/devtools':
         specifier: latest
         version: 2.6.2(vite@6.3.5(@types/node@20.19.4)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.0))(vue@3.5.17(typescript@5.8.3))
@@ -122,17 +122,17 @@ importers:
         specifier: ^5.2.0
         version: 5.8.3
 
-  packages/latex2html5:
+  packages/html5:
     dependencies:
       '@latex2js/macros':
         specifier: workspace:*
-        version: link:../latex2js-macros
+        version: link:../macros
       '@latex2js/mathjax':
         specifier: workspace:*
-        version: link:../latex2js-mathjax
+        version: link:../mathjax
       '@latex2js/pstricks':
         specifier: workspace:*
-        version: link:../latex2js-pstricks
+        version: link:../pstricks
       d3:
         specifier: ^7.8.0
         version: 7.9.0
@@ -166,13 +166,13 @@ importers:
     dependencies:
       '@latex2js/pstricks':
         specifier: workspace:*
-        version: link:../latex2js-pstricks
+        version: link:../pstricks
       '@latex2js/settings':
         specifier: workspace:*
-        version: link:../latex2js-settings
+        version: link:../settings
       '@latex2js/utils':
         specifier: workspace:*
-        version: link:../latex2js-utils
+        version: link:../utils
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -187,7 +187,7 @@ importers:
         specifier: ^5.2.0
         version: 5.8.3
 
-  packages/latex2js-macros:
+  packages/macros:
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -202,7 +202,7 @@ importers:
         specifier: ^5.2.0
         version: 5.8.3
 
-  packages/latex2js-mathjax:
+  packages/mathjax:
     dependencies:
       load-script:
         specifier: ^1.0.0
@@ -224,14 +224,14 @@ importers:
         specifier: ^5.2.0
         version: 5.8.3
 
-  packages/latex2js-pstricks:
+  packages/pstricks:
     dependencies:
       '@latex2js/settings':
         specifier: workspace:*
-        version: link:../latex2js-settings
+        version: link:../settings
       '@latex2js/utils':
         specifier: workspace:*
-        version: link:../latex2js-utils
+        version: link:../utils
       d3:
         specifier: ^4.13.0
         version: 4.13.0
@@ -252,51 +252,17 @@ importers:
         specifier: ^5.2.0
         version: 5.8.3
 
-  packages/latex2js-settings:
-    dependencies:
-      '@latex2js/utils':
-        specifier: workspace:*
-        version: link:../latex2js-utils
-    devDependencies:
-      '@types/jest':
-        specifier: ^29.5.0
-        version: 29.5.14
-      jest:
-        specifier: ^29.7.0
-        version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
-      ts-jest:
-        specifier: ^29.1.0
-        version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
-      typescript:
-        specifier: ^5.2.0
-        version: 5.8.3
-
-  packages/latex2js-utils:
-    devDependencies:
-      '@types/jest':
-        specifier: ^29.5.0
-        version: 29.5.14
-      jest:
-        specifier: ^29.7.0
-        version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
-      ts-jest:
-        specifier: ^29.1.0
-        version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
-      typescript:
-        specifier: ^5.2.0
-        version: 5.8.3
-
-  packages/latex2react:
+  packages/react:
     dependencies:
       '@latex2js/macros':
         specifier: workspace:*
-        version: link:../latex2js-macros
+        version: link:../macros
       '@latex2js/mathjax':
         specifier: workspace:*
-        version: link:../latex2js-mathjax
+        version: link:../mathjax
       '@latex2js/pstricks':
         specifier: workspace:*
-        version: link:../latex2js-pstricks
+        version: link:../pstricks
       d3:
         specifier: ^7.8.0
         version: 7.9.0
@@ -347,17 +313,51 @@ importers:
         specifier: ^5.2.0
         version: 5.8.3
 
-  packages/latex2vue:
+  packages/settings:
+    dependencies:
+      '@latex2js/utils':
+        specifier: workspace:*
+        version: link:../utils
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.0
+        version: 29.5.14
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
+      ts-jest:
+        specifier: ^29.1.0
+        version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
+      typescript:
+        specifier: ^5.2.0
+        version: 5.8.3
+
+  packages/utils:
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.0
+        version: 29.5.14
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
+      ts-jest:
+        specifier: ^29.1.0
+        version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
+      typescript:
+        specifier: ^5.2.0
+        version: 5.8.3
+
+  packages/vue:
     dependencies:
       '@latex2js/macros':
         specifier: workspace:*
-        version: link:../latex2js-macros
+        version: link:../macros
       '@latex2js/mathjax':
         specifier: workspace:*
-        version: link:../latex2js-mathjax
+        version: link:../mathjax
       '@latex2js/pstricks':
         specifier: workspace:*
-        version: link:../latex2js-pstricks
+        version: link:../pstricks
       d3:
         specifier: ^7.8.0
         version: 7.9.0
@@ -12158,7 +12158,7 @@ snapshots:
     dependencies:
       cipher-base: 1.0.6
       inherits: 2.0.4
-      ripemd160: 2.0.1
+      ripemd160: 2.0.2
       sha.js: 2.4.12
 
   create-hash@1.2.0:
@@ -13103,8 +13103,8 @@ snapshots:
       '@typescript-eslint/parser': 5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3)
       eslint: 9.30.1(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.1(jiti@2.4.2))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-react: 7.37.5(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.30.1(jiti@2.4.2))
@@ -13123,7 +13123,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.1(jiti@2.4.2)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.1
@@ -13134,22 +13134,22 @@ snapshots:
       tinyglobby: 0.2.14
       unrs-resolver: 1.9.2
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3)
       eslint: 9.30.1(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.1(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -13160,7 +13160,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.30.1(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3

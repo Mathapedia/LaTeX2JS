@@ -1,9 +1,9 @@
 {
-  "name": "@latex2js/pstricks",
-  "version": "2.1.2",
-  "description": "PSTricks extension for LaTeX2JS",
+  "name": "@latex2js/vue",
+  "version": "2.2.2",
+  "description": "Vue components for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
-  "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/latex2js-pstricks#readme",
+  "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/vue#readme",
   "license": "SEE LICENSE IN LICENSE",
   "main": "main/index.js",
   "module": "module/index.js",
@@ -23,10 +23,21 @@
     "type": "git",
     "url": "https://github.com/pyramation/latex2js"
   },
+  "keywords": [
+    "latex",
+    "latex2html",
+    "latex2js",
+    "math",
+    "mathematics",
+    "mathjax",
+    "vue",
+    "vue.js"
+  ],
   "scripts": {
     "build:main": "tsc --project tsconfig.build.json --outDir main",
     "build:module": "tsc --project tsconfig.build.json --outDir module --module esnext",
-    "build": "pnpm run build:module && pnpm run build:main",
+    "build": "pnpm run build:module && pnpm run build:main && pnpm run copy",
+    "copy": "cp src/latex.vue main/ && cp src/latex.vue module/ && cp -r src/components main/ && cp -r src/components module/",
     "prepare": "pnpm run build",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -37,15 +48,22 @@
     "url": "https://github.com/pyramation/latex2js/issues"
   },
   "devDependencies": {
-    "@types/d3": "^7.4.0",
     "@types/jest": "^29.5.0",
     "jest": "^29.7.0",
+    "prettier": "^3.0.0",
     "ts-jest": "^29.1.0",
-    "typescript": "^5.2.0"
+    "typescript": "^5.2.0",
+    "vue-tsc": "^1.8.0"
   },
   "dependencies": {
-    "d3": "^4.13.0",
-    "@latex2js/settings": "workspace:*",
-    "@latex2js/utils": "workspace:*"
+    "d3": "^7.8.0",
+    "latex2js": "^2.1.2",
+    "@latex2js/macros": "workspace:*",
+    "@latex2js/mathjax": "workspace:*",
+    "@latex2js/pstricks": "workspace:*",
+    "vue": "^3.3.0"
+  },
+  "peerDependencies": {
+    "vue": ">=3.0.0"
   }
 }

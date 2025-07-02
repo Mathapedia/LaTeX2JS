@@ -1,6 +1,6 @@
 'use client';
 
-import 'latex2js/latex2js.css';
+import '../../../../packages/latex2js/latex2js.css';
 import { LaTeX } from '@latex2js/react';
 
 const tex = String.raw`

@@ -3,7 +3,7 @@
     "version": "2.1.2",
     "description": "latex2js settings",
     "author": "Dan Lynch <pyramation@gmail.com>",
-    "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/latex2js-settings#readme",
+    "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/settings#readme",
     "license": "SEE LICENSE IN LICENSE",
     "main": "main/index.js",
     "module": "module/index.js",

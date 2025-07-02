@@ -20,7 +20,7 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@latex2js/react": ["../../packages/latex2react/main/index.d.ts"]
+      "@latex2js/react": ["../../packages/react/main/index.d.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
