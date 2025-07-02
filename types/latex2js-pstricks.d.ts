@@ -1,4 +1,4 @@
-declare module 'latex2js-pstricks' {
+declare module '@latex2js/pstricks' {
   export const pstricks: any;
   export const psgraph: {
     getSize: {
