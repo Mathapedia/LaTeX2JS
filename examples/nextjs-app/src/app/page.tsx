@@ -3,6 +3,9 @@
 import '../../../../packages/latex2js/latex2js.css';
 import { LaTeX } from '@latex2js/react';
 
+console.log('LaTeX import:', LaTeX);
+console.log('LaTeX type:', typeof LaTeX);
+
 const tex = String.raw`
 \begin{nicebox}{LaTeX2JS Next.js Demo}
 Welcome to the modernized LaTeX2JS demonstration using Next.js with TypeScript support!
