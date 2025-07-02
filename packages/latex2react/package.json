@@ -47,6 +47,7 @@
     "url": "https://github.com/pyramation/latex2js/issues"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.0",
     "@types/jest": "^29.5.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",

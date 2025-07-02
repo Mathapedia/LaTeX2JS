@@ -23,13 +23,13 @@ export const Expressions = {
 };
 
 export const Functions = {
-  cite: function(m, contents) {
-    m.forEach(match=> {
+  cite: function(m: any[], contents: string): string {
+    m.forEach((match: any) => {
       var m2 = match.match(/\\cite\[(\d+)\]\{([^}]*)\}/);
       var m = location.pathname.match(/\/books\/(\d+)\//);
-      var book_id = 0;
+      var book_id: number = 0;
       if (m) {
-        book_id = m[1];
+        book_id = parseInt(m[1], 10);
       }
       contents = contents.replace(
         m2.input,
@@ -44,43 +44,43 @@ export const Functions = {
     });
     return contents;
   },
-  img: matchrepl(/\\img\{([^}]*)\}/, function(m) {
+  img: matchrepl(/\\img\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return (
       '<div style="width: 100%;text-align: center;"><img src="' +
       m[1] +
       '"></div>'
     );
   }),
-  youtube: matchrepl(/\\youtube\{([^}]*)\}/, function(m) {
+  youtube: matchrepl(/\\youtube\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return (
       '<div style="width: 100%;text-align: center;"><iframe width="560" height="315" src="https://www.youtube.com/embed/' +
       m[1] +
       '" frameborder="0" allowfullscreen></iframe></div>'
     );
   }),
-  href: matchrepl(/\\href\{([^}]*)\}\{([^}]*)\}/, function(m) {
+  href: matchrepl(/\\href\{([^}]*)\}\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<a href="' + m[1] + '">' + m[2] + '</a>';
   }),
-  set: matchrepl(/\\set\{([^}]*)\}/, function(m) {
+  set: matchrepl(/\\set\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<i>' + m[1] + '</i>';
   }),
   euler: simplerepl(/Euler\^/, 'exp'),
-  emph: matchrepl(/\{([^}]*)\}/, function(m) {
+  emph: matchrepl(/\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<i>' + m[1] + '</i>';
   }),
-  bf: matchrepl(/\{*\\bf ([^}]*)\}/, function(m) {
+  bf: matchrepl(/\{*\\bf ([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<b>' + m[1] + '</b>';
   }),
-  rm: matchrepl(/\{*\\rm ([^}]*)\}/, function(m) {
+  rm: matchrepl(/\{*\\rm ([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<span class="rm">' + m[1] + '</span>';
   }),
-  sl: matchrepl(/\{*\\sl ([^}]*)\}/, function(m) {
+  sl: matchrepl(/\{*\\sl ([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<i>' + m[1] + '</i>';
   }),
-  it: matchrepl(/\{*\\it ([^}]*)\}/, function(m) {
+  it: matchrepl(/\{*\\it ([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<i>' + m[1] + '</i>';
   }),
-  tt: matchrepl(/\{*\\tt ([^}]*)\}/, function(m) {
+  tt: matchrepl(/\{*\\tt ([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<span class="tt">' + m[1] + '</span>';
   }),
   ndash: simplerepl(/--/g, '&ndash;'),

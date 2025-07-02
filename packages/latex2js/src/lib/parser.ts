@@ -1,19 +1,27 @@
-function Parser(LaTeX2JS) {
-  this.Ignore = LaTeX2JS.Ignore;
-  this.Delimiters = LaTeX2JS.Delimiters;
-  this.Text = LaTeX2JS.Text;
-  this.PSTricks = LaTeX2JS.PSTricks;
-  this.Headers = LaTeX2JS.Headers;
-  this.objects = [];
-  this.environment = null;
-  // emulating a match
-  this.settings = this.PSTricks.Functions.psset.call(this, [
-    '',
-    'units=1cm,linecolor=black,linestyle=solid,fillstyle=none'
-  ]);
-}
-Parser.prototype = {
-  parse: function (text) {
+class Parser {
+  Ignore: any;
+  Delimiters: any;
+  Text: any;
+  PSTricks: any;
+  Headers: any;
+  objects: any[];
+  environment: any;
+  settings: any;
+
+  constructor(LaTeX2JS: any) {
+    this.Ignore = LaTeX2JS.Ignore;
+    this.Delimiters = LaTeX2JS.Delimiters;
+    this.Text = LaTeX2JS.Text;
+    this.PSTricks = LaTeX2JS.PSTricks;
+    this.Headers = LaTeX2JS.Headers;
+    this.objects = [];
+    this.environment = null;
+    this.settings = this.PSTricks.Functions.psset.call(this, [
+      '',
+      'units=1cm,linecolor=black,linestyle=solid,fillstyle=none'
+    ]);
+  }
+  parse(text: string): any[] {
     if (!text) return {};
     var lines = text.split('\n');
     this.parseEnvText(lines);
@@ -25,8 +33,9 @@ Parser.prototype = {
       }
     });
     return this.objects;
-  },
-  newEnvironment: function (type) {
+  }
+
+  newEnvironment(type: string): void {
     if (this.environment && this.environment.lines.length) {
       this.environment.settings = { ...this.settings };
       this.objects.push(this.environment);
@@ -35,8 +44,9 @@ Parser.prototype = {
       type: type,
       lines: []
     };
-  },
-  pushLine: function (line) {
+  }
+
+  pushLine(line: string): void {
     var add = true;
     this.Ignore.forEach((exp) => {
       if (exp.test(line)) {
@@ -52,12 +62,14 @@ Parser.prototype = {
         }
       }
     }
-  },
-  parseUnits: function (line) {
+  }
+
+  parseUnits(line: string): void {
     var m = line.match(this.PSTricks.Expressions.psset);
     Object.assign(this.settings, this.PSTricks.Functions.psset.call(this, m));
-  },
-  metaData: function (environment, line) {
+  }
+
+  metaData(environment: string, line: string): void {
     if (this.PSTricks.Expressions.hasOwnProperty(environment)) {
       this.environment.match = line.match(
         this.PSTricks.Expressions[environment]
@@ -75,8 +87,9 @@ Parser.prototype = {
         }
       }
     }
-  },
-  parseEnv: function (lines) {
+  }
+
+  parseEnv(lines: string[]): void {
     this.objects = [];
     this.environment = {
       type: 'math',
@@ -125,8 +138,9 @@ Parser.prototype = {
 
     // push last!
     this.newEnvironment('math');
-  },
-  parseEnvText: function (lines) {
+  }
+
+  parseEnvText(lines: string[]): void {
     var _env = 'math';
     const Delimiters = this.Delimiters;
     lines.forEach((line, i) => {
@@ -164,8 +178,9 @@ Parser.prototype = {
         }
       }
     });
-  },
-  parsePSExpression: function (line, exp, plot, k, env) {
+  }
+
+  parsePSExpression(line: string, exp: RegExp, plot: any, k: string, env: any): boolean {
     var match = line.match(exp);
     if (match) {
       plot[k].push({
@@ -177,8 +192,9 @@ Parser.prototype = {
       return true;
     }
     return false;
-  },
-  parsePSVariables: function (line, exp, plot, k, env) {
+  }
+
+  parsePSVariables(line: string, exp: RegExp, plot: any, k: string, env: any): void {
     var match = line.match(exp);
     if (match) {
       if (k.match(/uservariable/)) {
@@ -187,8 +203,9 @@ Parser.prototype = {
         env.variables[dd.name] = dd.value;
       }
     }
-  },
-  parsePSTricks: function (lines, env) {
+  }
+
+  parsePSTricks(lines: string[], env: any): any {
     var plot = {};
     const entries = Object.entries(this.PSTricks.Expressions);
     entries.forEach(([k, exp]) => {
@@ -201,22 +218,25 @@ Parser.prototype = {
       });
     });
     return plot;
-  },
-  parseTextExpression: function (line, exp, k, contents) {
+  }
+
+  parseTextExpression(line: string, exp: RegExp, k: string, contents: string): string {
     var match = line.match(exp);
     if (match) {
       return this.Text.Functions[k].call(this, match, contents);
     }
     return contents;
-  },
-  parseHeadersExpression: function (line, exp, k, contents) {
+  }
+
+  parseHeadersExpression(line: string, exp: RegExp, k: string, contents: string): string {
     var match = line.match(exp);
     if (match) {
       return this.Headers.Functions[k].call(this);
     }
     return contents;
-  },
-  parseText: function (line) {
+  }
+
+  parseText(line: string): string {
     var contents = line;
     // TEXT
     Object.entries(this.Text.Expressions).forEach(([k, exp]) => {
@@ -230,6 +250,6 @@ Parser.prototype = {
 
     return contents;
   }
-};
+}
 
 export default Parser;

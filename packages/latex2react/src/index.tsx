@@ -1,4 +1,4 @@
-import React, { Component, createElement } from 'react';
+import { Component, createElement } from 'react';
 import LaTeX2JS from 'latex2js';
 import { getMathJax, loadMathJax } from 'latex2js-mathjax';
 
@@ -6,7 +6,6 @@ import pspicture from './components/pspicture';
 import nicebox from './components/nicebox';
 import enumerate from './components/enumerate';
 import verbatim from './components/verbatim';
-import slider from './components/slider';
 import math from './components/math';
 import macros from './components/macros';
 
@@ -14,8 +13,16 @@ const ELEMENTS = { pspicture, nicebox, enumerate, verbatim, math, macros };
 
 export { pspicture, nicebox, enumerate, verbatim, math, macros };
 
-export class LaTeX extends Component {
-  constructor(props) {
+interface LaTeXProps {
+  content: string;
+}
+
+interface LaTeXState {
+  loaded?: boolean;
+}
+
+export class LaTeX extends Component<LaTeXProps, LaTeXState> {
+  constructor(props: LaTeXProps) {
     super(props);
     this.onLoad = this.onLoad.bind(this);
   }
@@ -39,13 +46,14 @@ export class LaTeX extends Component {
     const latex = new LaTeX2JS();
     const parsed = latex.parse(this.props.content);
 
-    const children = [];
+    const children: React.ReactElement[] = [];
 
     parsed &&
       parsed.forEach &&
-      parsed.forEach((el) => {
+      parsed.forEach((el: any) => {
         if (ELEMENTS.hasOwnProperty(el.type)) {
-          children.push(createElement(ELEMENTS[el.type], el));
+          const elementType = el.type as keyof typeof ELEMENTS;
+          children.push(createElement(ELEMENTS[elementType], el));
         }
       });
 

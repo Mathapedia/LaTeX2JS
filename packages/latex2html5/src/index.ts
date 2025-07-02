@@ -4,7 +4,6 @@ import pspicture from './components/pspicture';
 import nicebox from './components/nicebox';
 import enumerate from './components/enumerate';
 import verbatim from './components/verbatim';
-import slider from './components/slider';
 import math from './components/math';
 import macros from './components/macros';
 
@@ -12,7 +11,7 @@ const ELEMENTS = { pspicture, nicebox, enumerate, verbatim, math, macros };
 
 export { pspicture, nicebox, enumerate, verbatim, math, macros };
 
-export default function render(tex, resolve) {
+export default function render(tex: string, resolve: (div: HTMLDivElement) => void): void {
   const done = () => {
     const latex = new LaTeX2JS();
     const parsed = latex.parse(tex);
@@ -20,9 +19,10 @@ export default function render(tex, resolve) {
     div.className = 'latex-container';
     parsed &&
       parsed.forEach &&
-      parsed.forEach((el) => {
+      parsed.forEach((el: any) => {
         if (ELEMENTS.hasOwnProperty(el.type)) {
-          div.appendChild(ELEMENTS[el.type](el));
+          const elementType = el.type as keyof typeof ELEMENTS;
+          div.appendChild(ELEMENTS[elementType](el));
         }
       });
     resolve(div);
@@ -34,11 +34,13 @@ export default function render(tex, resolve) {
   loadMathJax(done);
 }
 
-export const init = () => {
+export const init = (): void => {
   loadMathJax();
   document.querySelectorAll('script[type="text/latex"]').forEach((el) => {
-    render(el.innerHTML, (div) => {
-      el.parentNode.insertBefore(div, el.nextSibling);
+    render(el.innerHTML, (div: HTMLDivElement) => {
+      if (el.parentNode) {
+        el.parentNode.insertBefore(div, el.nextSibling);
+      }
     });
   });
 };

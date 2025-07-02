@@ -7,6 +7,14 @@ import IgnoreDefault from './lib/ignore';
 import Parser from './lib/parser';
 
 export default class LaTeX2HTML5 {
+  Text: any;
+  Headers: any;
+  Environments: any;
+  Ignore: any;
+  PSTricks: any;
+  Views: any;
+  Delimiters: any;
+
   constructor(
     Text = TextExt,
     Headers = HeadersExt,
@@ -23,12 +31,12 @@ export default class LaTeX2HTML5 {
     this.Views = Views;
     this.Delimiters = {};
 
-    Environments.forEach((name) => {
+    Environments.forEach((name: string) => {
       this.addEnvironment(name);
     });
   }
 
-  addEnvironment(name) {
+  addEnvironment(name: string): void {
     var delim = {
       begin: new RegExp('\\\\begin\\{' + name + '\\}'),
       end: new RegExp('\\\\end\\{' + name + '\\}')
@@ -36,18 +44,18 @@ export default class LaTeX2HTML5 {
     this.Delimiters[name] = delim;
   }
 
-  addView(name, options) {
+  addView(name: string, options: any): void {
     this.addEnvironment(name);
     // var view = {};
     // this.Views[name] = this.BaseEnvView.extend(options);
   }
 
-  addText(name, exp, func) {
+  addText(name: string, exp: RegExp, func: Function): void {
     this.Text.Expressions[name] = exp;
     this.Text.Functions[name] = func;
   }
 
-  addHeaders(name, begin, end) {
+  addHeaders(name: string, begin?: string, end?: string): void {
     var exp = {};
     var beginHash = name + 'begin';
     var endHash = name + 'end';
@@ -64,11 +72,11 @@ export default class LaTeX2HTML5 {
     Object.assign(this.Headers.Functions, fns);
   }
 
-  getParser() {
+  getParser(): any {
     return new Parser(this);
   }
 
-  parse(text) {
+  parse(text: string): any[] {
     const parser = new Parser(this);
     const parsed = parser.parse(text);
     parsed.forEach((element) => {

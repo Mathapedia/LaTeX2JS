@@ -1,9 +1,24 @@
 import { psgraph } from 'latex2js-pstricks';
 import * as d3 from 'd3';
 
-export default function render(that) {
+interface ComponentProps {
+  env: {
+    sliders?: Array<{
+      latex: string;
+      scalar: number;
+      variable: string;
+      value: string;
+      min: number;
+      max: number;
+    }>;
+    variables?: { [key: string]: number };
+  };
+  plot: { [key: string]: any };
+  [key: string]: any;
+}
+
+export default function render(that: ComponentProps): HTMLDivElement {
   const size = psgraph.getSize.call(that);
-  const style = `width: ${size.width}px; height: ${size.height}px;`;
   const width = `${size.width}px`;
   const height = `${size.height}px`;
   const div = document.createElement('div');
@@ -14,30 +29,27 @@ export default function render(that) {
   svg.setAttribute('width', width);
   svg.setAttribute('height', height);
   var d3svg = d3.select(svg);
-  that.$el = div;
+  (that as any).$el = div;
   psgraph.pspicture.call(that, d3svg);
   div.appendChild(svg);
 
-  // sliders
-
   const { env, plot } = that;
-
   const { sliders } = env;
 
   if (sliders && sliders.length) {
-    sliders.forEach((slider) => {
+    sliders.forEach((slider: any) => {
       const { latex, scalar, variable, value, min, max } = slider;
 
-      const onChange = (event) => {
-        // update value
-        var val = event.target.value / scalar;
+      const onChange = (event: Event) => {
+        const target = event.target as HTMLInputElement;
+        var val = Number(target.value) / scalar;
+        if (!env.variables) env.variables = {};
         env.variables[variable] = val;
 
-        // update svg
         d3svg.selectAll('.psplot').remove();
-        Object.entries(plot).forEach(([k, plot]) => {
+        Object.entries(plot).forEach(([k, plotData]: [string, any]) => {
           if (k.match(/psplot/)) {
-            plot.forEach((data) => {
+            plotData.forEach((data: any) => {
               const d = data.fn.call(data.env, data.match);
               if (psgraph[k] && d && d3svg) {
                 psgraph[k].call(d, d3svg);
@@ -49,8 +61,8 @@ export default function render(that) {
       const label = document.createElement('label');
       const text = document.createTextNode(latex);
       const input = document.createElement('input');
-      input.setAttribute('min', min * scalar);
-      input.setAttribute('max', max * scalar);
+      input.setAttribute('min', String(min * scalar));
+      input.setAttribute('max', String(max * scalar));
       input.setAttribute('type', 'range');
       input.setAttribute('value', value);
       label.appendChild(text);
