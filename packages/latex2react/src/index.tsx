@@ -53,7 +53,8 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
       parsed.forEach((el: any) => {
         if (ELEMENTS.hasOwnProperty(el.type)) {
           const elementType = el.type as keyof typeof ELEMENTS;
-          children.push(createElement(ELEMENTS[elementType], el));
+          const Component = ELEMENTS[elementType];
+          children.push(createElement(Component as any, { ...el, key: children.length }));
         }
       });
 

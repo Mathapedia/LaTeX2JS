@@ -64,8 +64,23 @@ export const Expressions = {
   psset: /\\psset\{(.*)\}/
 };
 
+export interface PSTricksContext {
+  variables: { [key: string]: any };
+  sliders: any[];
+  xunit: number;
+  yunit: number;
+  w: number;
+  h: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  userx?: any;
+  usery?: any;
+}
+
 export const Functions = {
-  slider(m) {
+  slider(this: PSTricksContext, m: any) {
     var obj = {
       scalar: 1,
       min: Number(m[2]),
@@ -84,7 +99,7 @@ export const Functions = {
     }
     return obj;
   },
-  pspicture(m) {
+  pspicture(this: PSTricksContext, m: any) {
     var p = {
       x0: Number(m[1]),
       y0: Number(m[2]),
@@ -98,7 +113,7 @@ export const Functions = {
     Object.assign(this, p, s);
     return Object.assign(p, s);
   },
-  psframe(m) {
+  psframe(this: PSTricksContext, m: any) {
     var obj = {
       x1: X.call(this, m[1]),
       y1: Y.call(this, m[2]),
@@ -107,7 +122,7 @@ export const Functions = {
     };
     return obj;
   },
-  pscircle(m) {
+  pscircle(this: PSTricksContext, m: any) {
     var obj = {
       cx: X.call(this, m[1]),
       cy: Y.call(this, m[2]),
@@ -115,8 +130,8 @@ export const Functions = {
     };
     return obj;
   },
-  psaxes(m) {
-    var obj = {
+  psaxes(this: PSTricksContext, m: any) {
+    var obj: any = {
       dx: 1 * this.xunit,
       dy: 1 * this.yunit,
       arrows: [0, 0],
@@ -166,7 +181,7 @@ export const Functions = {
     }
     return obj;
   },
-  psplot(m) {
+  psplot(this: PSTricksContext, m: any) {
     var startX = evaluate.call(this, m[2]);
     var endX = evaluate.call(this, m[3]);
     var data = [];
@@ -182,7 +197,7 @@ export const Functions = {
       // data.push(Y.call(this, Math.cos(x/2)));
       data.push(Y.call(this, eval(expression)));
     }
-    var obj = {
+    var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
       fillstyle: 'none',
@@ -193,17 +208,19 @@ export const Functions = {
     obj.data = data;
     return obj;
   },
-  pspolygon(m) {
+  pspolygon(this: PSTricksContext, m: any) {
     var coords = m[2];
     if (!coords) return;
     var manyCoords = new RegExp(RE.coords, 'g');
     var matches = coords.match(manyCoords);
     var singleCoord = new RegExp(RE.coords);
-    var data = [];
-    matches.forEach((coord) => {
+    var data: number[] = [];
+    matches.forEach((coord: string) => {
       var d = singleCoord.exec(coord);
-      data.push(X.call(this, d[1]));
-      data.push(Y.call(this, d[2]));
+      if (d) {
+        data.push(X.call(this, d[1]));
+        data.push(Y.call(this, d[2]));
+      }
     });
     var obj = {
       linecolor: 'black',
@@ -216,11 +233,11 @@ export const Functions = {
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     return obj;
   },
-  psarc(m) {
+  psarc(this: PSTricksContext, m: any) {
     var l = parseArrows(m[2]);
     var arrows = l.arrows;
     var dots = l.dots;
-    var obj = {
+    var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
       fillstyle: 'solid',
@@ -261,13 +278,13 @@ export const Functions = {
     };
     return obj;
   },
-  psline(m) {
+  psline(this: PSTricksContext, m: any) {
     var options = m[1];
     var lineType = m[2];
     var l = parseArrows(lineType);
     var arrows = l.arrows;
     var dots = l.dots;
-    var obj = {
+    var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
       fillstyle: 'solid',
@@ -296,8 +313,7 @@ export const Functions = {
     }
     return obj;
   },
-  uservariable(m) {
-    var options = m[1];
+  uservariable(this: PSTricksContext, m: any) {
     var coords = [];
     if (this.userx && this.usery) {
       // coords.push( Xinv.call(this, this.userx) );
@@ -322,7 +338,7 @@ export const Functions = {
     };
     return obj;
   },
-  userline(m) {
+  userline(this: PSTricksContext, m: any) {
     var options = m[1];
     // WE ARENT USING THIS YET!!!! e.g., [linecolor=green]
     var lineType = m[2];
@@ -356,28 +372,28 @@ export const Functions = {
       yExp: yExp,
       xExp2: xExp2,
       yExp2: yExp2,
-      userx: (coords) => {
+      userx: (coords: number[]) => {
         var nx1 = Xinv.call(this, coords[0]);
         var ny1 = Yinv.call(this, coords[1]);
         var expx1 = 'var x = ' + nx1 + ';';
         var expy1 = 'var y = ' + ny1 + ';';
         return X.call(this, eval(expression + expy1 + expx1 + xExp));
       },
-      usery: (coords) => {
+      usery: (coords: number[]) => {
         var nx2 = Xinv.call(this, coords[0]);
         var ny2 = Yinv.call(this, coords[1]);
         var expx2 = 'var x = ' + nx2 + ';';
         var expy2 = 'var y = ' + ny2 + ';';
         return Y.call(this, eval(expression + expy2 + expx2 + yExp));
       },
-      userx2: (coords) => {
+      userx2: (coords: number[]) => {
         var nx3 = Xinv.call(this, coords[0]);
         var ny3 = Yinv.call(this, coords[1]);
         var expx3 = 'var x = ' + nx3 + ';';
         var expy3 = 'var y = ' + ny3 + ';';
         return X.call(this, eval(expression + expy3 + expx3 + xExp2));
       },
-      usery2: (coords) => {
+      usery2: (coords: number[]) => {
         var nx4 = Xinv.call(this, coords[0]);
         var ny4 = Yinv.call(this, coords[1]);
         var expx4 = 'var x = ' + nx4 + ';';
@@ -401,17 +417,17 @@ export const Functions = {
     }
     return obj;
   },
-  rput(m) {
+  rput(this: PSTricksContext, m: any) {
     return {
       x: X.call(this, m[1]),
       y: Y.call(this, m[2]),
       text: m[3]
     };
   },
-  psset(m) {
-    const pairs = m[1].split(',').map((pair) => pair.split('='));
+  psset(this: PSTricksContext, m: any) {
+    const pairs = m[1].split(',').map((pair: string) => pair.split('='));
     const obj = {};
-    pairs.forEach((pair) => {
+    pairs.forEach((pair: string[]) => {
       const key = pair[0];
       const value = pair[1];
       Object.keys(Settings.Expressions).forEach((setting) => {

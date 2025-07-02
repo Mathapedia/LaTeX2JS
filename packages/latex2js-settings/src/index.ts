@@ -12,36 +12,36 @@ export const Expressions = {
 };
 
 export const Functions = {
-  fillcolor(o, v) {
+  fillcolor(o: any, v: any) {
     o.fillcolor = v;
   },
-  fillstyle(o, v) {
+  fillstyle(o: any, v: any) {
     o.fillstyle = v;
   },
-  linecolor(o, v) {
+  linecolor(o: any, v: any) {
     o.linecolor = v;
   },
-  linestyle(o, v) {
+  linestyle(o: any, v: any) {
     o.linestyle = v;
   },
-  unit(o, v) {
-    v = convertUnits(v);
-    o.unit = v;
-    o.runit = v;
-    o.xunit = v;
-    o.yunit = v;
+  unit(o: any, v: string) {
+    const converted = convertUnits(v);
+    o.unit = converted;
+    o.runit = converted;
+    o.xunit = converted;
+    o.yunit = converted;
   },
-  runit(o, v) {
-    v = convertUnits(v);
-    o.runit = v;
+  runit(o: any, v: string) {
+    const converted = convertUnits(v);
+    o.runit = converted;
   },
-  xunit(o, v) {
-    v = convertUnits(v);
-    o.xunit = v;
+  xunit(o: any, v: string) {
+    const converted = convertUnits(v);
+    o.xunit = converted;
   },
-  yunit(o, v) {
-    v = convertUnits(v);
-    o.yunit = v;
+  yunit(o: any, v: string) {
+    const converted = convertUnits(v);
+    o.yunit = converted;
   }
 };
 
