@@ -5,14 +5,14 @@
 1. Install the library!
 
 ```sh
-yarn add latex2react
+yarn add @latex2js/react
 ```
 
 2. import the `latex2js` CSS file, and the `LaTeX` React component
 
 ```js
 import 'latex2js/latex2js.css';
-import { LaTeX } from 'latex2react';
+import { LaTeX } from '@latex2js/react';
 ```
 
 3. Load your {\tt TeX} into the {\tt content} property. Enjoy!

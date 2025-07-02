@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { psgraph } from 'latex2js-pstricks';
+import { psgraph } from '@latex2js/pstricks';
 
 interface SliderProps {
   env: any;

@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@nuxt/devtools": "latest",
-    "latex2vue": "^2.2.2",
+    "@latex2js/vue": "workspace:*",
     "nuxt": "^3.8.0",
     "vue": "^3.3.0",
     "vue-router": "^4.2.0"

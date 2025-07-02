@@ -59,9 +59,9 @@ importers:
 
   examples/nextjs-app:
     dependencies:
-      latex2react:
-        specifier: ^2.1.3
-        version: 2.1.3
+      '@latex2js/react':
+        specifier: workspace:*
+        version: link:../../packages/latex2react
       next:
         specifier: 15.3.4
         version: 15.3.4(@babel/core@7.27.7)(babel-plugin-macros@3.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -102,12 +102,12 @@ importers:
 
   examples/nuxt-app:
     dependencies:
+      '@latex2js/vue':
+        specifier: workspace:*
+        version: link:../../packages/latex2vue
       '@nuxt/devtools':
         specifier: latest
         version: 2.6.2(vite@6.3.5(@types/node@20.19.4)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.0))(vue@3.5.17(typescript@5.8.3))
-      latex2vue:
-        specifier: ^2.2.2
-        version: 2.2.2
       nuxt:
         specifier: ^3.8.0
         version: 3.17.6(@parcel/watcher@2.5.1)(@types/node@20.19.4)(@vue/compiler-sfc@3.5.17)(db0@0.3.2)(encoding@0.1.13)(eslint@9.30.1(jiti@2.4.2))(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.44.1)(stylelint@15.11.0(typescript@5.8.3))(terser@5.43.1)(typescript@5.8.3)(vite@6.3.5(@types/node@20.19.4)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.0))(yaml@2.8.0)
@@ -164,15 +164,15 @@ importers:
 
   packages/latex2js:
     dependencies:
-      latex2js-pstricks:
-        specifier: ^2.1.2
-        version: 2.1.2
-      latex2js-settings:
-        specifier: ^2.1.2
-        version: 2.1.2
-      latex2js-utils:
-        specifier: ^2.1.0
-        version: 2.1.0
+      '@latex2js/pstricks':
+        specifier: workspace:*
+        version: link:../latex2js-pstricks
+      '@latex2js/settings':
+        specifier: workspace:*
+        version: link:../latex2js-settings
+      '@latex2js/utils':
+        specifier: workspace:*
+        version: link:../latex2js-utils
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -223,15 +223,15 @@ importers:
 
   packages/latex2js-pstricks:
     dependencies:
+      '@latex2js/settings':
+        specifier: workspace:*
+        version: link:../latex2js-settings
+      '@latex2js/utils':
+        specifier: workspace:*
+        version: link:../latex2js-utils
       d3:
         specifier: ^4.13.0
         version: 4.13.0
-      latex2js-settings:
-        specifier: ^2.1.2
-        version: 2.1.2
-      latex2js-utils:
-        specifier: ^2.1.0
-        version: 2.1.0
     devDependencies:
       '@types/d3':
         specifier: ^7.4.0
@@ -251,9 +251,9 @@ importers:
 
   packages/latex2js-settings:
     dependencies:
-      latex2js-utils:
-        specifier: ^2.1.0
-        version: 2.1.0
+      '@latex2js/utils':
+        specifier: workspace:*
+        version: link:../latex2js-utils
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -5617,12 +5617,6 @@ packages:
   latex2js@2.1.2:
     resolution: {integrity: sha512-i9lctMmdRfOYgcRqnjEOCJaZWNg+J4LxSUCdvwv+1u5VJjAOYO4q+F7Cl61IZqs7jLPmhk9sYuVt7GZncY6P3w==}
 
-  latex2react@2.1.3:
-    resolution: {integrity: sha512-3xekrzErPAL3P3p49vmPGMPukivfo0Z+mMIV+LJ5XvANa6q/rFRHTdJeGuVzovVP1qD2YzPUTEWSpSS90Y7a7g==}
-
-  latex2vue@2.2.2:
-    resolution: {integrity: sha512-M4tX9NkmBNwAJdHi1PoUFjLYGvs3mUdwP0xzx/8Cro4R3p082N5bK61FVGZI4OYrlW9lIf8rtzbSUnFIrViNew==}
-
   launch-editor@2.10.0:
     resolution: {integrity: sha512-D7dBRJo/qcGX9xlvt/6wUYzQxjh5G1RvZPgPv8vi4KRU99DVQL/oW7tnVOCCTm2HGeo3C5HvGE5Yrh6UBoZ0vA==}
 
@@ -7063,11 +7057,6 @@ packages:
   rc9@2.1.2:
     resolution: {integrity: sha512-btXCnMmRIBINM2LDZoEmOogIZU7Qe7zn4BpomSKZ/ykbLObuBdvG+mFq11DL6fjH1DRwHhrlgtYWG96bJiC7Cg==}
 
-  react-dom@16.14.0:
-    resolution: {integrity: sha512-1gCeQXDLoIqMgqD3IO2Ah9bnf0w9kzhwN5q4FGnHZ67hBm9yePzB5JJAIQCc8x3pFnNlwFq4RidZggNAAkzWWw==}
-    peerDependencies:
-      react: ^16.14.0
-
   react-dom@19.1.0:
     resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
     peerDependencies:
@@ -7078,10 +7067,6 @@ packages:
 
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
-
-  react@16.14.0:
-    resolution: {integrity: sha512-0X2CImDkJGApiAlcf0ODKIneSwBPhqJawOa5wCtKbu7ZECrmS26NvtSILynQ66cgkT/RJ4LidJOc3bUESwmU8g==}
-    engines: {node: '>=0.10.0'}
 
   react@19.1.0:
     resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
@@ -7331,9 +7316,6 @@ packages:
 
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
-
-  scheduler@0.19.1:
-    resolution: {integrity: sha512-n/zwRWRYSUj0/3g/otKDRPMh6qv2SYMWNq85IEa8iZyAv8od9zDYpGSnpBEjNgcMNq6Scbu5KfIPxNF72R/2EA==}
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
@@ -14921,26 +14903,6 @@ snapshots:
       latex2js-settings: 2.1.2
       latex2js-utils: 2.1.0
 
-  latex2react@2.1.3:
-    dependencies:
-      '@babel/runtime': 7.27.6
-      d3: 4.13.0
-      latex2js: 2.1.2
-      latex2js-macros: 2.1.0
-      latex2js-mathjax: 2.1.0
-      latex2js-pstricks: 2.1.2
-      react: 16.14.0
-      react-dom: 16.14.0(react@16.14.0)
-
-  latex2vue@2.2.2:
-    dependencies:
-      '@babel/runtime': 7.27.6
-      d3: 4.13.0
-      latex2js: 2.1.2
-      latex2js-macros: 2.1.0
-      latex2js-mathjax: 2.1.0
-      latex2js-pstricks: 2.1.2
-
   launch-editor@2.10.0:
     dependencies:
       picocolors: 1.1.1
@@ -16764,14 +16726,6 @@ snapshots:
       defu: 6.1.4
       destr: 2.0.5
 
-  react-dom@16.14.0(react@16.14.0):
-    dependencies:
-      loose-envify: 1.4.0
-      object-assign: 4.1.1
-      prop-types: 15.8.1
-      react: 16.14.0
-      scheduler: 0.19.1
-
   react-dom@19.1.0(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -16780,12 +16734,6 @@ snapshots:
   react-is@16.13.1: {}
 
   react-is@18.3.1: {}
-
-  react@16.14.0:
-    dependencies:
-      loose-envify: 1.4.0
-      object-assign: 4.1.1
-      prop-types: 15.8.1
 
   react@19.1.0: {}
 
@@ -17081,11 +17029,6 @@ snapshots:
   safe-stable-stringify@2.5.0: {}
 
   safer-buffer@2.1.2: {}
-
-  scheduler@0.19.1:
-    dependencies:
-      loose-envify: 1.4.0
-      object-assign: 4.1.1
 
   scheduler@0.26.0: {}
 

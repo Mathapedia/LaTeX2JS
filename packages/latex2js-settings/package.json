@@ -1,5 +1,5 @@
 {
-    "name": "latex2js-settings",
+    "name": "@latex2js/settings",
     "version": "2.1.2",
     "description": "latex2js settings",
     "author": "Dan Lynch <pyramation@gmail.com>",
@@ -43,6 +43,6 @@
         "typescript": "^5.2.0"
     },
     "dependencies": {
-        "latex2js-utils": "^2.1.0"
+        "@latex2js/utils": "workspace:*"
     }
 }

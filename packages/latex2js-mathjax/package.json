@@ -1,5 +1,5 @@
 {
-  "name": "latex2js-mathjax",
+  "name": "@latex2js/mathjax",
   "version": "2.1.0",
   "description": "MathJax utilities for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",

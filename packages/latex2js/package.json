@@ -58,8 +58,8 @@
     "typescript": "^5.2.0"
   },
   "dependencies": {
-    "latex2js-pstricks": "^2.1.2",
-    "latex2js-settings": "^2.1.2",
-    "latex2js-utils": "^2.1.0"
+    "@latex2js/pstricks": "workspace:*",
+    "@latex2js/settings": "workspace:*",
+    "@latex2js/utils": "workspace:*"
   }
 }

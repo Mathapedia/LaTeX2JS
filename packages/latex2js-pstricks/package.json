@@ -1,5 +1,5 @@
 {
-  "name": "latex2js-pstricks",
+  "name": "@latex2js/pstricks",
   "version": "2.1.2",
   "description": "PSTricks extension for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "d3": "^4.13.0",
-    "latex2js-settings": "^2.1.2",
-    "latex2js-utils": "^2.1.0"
+    "@latex2js/settings": "workspace:*",
+    "@latex2js/utils": "workspace:*"
   }
 }

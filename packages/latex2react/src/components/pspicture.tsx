@@ -1,4 +1,4 @@
-import { psgraph } from 'latex2js-pstricks';
+import { psgraph } from '@latex2js/pstricks';
 import * as d3 from 'd3';
 import { useRef, useEffect } from 'react';
 import Slider from './slider';

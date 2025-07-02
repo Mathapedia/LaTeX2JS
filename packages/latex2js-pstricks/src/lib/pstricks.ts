@@ -7,9 +7,9 @@ import {
   Xinv,
   Y,
   Yinv
-} from 'latex2js-utils';
+} from '@latex2js/utils';
 
-import Settings from 'latex2js-settings';
+import Settings from '@latex2js/settings';
 
 export const Expressions = {
   pspicture: /\\begin\{pspicture\}\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
@@ -431,9 +431,9 @@ export const Functions = {
       const key = pair[0];
       const value = pair[1];
       Object.keys(Settings.Expressions).forEach((setting) => {
-        const exp = Settings.Expressions[setting];
+        const exp = (Settings.Expressions as any)[setting];
         if (key.match(exp)) {
-          Settings.Functions[setting](obj, value);
+          (Settings.Functions as any)[setting](obj, value);
         }
       });
     });

@@ -20,18 +20,19 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "typeRoots": ["./types", "./node_modules/@types"]
   },
   "include": [
     "packages/*/src/**/*",
     "packages/*/test/**/*",
-    "examples/*/src/**/*"
+    "examples/*/src/**/*",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "main",
-    "module",
-    "**/*.d.ts"
+    "module"
   ]
 }

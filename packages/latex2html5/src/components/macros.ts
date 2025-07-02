@@ -1,4 +1,4 @@
-import macroStr from 'latex2js-macros';
+import macroStr from '@latex2js/macros';
 
 interface ComponentProps {
   [key: string]: any;

@@ -5,9 +5,9 @@ Author interactive math equations and diagrams online using LaTeX and PSTricks
 Author real LaTeX+PSTricks in React, Vue.js, or pure HTML5.
 
 ```sh
-npm install latex2html5
-npm install latex2vue
-npm install latex2react
+npm install @latex2js/html5
+npm install @latex2js/vue
+npm install @latex2js/react
 ```
 
 [LaTeX2JS website](https://latex2js.com)

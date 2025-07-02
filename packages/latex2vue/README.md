@@ -25,7 +25,7 @@ npm install latex2vue
 
 ```js
 import Vue from 'vue';
-import VueLaTeX2JS from 'latex2vue';
+import VueLaTeX2JS from '@latex2js/vue';
 Vue.use(VueLaTeX2JS);
 ```
 

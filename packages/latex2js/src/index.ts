@@ -1,6 +1,6 @@
 import TextExt from './lib/text';
 import HeadersExt from './lib/headers';
-import { pstricks as PSTricksExt } from 'latex2js-pstricks';
+import { pstricks as PSTricksExt } from '@latex2js/pstricks';
 import EnvironmentsDefault from './lib/environments';
 import IgnoreDefault from './lib/ignore';
 

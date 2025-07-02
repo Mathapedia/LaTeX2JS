@@ -1,4 +1,4 @@
-import { convertUnits } from 'latex2js-utils';
+import { convertUnits } from '@latex2js/utils';
 
 export const Expressions = {
   fillcolor: /^fillcolor$/,

@@ -1,5 +1,5 @@
 {
-  "name": "latex2js-macros",
+  "name": "@latex2js/macros",
   "version": "2.1.0",
   "description": "latex2js macros",
   "author": "Dan Lynch <pyramation@gmail.com>",

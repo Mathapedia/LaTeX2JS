@@ -1,4 +1,4 @@
-import { matchrepl, simplerepl } from 'latex2js-utils';
+import { matchrepl, simplerepl } from '@latex2js/utils';
 
 export const Expressions = {
   emph: /\\emph\{[^}]*\}/g,

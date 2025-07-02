@@ -1,7 +1,7 @@
 'use client';
 
-import '../../../../packages/latex2js/latex2js.css';
-import { LaTeX } from '../../../../packages/latex2react/main/index.js';
+import 'latex2js/latex2js.css';
+import { LaTeX } from '@latex2js/react';
 
 const tex = String.raw`
 \begin{nicebox}{LaTeX2JS Next.js Demo}
@@ -67,7 +67,7 @@ export default function Home() {
       </header>
       
       <main className="max-w-4xl mx-auto">
-        <LaTeX content={tex} />
+        <LaTeX key="latex-demo" content={tex} />
       </main>
     </div>
   );

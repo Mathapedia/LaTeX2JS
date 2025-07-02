@@ -1,5 +1,5 @@
 {
-  "name": "latex2vue",
+  "name": "@latex2js/vue",
   "version": "2.2.2",
   "description": "Vue components for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
@@ -58,9 +58,9 @@
   "dependencies": {
     "d3": "^7.8.0",
     "latex2js": "^2.1.2",
-    "latex2js-macros": "^2.1.0",
-    "latex2js-mathjax": "^2.1.0",
-    "latex2js-pstricks": "^2.1.2",
+    "@latex2js/macros": "workspace:*",
+    "@latex2js/mathjax": "workspace:*",
+    "@latex2js/pstricks": "workspace:*",
     "vue": "^3.3.0"
   },
   "peerDependencies": {
