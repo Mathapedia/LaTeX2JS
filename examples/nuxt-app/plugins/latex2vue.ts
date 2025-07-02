@@ -1,4 +1,6 @@
-import Vue from 'vue';
-import VueLaTeX2JS from 'latex2vue';
+import { createApp } from 'vue';
+import VueLaTeX2JS from '@latex2js/vue';
 
-Vue.use(VueLaTeX2JS);
+export default defineNuxtPlugin((nuxtApp) => {
+  nuxtApp.vueApp.use(VueLaTeX2JS);
+});
