@@ -1,5 +1,7 @@
 import loadScript from 'load-script';
 
+declare const process: any;
+
 export const DEFAULT_SCRIPT =
   process.env.MATHJAX_CDN ||
   'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/MathJax.js';
