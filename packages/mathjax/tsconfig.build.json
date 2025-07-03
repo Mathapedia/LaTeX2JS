@@ -1,13 +1,9 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "declaration": true,
-    "declarationMap": true,
-    "module": "commonjs",
-    "target": "es2017"
+    "outDir": "dist",
+    "rootDir": "src/"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "main", "module"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules", "**/*.spec.*", "**/*.test.*"]
 }

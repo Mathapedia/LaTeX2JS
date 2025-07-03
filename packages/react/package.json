@@ -5,30 +5,12 @@
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/react#readme",
   "license": "SEE LICENSE IN LICENSE",
-  "main": "main/index.js",
-  "module": "module/index.js",
-  "types": "main/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./main/index.d.ts",
-      "import": "./module/index.js",
-      "require": "./main/index.js",
-      "default": "./main/index.js"
-    },
-    "./main/*": "./main/*",
-    "./module/*": "./module/*",
-    "./package.json": "./package.json"
-  },
-  "directories": {
-    "lib": "src",
-    "test": "__tests__"
-  },
-  "files": [
-    "main",
-    "module"
-  ],
+  "main": "index.js",
+  "module": "esm/index.js",
+  "types": "index.d.ts",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "dist"
   },
   "repository": {
     "type": "git",
@@ -44,11 +26,10 @@
     "react"
   ],
   "scripts": {
-    "build:main": "tsc --project tsconfig.build.json --outDir main",
-    "build:module": "tsc --project tsconfig.build.json --outDir module --module esnext",
-    "build": "pnpm run build:main && pnpm run build:module",
-    "prepare": "pnpm run build",
-    "lint:style": "stylelint 'src/**/*.js'",
+    "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
+    "clean": "rimraf dist",
+    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
+    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
@@ -69,11 +50,13 @@
     "stylelint-config-recommended": "^13.0.0",
     "stylelint-config-styled-components": "^0.1.1",
     "stylelint-processor-styled-components": "^1.10.0",
-    "typescript": "^5.2.0"
+    "typescript": "^5.2.0",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.5"
   },
   "dependencies": {
     "d3": "^7.8.0",
-    "latex2js": "^2.1.2",
+    "latex2js": "workspace:*",
     "@latex2js/macros": "workspace:*",
     "@latex2js/mathjax": "workspace:*",
     "@latex2js/pstricks": "workspace:*",

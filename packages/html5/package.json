@@ -5,30 +5,23 @@
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/html5#readme",
   "license": "SEE LICENSE IN LICENSE",
-  "main": "main/index.js",
-  "module": "module/index.js",
-  "types": "main/index.d.ts",
-  "directories": {
-    "lib": "src",
-    "test": "__tests__"
-  },
-  "files": [
-    "main",
-    "module"
-  ],
+  "main": "index.js",
+  "module": "esm/index.js",
+  "types": "index.d.ts",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "dist"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/pyramation/latex2js"
   },
   "scripts": {
-    "build:main": "tsc --project tsconfig.build.json --outDir main",
-    "build:module": "tsc --project tsconfig.build.json --outDir module --module esnext",
-    "build": "pnpm run build:module && pnpm run build:main",
-    "bundle": "browserify main/index.js --s LaTeX2HTML5 -o latex2html5.bundle.js",
-    "prepare": "pnpm run build",
+    "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
+    "clean": "rimraf dist",
+    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
+    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
+    "bundle": "browserify dist/index.js --s LaTeX2HTML5 -o latex2html5.bundle.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
@@ -44,7 +37,9 @@
     "jest": "^29.7.0",
     "prettier": "^3.0.0",
     "ts-jest": "^29.1.0",
-    "typescript": "^5.2.0"
+    "typescript": "^5.2.0",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.5"
   },
   "dependencies": {
     "d3": "^7.8.0",
