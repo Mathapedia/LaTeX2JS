@@ -21,7 +21,7 @@
     "clean": "rimraf dist",
     "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
     "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
-    "bundle": "browserify dist/index.js --s LaTeX2HTML5 -o latex2html5.bundle.js",
+    "bundle": "browserify dist/index.js --s LaTeX2HTML5 -o dist/latex2html5.bundle.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "d3": "^7.8.0",
-    "latex2js": "^2.1.2",
+    "latex2js": "workspace:*",
     "@latex2js/macros": "workspace:*",
     "@latex2js/mathjax": "workspace:*",
     "@latex2js/pstricks": "workspace:*"
