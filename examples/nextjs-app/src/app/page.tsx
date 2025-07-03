@@ -1,6 +1,6 @@
 'use client';
 
-import MathJaxProvider from '../components/MathJaxProvider';
+import { MathJaxProvider } from '@latex2js/mathjax';
 
 export default function Home() {
   return (
