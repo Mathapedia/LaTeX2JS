@@ -1,70 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Script from 'next/script';
-import dynamic from 'next/dynamic';
+import MathJaxProvider from '../components/MathJaxProvider';
 
-declare global {
-  interface Window {
-    MathJax: any;
-  }
-}
-
-function MathJaxComponent() {
-  const [isClient, setIsClient] = useState(false);
-  const [mathJaxLoaded, setMathJaxLoaded] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    
-    // Configure MathJax before it loads
-    window.MathJax = {
-      tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']],
-        packages: {'[+]': ['ams', 'newcommand', 'configmacros']}
-      },
-      chtml: {
-        fontURL: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2'
-      },
-      startup: {
-        ready: () => {
-          console.log('MathJax is ready');
-          window.MathJax.startup.defaultReady();
-          setMathJaxLoaded(true);
-        }
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (mathJaxLoaded && window.MathJax) {
-      // Process all math on the page
-      window.MathJax.typesetPromise().then(() => {
-        console.log('MathJax typesetting complete');
-      });
-    }
-  }, [mathJaxLoaded]);
-
-  if (!isClient) {
-    return <div className="min-h-screen p-8">Loading...</div>;
-  }
-
+export default function Home() {
   return (
-    <div className="min-h-screen p-8">
-      <Script
-        id="MathJax-script"
-        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          console.log('MathJax script loaded');
-        }}
-      />
-      
+    <MathJaxProvider className="min-h-screen p-8">
       <header className="mb-8">
         <h1 className="text-4xl font-bold mb-4">MathJax Next.js Demo</h1>
         <p className="text-lg text-gray-600">
-          Manual MathJax integration with Next.js
+          MathJax integration with reusable React component
         </p>
       </header>
       
@@ -92,13 +36,6 @@ function MathJaxComponent() {
           </div>
         </div>
       </main>
-    </div>
+    </MathJaxProvider>
   );
 }
-
-const Home = dynamic(() => Promise.resolve(MathJaxComponent), {
-  ssr: false,
-  loading: () => <div className="min-h-screen p-8 flex items-center justify-center">Loading MathJax...</div>
-});
-
-export default Home;
