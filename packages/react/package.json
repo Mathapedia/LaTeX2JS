@@ -15,8 +15,9 @@
       "require": "./main/index.js",
       "default": "./main/index.js"
     },
-    "./main/components/*": "./main/components/*",
-    "./module/components/*": "./module/components/*"
+    "./main/*": "./main/*",
+    "./module/*": "./module/*",
+    "./package.json": "./package.json"
   },
   "directories": {
     "lib": "src",
