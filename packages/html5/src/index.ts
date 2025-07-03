@@ -1,10 +1,10 @@
 import LaTeX2JS from 'latex2js';
 import { getMathJax, loadMathJax } from '@latex2js/mathjax';
-import pspicture from './components/pspicture';
-import nicebox from './components/nicebox';
-import enumerate from './components/enumerate';
-import verbatim from './components/verbatim';
-import math from './components/math';
+import pspicture from './components/pspicture.js';
+import nicebox from './components/nicebox.js';
+import enumerate from './components/enumerate.js';
+import verbatim from './components/verbatim.js';
+import math from './components/math.js';
 import macros from './components/macros';
 
 const ELEMENTS = { pspicture, nicebox, enumerate, verbatim, math, macros };

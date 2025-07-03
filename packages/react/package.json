@@ -6,13 +6,25 @@
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/react#readme",
   "license": "SEE LICENSE IN LICENSE",
   "main": "main/index.js",
+  "module": "module/index.js",
   "types": "main/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./main/index.d.ts",
+      "import": "./module/index.js",
+      "require": "./main/index.js",
+      "default": "./main/index.js"
+    },
+    "./main/components/*": "./main/components/*",
+    "./module/components/*": "./module/components/*"
+  },
   "directories": {
     "lib": "src",
     "test": "__tests__"
   },
   "files": [
-    "main"
+    "main",
+    "module"
   ],
   "publishConfig": {
     "access": "public"
@@ -33,7 +45,7 @@
   "scripts": {
     "build:main": "tsc --project tsconfig.build.json --outDir main",
     "build:module": "tsc --project tsconfig.build.json --outDir module --module esnext",
-    "build": "pnpm run build:module && pnpm run build:main",
+    "build": "pnpm run build:main && pnpm run build:module",
     "prepare": "pnpm run build",
     "lint:style": "stylelint 'src/**/*.js'",
     "test": "jest",

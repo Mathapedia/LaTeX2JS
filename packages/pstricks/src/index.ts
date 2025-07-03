@@ -1,5 +1,5 @@
-import pstricks from './lib/pstricks';
-import psgraph from './lib/psgraph';
+import pstricks from './lib/pstricks.js';
+import psgraph from './lib/psgraph.js';
 export { pstricks, psgraph };
 export default {
   pstricks,

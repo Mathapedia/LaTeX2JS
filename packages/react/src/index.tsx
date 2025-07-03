@@ -1,13 +1,13 @@
-import { Component, createElement } from 'react';
+import React, { Component, createElement } from 'react';
 import LaTeX2JS from 'latex2js';
 import { getMathJax, loadMathJax } from '@latex2js/mathjax';
 
-import pspicture from './components/pspicture';
-import nicebox from './components/nicebox';
-import enumerate from './components/enumerate';
-import verbatim from './components/verbatim';
-import math from './components/math';
-import macros from './components/macros';
+import pspicture from './components/pspicture.js';
+import nicebox from './components/nicebox.js';
+import enumerate from './components/enumerate.js';
+import verbatim from './components/verbatim.js';
+import math from './components/math.js';
+import macros from './components/macros.js';
 
 const ELEMENTS = { pspicture, nicebox, enumerate, verbatim, math, macros };
 
@@ -18,30 +18,55 @@ interface LaTeXProps {
 }
 
 interface LaTeXState {
-  loaded?: boolean;
+  mathJaxLoaded: boolean;
 }
 
 export class LaTeX extends Component<LaTeXProps, LaTeXState> {
+  private containerRef = React.createRef<HTMLDivElement>();
+
   constructor(props: LaTeXProps) {
     super(props);
+    this.state = {
+      mathJaxLoaded: false
+    };
     this.onLoad = this.onLoad.bind(this);
   }
 
   componentDidMount() {
     if (getMathJax()) {
       this.onLoad();
+    } else {
+      loadMathJax(this.onLoad);
     }
-    loadMathJax(this.onLoad);
+  }
+
+  componentDidUpdate(prevProps: LaTeXProps) {
+    if (prevProps.content !== this.props.content && this.state.mathJaxLoaded) {
+      this.typesetMath();
+    }
   }
 
   onLoad() {
     this.setState({
-      loaded: true
+      mathJaxLoaded: true
+    }, () => {
+      this.typesetMath();
     });
   }
 
+  typesetMath = () => {
+    const mathJax = getMathJax();
+    if (mathJax && mathJax.typesetPromise && this.containerRef.current) {
+      mathJax.typesetPromise([this.containerRef.current]).catch((err: any) => {
+        console.error('MathJax typesetting failed:', err);
+      });
+    }
+  };
+
   render() {
-    if (!getMathJax()) return <div className="latex-container">loading...</div>;
+    if (!this.state.mathJaxLoaded) {
+      return <div className="latex-container">Loading...</div>;
+    }
 
     const latex = new LaTeX2JS();
     const parsed = latex.parse(this.props.content);
@@ -58,7 +83,7 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
         }
       });
 
-    return <div className="latex-container">{children}</div>;
+    return <div className="latex-container" ref={this.containerRef}>{children}</div>;
   }
 }
 
