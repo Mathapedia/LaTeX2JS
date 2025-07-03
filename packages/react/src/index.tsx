@@ -1,17 +1,17 @@
-import React, { Component, createElement } from 'react';
-import LaTeX2JS from 'latex2js';
+import * as React from 'react';
+const { Component, createElement } = React;
+import LaTeX2HTML5 from 'latex2js';
 import { getMathJax, loadMathJax } from '@latex2js/mathjax';
 
-import pspicture from './components/pspicture.js';
-import nicebox from './components/nicebox.js';
-import enumerate from './components/enumerate.js';
-import verbatim from './components/verbatim.js';
-import math from './components/math.js';
-import macros from './components/macros.js';
+import nicebox from './components/nicebox';
+import enumerate from './components/enumerate';
+import verbatim from './components/verbatim';
+import math from './components/math';
+import macros from './components/macros';
 
-const ELEMENTS = { pspicture, nicebox, enumerate, verbatim, math, macros };
+const ELEMENTS = { nicebox, enumerate, verbatim, math, macros };
 
-export { pspicture, nicebox, enumerate, verbatim, math, macros };
+export { nicebox, enumerate, verbatim, math, macros };
 
 interface LaTeXProps {
   content: string;
@@ -68,7 +68,7 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
       return <div className="latex-container">Loading...</div>;
     }
 
-    const latex = new LaTeX2JS();
+    const latex = new LaTeX2HTML5();
     const parsed = latex.parse(this.props.content);
 
     const children: React.ReactElement[] = [];

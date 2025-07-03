@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "@latex2js/mathjax": "workspace:^",
+    "@latex2js/pstricks": "workspace:*",
     "@latex2js/react": "workspace:*",
+    "@latex2js/settings": "workspace:*",
+    "@latex2js/utils": "workspace:*",
     "latex2js": "workspace:*",
     "next": "15.3.4",
     "react": "^19.0.0",

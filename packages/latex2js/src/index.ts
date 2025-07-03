@@ -1,10 +1,10 @@
-import TextExt from './lib/text.js';
-import HeadersExt from './lib/headers.js';
+import TextExt from './lib/text';
+import HeadersExt from './lib/headers';
 import { pstricks as PSTricksExt } from '@latex2js/pstricks';
-import EnvironmentsDefault from './lib/environments.js';
-import IgnoreDefault from './lib/ignore.js';
+import EnvironmentsDefault from './lib/environments';
+import IgnoreDefault from './lib/ignore';
 
-import Parser from './lib/parser.js';
+import Parser from './lib/parser';
 
 export default class LaTeX2HTML5 {
   Text: any;

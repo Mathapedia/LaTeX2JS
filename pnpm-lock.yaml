@@ -61,13 +61,22 @@ importers:
     dependencies:
       '@latex2js/mathjax':
         specifier: workspace:^
-        version: link:../../packages/mathjax
+        version: link:../../packages/mathjax/dist
+      '@latex2js/pstricks':
+        specifier: workspace:*
+        version: link:../../packages/pstricks/dist
       '@latex2js/react':
         specifier: workspace:*
-        version: link:../../packages/react
+        version: link:../../packages/react/dist
+      '@latex2js/settings':
+        specifier: workspace:*
+        version: link:../../packages/settings/dist
+      '@latex2js/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils/dist
       latex2js:
         specifier: workspace:*
-        version: link:../../packages/latex2js
+        version: link:../../packages/latex2js/dist
       next:
         specifier: 15.3.4
         version: 15.3.4(@babel/core@7.27.7)(babel-plugin-macros@3.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -110,7 +119,7 @@ importers:
     dependencies:
       '@latex2js/vue':
         specifier: workspace:*
-        version: link:../../packages/vue
+        version: link:../../packages/vue/dist
       '@nuxt/devtools':
         specifier: latest
         version: 2.6.2(vite@6.3.5(@types/node@20.19.4)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.0))(vue@3.5.17(typescript@5.8.3))
@@ -132,19 +141,19 @@ importers:
     dependencies:
       '@latex2js/macros':
         specifier: workspace:*
-        version: link:../macros
+        version: link:../macros/dist
       '@latex2js/mathjax':
         specifier: workspace:*
-        version: link:../mathjax
+        version: link:../mathjax/dist
       '@latex2js/pstricks':
         specifier: workspace:*
-        version: link:../pstricks
+        version: link:../pstricks/dist
       d3:
         specifier: ^7.8.0
         version: 7.9.0
       latex2js:
-        specifier: ^2.1.2
-        version: 2.1.2
+        specifier: workspace:*
+        version: link:../latex2js/dist
     devDependencies:
       '@types/d3':
         specifier: ^7.4.0
@@ -155,58 +164,79 @@ importers:
       browserify:
         specifier: ^16.5.0
         version: 16.5.2
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
       prettier:
         specifier: ^3.0.0
         version: 3.6.2
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
       typescript:
         specifier: ^5.2.0
         version: 5.8.3
+    publishDirectory: dist
 
   packages/latex2js:
     dependencies:
       '@latex2js/pstricks':
         specifier: workspace:*
-        version: link:../pstricks
+        version: link:../pstricks/dist
       '@latex2js/settings':
         specifier: workspace:*
-        version: link:../settings
+        version: link:../settings/dist
       '@latex2js/utils':
         specifier: workspace:*
-        version: link:../utils
+        version: link:../utils/dist
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
       typescript:
         specifier: ^5.2.0
         version: 5.8.3
+    publishDirectory: dist
 
   packages/macros:
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
       typescript:
         specifier: ^5.2.0
         version: 5.8.3
+    publishDirectory: dist
 
   packages/mathjax:
     dependencies:
@@ -220,24 +250,31 @@ importers:
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.4
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
       typescript:
         specifier: ^5.2.0
         version: 5.8.3
+    publishDirectory: dist
 
   packages/pstricks:
     dependencies:
       '@latex2js/settings':
         specifier: workspace:*
-        version: link:../settings
+        version: link:../settings/dist
       '@latex2js/utils':
         specifier: workspace:*
-        version: link:../utils
+        version: link:../utils/dist
       d3:
         specifier: ^4.13.0
         version: 4.13.0
@@ -248,33 +285,40 @@ importers:
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
       typescript:
         specifier: ^5.2.0
         version: 5.8.3
+    publishDirectory: dist
 
   packages/react:
     dependencies:
       '@latex2js/macros':
         specifier: workspace:*
-        version: link:../macros
+        version: link:../macros/dist
       '@latex2js/mathjax':
         specifier: workspace:*
-        version: link:../mathjax
+        version: link:../mathjax/dist
       '@latex2js/pstricks':
         specifier: workspace:*
-        version: link:../pstricks
+        version: link:../pstricks/dist
       d3:
         specifier: ^7.8.0
         version: 7.9.0
       latex2js:
-        specifier: ^2.1.2
-        version: 2.1.2
+        specifier: workspace:*
+        version: link:../latex2js/dist
       react:
         specifier: ^19.0.0
         version: 19.1.0
@@ -294,6 +338,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.0
         version: 18.3.7(@types/react@18.3.23)
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
@@ -303,6 +350,9 @@ importers:
       regenerator-runtime:
         specifier: ^0.13.5
         version: 0.13.11
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       stylelint:
         specifier: ^15.11.0
         version: 15.11.0(typescript@5.8.3)
@@ -318,58 +368,73 @@ importers:
       typescript:
         specifier: ^5.2.0
         version: 5.8.3
+    publishDirectory: dist
 
   packages/settings:
     dependencies:
       '@latex2js/utils':
         specifier: workspace:*
-        version: link:../utils
+        version: link:../utils/dist
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
       typescript:
         specifier: ^5.2.0
         version: 5.8.3
+    publishDirectory: dist
 
   packages/utils:
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
       typescript:
         specifier: ^5.2.0
         version: 5.8.3
+    publishDirectory: dist
 
   packages/vue:
     dependencies:
       '@latex2js/macros':
         specifier: workspace:*
-        version: link:../macros
+        version: link:../macros/dist
       '@latex2js/mathjax':
         specifier: workspace:*
-        version: link:../mathjax
+        version: link:../mathjax/dist
       '@latex2js/pstricks':
         specifier: workspace:*
-        version: link:../pstricks
+        version: link:../pstricks/dist
       d3:
         specifier: ^7.8.0
         version: 7.9.0
       latex2js:
-        specifier: ^2.1.2
-        version: 2.1.2
+        specifier: workspace:*
+        version: link:../latex2js/dist
       vue:
         specifier: ^3.3.0
         version: 3.5.17(typescript@5.8.3)
@@ -377,12 +442,18 @@ importers:
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
       prettier:
         specifier: ^3.0.0
         version: 3.6.2
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.0(@babel/core@7.27.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
@@ -392,6 +463,7 @@ importers:
       vue-tsc:
         specifier: ^1.8.0
         version: 1.8.27(typescript@5.8.3)
+    publishDirectory: dist
 
   website/latex2js.com:
     devDependencies:
@@ -3344,6 +3416,10 @@ packages:
     resolution: {integrity: sha512-mFsNh/DIANLqFt5VHZoGirdg7bK5+oTWlhnGu6tgRhzBlnEKWaPX2xrFaLltii/6rmhqFMJqffUgknuRdpYlHw==}
     engines: {node: '>=18'}
 
+  copyfiles@2.4.1:
+    resolution: {integrity: sha512-fereAvAvxDrQDOXybk3Qu3dPbOoKoysFMWtkY3mv5BsL8//OSZVL5DCLYqgRfY5cWirgRzlC+WSrxp6Bo3eNZg==}
+    hasBin: true
+
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
 
@@ -5291,6 +5367,9 @@ packages:
     resolution: {integrity: sha512-jv+8jaWCl0g2lSBkNSVXdzfBA0npK1HGC2KtWM9FumFRoGS94g3NbCCLVnCYHLjp4GrW2KZeeSTMo5ddtznmGw==}
     engines: {node: '>=18'}
 
+  isarray@0.0.1:
+    resolution: {integrity: sha512-D2S+3GLxWH+uhrNEcoh/fnmYeP8E8/zHl644d/jdA0g2uyXvy3sb0qxotE+ne0LtccHknQzWwZEzhak7oJ0COQ==}
+
   isarray@1.0.0:
     resolution: {integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==}
 
@@ -5607,18 +5686,6 @@ packages:
   language-tags@1.0.9:
     resolution: {integrity: sha512-MbjN408fEndfiQXbFQ1vnd+1NoLDsnQW41410oQBXiyXDMYH5z505juWa4KUE1LqxRC7DgOgZDbKLxHIwm27hA==}
     engines: {node: '>=0.10'}
-
-  latex2js-pstricks@2.1.2:
-    resolution: {integrity: sha512-D7I7AJSBu+HNGyK8VsmH6A8CKQDwcO3uBJTbeyRdVDTVo9s76QIMPRCiGZhcFxcQW72RwhncUXNE6pWQdQZf+Q==}
-
-  latex2js-settings@2.1.2:
-    resolution: {integrity: sha512-m7svzFMK0Kd0/fiDAJN1cZuFJBCaLaEGqi8uZxWqnzaFdmGWAqRganE8J9opDuNEKmlEMBvuuP+dTXWV/Q4r0w==}
-
-  latex2js-utils@2.1.0:
-    resolution: {integrity: sha512-19cuesiGFf5BWNqLMdxpoSdmJBUaw7Ve2b2AEgXwImMWZbZ2dCdPAQsw7wESHSPrIg7sWf5Zz+tiQf91t88MwQ==}
-
-  latex2js@2.1.2:
-    resolution: {integrity: sha512-i9lctMmdRfOYgcRqnjEOCJaZWNg+J4LxSUCdvwv+1u5VJjAOYO4q+F7Cl61IZqs7jLPmhk9sYuVt7GZncY6P3w==}
 
   launch-editor@2.10.0:
     resolution: {integrity: sha512-D7dBRJo/qcGX9xlvt/6wUYzQxjh5G1RvZPgPv8vi4KRU99DVQL/oW7tnVOCCTm2HGeo3C5HvGE5Yrh6UBoZ0vA==}
@@ -6255,6 +6322,9 @@ packages:
   node-source-walk@7.0.1:
     resolution: {integrity: sha512-3VW/8JpPqPvnJvseXowjZcirPisssnBuDikk6JIZ8jQzF7KJQX52iPFX4RYYxLycYH7IbMRSPUOga/esVjy5Yg==}
     engines: {node: '>=18'}
+
+  noms@0.0.0:
+    resolution: {integrity: sha512-lNDU9VJaOPxUmXcLb+HQFeUgQQPtMI24Gt6hgfuMHRJgMRHMF/qZ4HJD3GDru4sSw9IQl2jPjAYnQrdIeLbwow==}
 
   nopt@6.0.0:
     resolution: {integrity: sha512-ZwLpbTgdhuZUnZzjd7nb1ZV+4DoiC6/sfiVKok72ym/4Tlf+DFdlHYmT2JPmcNNWV6Pi3SDf1kT+A4r9RTuT9g==}
@@ -7131,6 +7201,9 @@ packages:
     resolution: {integrity: sha512-SLBrDU/Srs/9EoWhU5GdbAoxG1GzpQHo/6qiGItaoLJ1thmYpcNIM1qISEUvyHBzfGlWIyd6p2DNi1oV1VmAuw==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
+  readable-stream@1.0.34:
+    resolution: {integrity: sha512-ok1qVCJuRkNmvebYikljxJA/UEsKwLl2nI1OmaqAu4/UE+h0wKCHok4XkL/gvi39OacXvw59RJUOFUkDib2rHg==}
+
   readable-stream@2.3.8:
     resolution: {integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==}
 
@@ -7249,6 +7322,10 @@ packages:
   rimraf@4.4.1:
     resolution: {integrity: sha512-Gk8NlF062+T9CqNGn6h4tls3k6T1+/nXdOcSZVikNVtlRdYpA7wRJJMoXmuvOnLW844rPjdQ7JgXCYM6PPC/og==}
     engines: {node: '>=14'}
+    hasBin: true
+
+  rimraf@5.0.10:
+    resolution: {integrity: sha512-l0OE8wL34P4nJH/H2ffoaniAokM2qSmrtXHmlpvYr5AVVX8msAyW0l8NVJFDxlSK4u3Uh/f41cQheDVdnYijwQ==}
     hasBin: true
 
   ripemd160@2.0.1:
@@ -7630,6 +7707,9 @@ packages:
   string.prototype.trimstart@1.0.8:
     resolution: {integrity: sha512-UXSH262CSZY1tfu3G3Secr6uGLCFVPMhIqHjlgCUtCCcgihYc/xKs9djMTMUOb2j1mVSeU8EU6NWc/iQKU6Gfg==}
     engines: {node: '>= 0.4'}
+
+  string_decoder@0.10.31:
+    resolution: {integrity: sha512-ev2QzSzWPYmy9GuqfIVildA4OdcGLeFZQrq5ys6RtiuF+RQQiZWr8TZNyAcuVXyQRYfEO+MsoB/1BuQVhOJuoQ==}
 
   string_decoder@1.1.1:
     resolution: {integrity: sha512-n/ShnvDi6FHbbVfviro+WojiFzv+s8MPMHBczVePfUpDJLwoLT0ht1l4YwBCbi8pJAveEEdnkHyPyTP/mzRfwg==}
@@ -8174,6 +8254,10 @@ packages:
         optional: true
       uploadthing:
         optional: true
+
+  untildify@4.0.0:
+    resolution: {integrity: sha512-KK8xQ1mkzZeg9inewmFVDNkg3l5LUhoq9kN6iWYB/CC9YMG8HA+c1Q8HwDe6dEX7kErrEVNVBO3fWsVq5iDgtw==}
+    engines: {node: '>=8'}
 
   untun@0.1.3:
     resolution: {integrity: sha512-4luGP9LMYszMRZwsvyUd9MrxgEGZdZuZgpVQHEEX0lCYFESasVRvZd0EYpCkOIbJKHMuv0LskpXc/8Un+MJzEQ==}
@@ -8811,7 +8895,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/runtime@7.27.6': {}
+  '@babel/runtime@7.27.6':
+    optional: true
 
   '@babel/template@7.27.2':
     dependencies:
@@ -12103,6 +12188,16 @@ snapshots:
       graceful-fs: 4.2.11
       p-event: 6.0.1
 
+  copyfiles@2.4.1:
+    dependencies:
+      glob: 7.2.3
+      minimatch: 3.1.2
+      mkdirp: 1.0.4
+      noms: 0.0.0
+      through2: 2.0.5
+      untildify: 4.0.0
+      yargs: 16.2.0
+
   core-util-is@1.0.3: {}
 
   cosmiconfig-typescript-loader@5.1.0(@types/node@20.19.4)(cosmiconfig@8.3.6(typescript@5.8.3))(typescript@5.8.3):
@@ -13110,7 +13205,7 @@ snapshots:
       eslint: 9.30.1(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-react: 7.37.5(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.30.1(jiti@2.4.2))
@@ -13140,7 +13235,7 @@ snapshots:
       tinyglobby: 0.2.14
       unrs-resolver: 1.9.2
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -13155,7 +13250,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -14388,6 +14483,8 @@ snapshots:
     dependencies:
       system-architecture: 0.1.0
 
+  isarray@0.0.1: {}
+
   isarray@1.0.0: {}
 
   isarray@2.0.5: {}
@@ -14873,29 +14970,6 @@ snapshots:
   language-tags@1.0.9:
     dependencies:
       language-subtag-registry: 0.3.23
-
-  latex2js-pstricks@2.1.2:
-    dependencies:
-      '@babel/runtime': 7.27.6
-      d3: 4.13.0
-      latex2js-settings: 2.1.2
-      latex2js-utils: 2.1.0
-
-  latex2js-settings@2.1.2:
-    dependencies:
-      '@babel/runtime': 7.27.6
-      latex2js-utils: 2.1.0
-
-  latex2js-utils@2.1.0:
-    dependencies:
-      '@babel/runtime': 7.27.6
-
-  latex2js@2.1.2:
-    dependencies:
-      '@babel/runtime': 7.27.6
-      latex2js-pstricks: 2.1.2
-      latex2js-settings: 2.1.2
-      latex2js-utils: 2.1.0
 
   launch-editor@2.10.0:
     dependencies:
@@ -15725,6 +15799,11 @@ snapshots:
   node-source-walk@7.0.1:
     dependencies:
       '@babel/parser': 7.27.7
+
+  noms@0.0.0:
+    dependencies:
+      inherits: 2.0.4
+      readable-stream: 1.0.34
 
   nopt@6.0.0:
     dependencies:
@@ -16808,6 +16887,13 @@ snapshots:
     dependencies:
       mute-stream: 1.0.0
 
+  readable-stream@1.0.34:
+    dependencies:
+      core-util-is: 1.0.3
+      inherits: 2.0.4
+      isarray: 0.0.1
+      string_decoder: 0.10.31
+
   readable-stream@2.3.8:
     dependencies:
       core-util-is: 1.0.3
@@ -16935,6 +17021,10 @@ snapshots:
   rimraf@4.4.1:
     dependencies:
       glob: 9.3.5
+
+  rimraf@5.0.10:
+    dependencies:
+      glob: 10.4.5
 
   ripemd160@2.0.1:
     dependencies:
@@ -17426,6 +17516,8 @@ snapshots:
       call-bind: 1.0.8
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
+
+  string_decoder@0.10.31: {}
 
   string_decoder@1.1.1:
     dependencies:
@@ -18008,6 +18100,8 @@ snapshots:
     optionalDependencies:
       db0: 0.3.2
       ioredis: 5.6.1
+
+  untildify@4.0.0: {}
 
   untun@0.1.3:
     dependencies:
