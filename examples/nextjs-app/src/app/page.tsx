@@ -43,9 +43,9 @@ const TestSVGComponent = () => {
   );
 };
 
-import { nicebox, enumerate, verbatim, math, macros, pspicture } from '@latex2js/react';
+import { nicebox, enumerate, verbatim, math, macros, pspicture, slider } from '@latex2js/react';
 
-const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture };
+const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture, slider };
 
 interface LaTeXProps {
   content: string;

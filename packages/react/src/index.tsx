@@ -1,7 +1,6 @@
 import * as React from 'react';
 const { Component, createElement } = React;
 import LaTeX2HTML5 from 'latex2js';
-import { getMathJax, loadMathJax } from 'mathjaxjs';
 
 import nicebox from './components/nicebox';
 import enumerate from './components/enumerate';
@@ -12,7 +11,7 @@ import pspicture from './components/pspicture';
 import slider from './components/slider';
 import MathJaxProvider from './components/MathJaxProvider';
 
-const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture };
+const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture, slider };
 
 export { nicebox, enumerate, verbatim, math, macros, pspicture, slider, MathJaxProvider };
 
@@ -36,11 +35,7 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
   }
 
   componentDidMount() {
-    if (getMathJax()) {
-      this.onLoad();
-    } else {
-      loadMathJax(this.onLoad);
-    }
+    this.onLoad();
   }
 
   componentDidUpdate(prevProps: LaTeXProps) {
@@ -58,9 +53,8 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
   }
 
   typesetMath = () => {
-    const mathJax = getMathJax();
-    if (mathJax && mathJax.typesetPromise && this.containerRef.current) {
-      mathJax.typesetPromise([this.containerRef.current]).catch((err: any) => {
+    if (window.MathJax && window.MathJax.typesetPromise && this.containerRef.current) {
+      window.MathJax.typesetPromise([this.containerRef.current]).catch((err: any) => {
         console.error('MathJax typesetting failed:', err);
       });
     }
