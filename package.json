@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "commit": "git-cz",
-    "build": "lerna run build --parallel",
+    "build": "lerna run build",
     "bootstrap": "lerna bootstrap --use-workspaces",
     "build:serve": "bin/build-all.sh && pnpm run serve",
     "serve": "serve website/latex2js.com/static",
