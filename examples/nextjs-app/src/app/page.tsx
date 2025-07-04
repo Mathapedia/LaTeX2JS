@@ -1,6 +1,7 @@
 'use client';
 
 import { MathJaxProvider } from '@latex2js/mathjax';
+import { tex } from './tex';
 
 export default function Home() {
   return (
@@ -11,7 +12,7 @@ export default function Home() {
           MathJax integration with reusable React component
         </p>
       </header>
-      
+
       <main className="max-w-4xl mx-auto space-y-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-bold mb-4">Basic Mathematics</h2>
@@ -33,6 +34,13 @@ export default function Home() {
           <h2 className="text-2xl font-bold mb-4">Series and Summations</h2>
           <div className="text-center my-4">
             $$\sum_{"{n=1}"}^{"{\\infty}"} \frac{"{1}"}{"{n^2}"} = \frac{"{\\pi^2}"}{"{6}"}$$
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Series and Summations</h2>
+          <div className="text-center my-4">
+            $${tex}$$
           </div>
         </div>
       </main>
