@@ -41,7 +41,7 @@ const jsx_runtime_1 = require("react/jsx-runtime");
 const React = __importStar(require("react"));
 const { Component, createElement } = React;
 const latex2js_1 = __importDefault(require("latex2js"));
-const mathjax_1 = require("@latex2js/mathjax");
+const mathjaxjs_1 = require("mathjaxjs");
 const nicebox_1 = __importDefault(require("./components/nicebox"));
 exports.nicebox = nicebox_1.default;
 const enumerate_1 = __importDefault(require("./components/enumerate"));
@@ -60,7 +60,7 @@ class LaTeX extends Component {
         super(props);
         this.containerRef = React.createRef();
         this.typesetMath = () => {
-            const mathJax = (0, mathjax_1.getMathJax)();
+            const mathJax = (0, mathjaxjs_1.getMathJax)();
             if (mathJax && mathJax.typesetPromise && this.containerRef.current) {
                 mathJax.typesetPromise([this.containerRef.current]).catch((err) => {
                     console.error('MathJax typesetting failed:', err);
@@ -73,11 +73,11 @@ class LaTeX extends Component {
         this.onLoad = this.onLoad.bind(this);
     }
     componentDidMount() {
-        if ((0, mathjax_1.getMathJax)()) {
+        if ((0, mathjaxjs_1.getMathJax)()) {
             this.onLoad();
         }
         else {
-            (0, mathjax_1.loadMathJax)(this.onLoad);
+            (0, mathjaxjs_1.loadMathJax)(this.onLoad);
         }
     }
     componentDidUpdate(prevProps) {

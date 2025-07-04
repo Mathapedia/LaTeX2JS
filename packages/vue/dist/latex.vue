@@ -16,7 +16,7 @@
 
 <script>
 import LaTeX2JS from 'latex2js';
-import { getMathJax, loadMathJax } from '@latex2js/mathjax';
+import { getMathJax, loadMathJax } from 'mathjaxjs';
 import pspicture from './components/pspicture.vue';
 import nicebox from './components/nicebox.vue';
 import enumerate from './components/enumerate.vue';

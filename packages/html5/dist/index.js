@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.init = exports.macros = exports.math = exports.verbatim = exports.enumerate = exports.nicebox = exports.pspicture = void 0;
 exports.default = render;
 const latex2js_1 = __importDefault(require("latex2js"));
-const mathjax_1 = require("@latex2js/mathjax");
+const mathjaxjs_1 = require("mathjaxjs");
 const pspicture_js_1 = __importDefault(require("./components/pspicture.js"));
 exports.pspicture = pspicture_js_1.default;
 const nicebox_js_1 = __importDefault(require("./components/nicebox.js"));
@@ -36,13 +36,13 @@ function render(tex, resolve) {
             });
         resolve(div);
     };
-    if ((0, mathjax_1.getMathJax)()) {
+    if ((0, mathjaxjs_1.getMathJax)()) {
         return done();
     }
-    (0, mathjax_1.loadMathJax)(done);
+    (0, mathjaxjs_1.loadMathJax)(done);
 }
 const init = () => {
-    (0, mathjax_1.loadMathJax)();
+    (0, mathjaxjs_1.loadMathJax)();
     document.querySelectorAll('script[type="text/latex"]').forEach((el) => {
         render(el.innerHTML, (div) => {
             if (el.parentNode) {

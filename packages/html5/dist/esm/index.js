@@ -1,5 +1,5 @@
 import LaTeX2JS from 'latex2js';
-import { getMathJax, loadMathJax } from '@latex2js/mathjax';
+import { getMathJax, loadMathJax } from 'mathjaxjs';
 import pspicture from './components/pspicture.js';
 import nicebox from './components/nicebox.js';
 import enumerate from './components/enumerate.js';

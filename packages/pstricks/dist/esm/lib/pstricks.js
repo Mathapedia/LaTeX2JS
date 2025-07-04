@@ -153,7 +153,7 @@ export const Functions = {
         Object.entries(this.variables || {}).forEach(([name, val]) => {
             expression += 'var ' + name + ' = ' + val + ';';
         });
-        const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
+        const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
         expression += mathFunctions + 'return ' + m[4] + ';';
         console.log('psplot expression setup:', { expression, startX, endX, mathExpression: m[4] });
         for (x = startX; x <= endX; x += 0.005) {
@@ -319,7 +319,7 @@ export const Functions = {
             func: m[5],
             value: (() => {
                 try {
-                    const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
+                    const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
                     const evalFunc = new Function('', mathFunctions + expx1 + expy1 + 'return ' + m[5]);
                     return evalFunc();
                 }
@@ -340,7 +340,7 @@ export const Functions = {
         var dots = l.dots;
         var xExp = m[7];
         var yExp = m[8];
-        const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
+        const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
         if (xExp)
             xExp = mathFunctions + xExp.replace(/^\{/, '').replace(/\}$/, '');
         if (yExp)
@@ -371,7 +371,7 @@ export const Functions = {
                 var expy1 = 'var y = ' + ny1 + ';';
                 try {
                     const cleanExp = xExp ? xExp.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-                    const evalFunc = new Function('', mathFunctions + expression + expy1 + expx1 + 'return ' + cleanExp);
+                    const evalFunc = new Function('', mathFunctions + expression + expy1 + expx1 + 'return (' + cleanExp + ')');
                     return X.call(this, evalFunc());
                 }
                 catch (err) {
@@ -386,7 +386,7 @@ export const Functions = {
                 var expy2 = 'var y = ' + ny2 + ';';
                 try {
                     const cleanExp = yExp ? yExp.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-                    const evalFunc = new Function('', mathFunctions + expression + expy2 + expx2 + 'return ' + cleanExp);
+                    const evalFunc = new Function('', mathFunctions + expression + expy2 + expx2 + 'return (' + cleanExp + ')');
                     return Y.call(this, evalFunc());
                 }
                 catch (err) {
@@ -401,7 +401,7 @@ export const Functions = {
                 var expy3 = 'var y = ' + ny3 + ';';
                 try {
                     const cleanExp = xExp2 ? xExp2.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-                    const evalFunc = new Function('', mathFunctions + expression + expy3 + expx3 + 'return ' + cleanExp);
+                    const evalFunc = new Function('', mathFunctions + expression + expy3 + expx3 + 'return (' + cleanExp + ')');
                     return X.call(this, evalFunc());
                 }
                 catch (err) {
@@ -416,7 +416,7 @@ export const Functions = {
                 var expy4 = 'var y = ' + ny4 + ';';
                 try {
                     const cleanExp = yExp2 ? yExp2.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-                    const evalFunc = new Function('', mathFunctions + expression + expy4 + expx4 + 'return ' + cleanExp);
+                    const evalFunc = new Function('', mathFunctions + expression + expy4 + expx4 + 'return (' + cleanExp + ')');
                     return Y.call(this, evalFunc());
                 }
                 catch (err) {
