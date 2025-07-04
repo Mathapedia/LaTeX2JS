@@ -5,7 +5,7 @@ import { tex } from './tex';
 import * as React from 'react';
 const { Component, createElement } = React;
 
-import { getMathJax, loadMathJax } from '@latex2js/mathjaxjs';
+import { getMathJax, loadMathJax } from 'mathjaxjs';
 // import LaTeX2HTML5 from 'latex2js'; // Temporarily disabled due to text.js import issue
 
 const TestSVGComponent = () => {

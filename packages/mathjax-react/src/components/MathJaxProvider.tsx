@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DEFAULT_CONFIG, getMathJax, loadMathJax } from '@latex2js/mathjaxjs';
+import { DEFAULT_CONFIG, getMathJax, loadMathJax } from 'mathjaxjs';
 
 declare global {
   interface Window {

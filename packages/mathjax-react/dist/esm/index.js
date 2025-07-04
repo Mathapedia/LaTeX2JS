@@ -1,2 +1,2 @@
 export { default as MathJaxProvider } from './components/MathJaxProvider';
-export { DEFAULT_CONFIG, getMathJax, loadMathJax } from '@latex2js/mathjaxjs';
+export { DEFAULT_CONFIG, getMathJax, loadMathJax } from 'mathjaxjs';

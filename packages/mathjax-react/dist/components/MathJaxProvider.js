@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = __importStar(require("react"));
-const mathjaxjs_1 = require("@latex2js/mathjaxjs");
+const mathjaxjs_1 = require("mathjaxjs");
 function MathJaxProvider({ children, config, loadingComponent, className = "" }) {
     const [mathJaxLoaded, setMathJaxLoaded] = (0, react_1.useState)(false);
     const finalConfig = {

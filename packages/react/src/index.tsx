@@ -1,7 +1,7 @@
 import * as React from 'react';
 const { Component, createElement } = React;
 import LaTeX2HTML5 from 'latex2js';
-import { getMathJax, loadMathJax } from '@latex2js/mathjaxjs';
+import { getMathJax, loadMathJax } from 'mathjaxjs';
 
 import nicebox from './components/nicebox';
 import enumerate from './components/enumerate';

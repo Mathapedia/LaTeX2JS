@@ -1,5 +1,5 @@
 {
-  "name": "@latex2js/mathjaxjs",
+  "name": "mathjaxjs",
   "version": "2.1.0",
   "description": "Pure HTML5 MathJax loading utilities without React dependencies",
   "author": "Dan Lynch <pyramation@gmail.com>",

@@ -9,10 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@latex2js/mathjax": "workspace:^",
     "@latex2js/pstricks": "workspace:*",
     "@latex2js/react": "workspace:*",
-    "@latex2js/mathjaxjs": "workspace:*",
+    "mathjaxjs": "workspace:*",
     "@latex2js/mathjax-react": "workspace:*",
     "@latex2js/settings": "workspace:*",
     "@latex2js/utils": "workspace:*",
