@@ -59,15 +59,9 @@ importers:
 
   examples/nextjs-app:
     dependencies:
-      '@latex2js/mathjax':
-        specifier: workspace:^
-        version: link:../../packages/mathjax/dist
       '@latex2js/mathjax-react':
         specifier: workspace:*
         version: link:../../packages/mathjax-react/dist
-      '@latex2js/mathjaxjs':
-        specifier: workspace:*
-        version: link:../../packages/mathjaxjs/dist
       '@latex2js/pstricks':
         specifier: workspace:*
         version: link:../../packages/pstricks/dist
@@ -89,6 +83,9 @@ importers:
       latex2js:
         specifier: workspace:*
         version: link:../../packages/latex2js/dist
+      mathjaxjs:
+        specifier: workspace:*
+        version: link:../../packages/mathjaxjs/dist
       next:
         specifier: 15.3.4
         version: 15.3.4(@babel/core@7.28.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -154,9 +151,6 @@ importers:
       '@latex2js/macros':
         specifier: workspace:*
         version: link:../macros/dist
-      '@latex2js/mathjaxjs':
-        specifier: workspace:*
-        version: link:../mathjaxjs/dist
       '@latex2js/pstricks':
         specifier: workspace:*
         version: link:../pstricks/dist
@@ -166,6 +160,9 @@ importers:
       latex2js:
         specifier: workspace:*
         version: link:../latex2js/dist
+      mathjaxjs:
+        specifier: workspace:*
+        version: link:../mathjaxjs/dist
     devDependencies:
       '@types/d3':
         specifier: ^7.4.0
@@ -250,44 +247,9 @@ importers:
         version: 5.8.3
     publishDirectory: dist
 
-  packages/mathjax:
-    dependencies:
-      load-script:
-        specifier: ^1.0.0
-        version: 1.0.0
-      next:
-        specifier: '>=12.0.0'
-        version: 15.3.4(@babel/core@7.28.0)(babel-plugin-macros@3.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      react:
-        specifier: '>=16.8.0'
-        version: 19.1.0
-    devDependencies:
-      '@types/jest':
-        specifier: ^29.5.0
-        version: 29.5.14
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.4
-      copyfiles:
-        specifier: ^2.4.1
-        version: 2.4.1
-      jest:
-        specifier: ^29.7.0
-        version: 29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0)
-      rimraf:
-        specifier: ^5.0.5
-        version: 5.0.10
-      ts-jest:
-        specifier: ^29.1.0
-        version: 29.4.0(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.0))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4)(babel-plugin-macros@3.1.0))(typescript@5.8.3)
-      typescript:
-        specifier: ^5.2.0
-        version: 5.8.3
-    publishDirectory: dist
-
   packages/mathjax-react:
     dependencies:
-      '@latex2js/mathjaxjs':
+      mathjaxjs:
         specifier: workspace:*
         version: link:../mathjaxjs/dist
     devDependencies:
@@ -364,9 +326,6 @@ importers:
       '@latex2js/macros':
         specifier: workspace:*
         version: link:../macros/dist
-      '@latex2js/mathjaxjs':
-        specifier: workspace:*
-        version: link:../mathjaxjs/dist
       '@latex2js/pstricks':
         specifier: workspace:*
         version: link:../pstricks/dist
@@ -376,6 +335,9 @@ importers:
       latex2js:
         specifier: workspace:*
         version: link:../latex2js/dist
+      mathjaxjs:
+        specifier: workspace:*
+        version: link:../mathjaxjs/dist
       react:
         specifier: ^19.0.0
         version: 19.1.0
@@ -480,9 +442,6 @@ importers:
       '@latex2js/macros':
         specifier: workspace:*
         version: link:../macros/dist
-      '@latex2js/mathjaxjs':
-        specifier: workspace:*
-        version: link:../mathjaxjs/dist
       '@latex2js/pstricks':
         specifier: workspace:*
         version: link:../pstricks/dist
@@ -492,6 +451,9 @@ importers:
       latex2js:
         specifier: workspace:*
         version: link:../latex2js/dist
+      mathjaxjs:
+        specifier: workspace:*
+        version: link:../mathjaxjs/dist
       vue:
         specifier: ^3.3.0
         version: 3.5.17(typescript@5.8.3)
@@ -5883,9 +5845,6 @@ packages:
   load-json-file@6.2.0:
     resolution: {integrity: sha512-gUD/epcRms75Cw8RT1pUdHugZYM5ce64ucs2GEISABwkRsOQr0q2wm/MV2TKThycIe5e0ytRweW2RZxclogCdQ==}
     engines: {node: '>=8'}
-
-  load-script@1.0.0:
-    resolution: {integrity: sha512-kPEjMFtZvwL9TaZo0uZ2ml+Ye9HUMmPwbYRJ324qF9tqMejwykJ5ggTyvzmrbBeapCAbk98BSbTeovHEEP1uCA==}
 
   local-pkg@1.1.1:
     resolution: {integrity: sha512-WunYko2W1NcdfAFpuLUoucsgULmgDBRkdxHxWQ7mK0cQqwPiy8E1enjuRBrhLtZkB5iScJ1XIPdhVEFK8aOLSg==}
@@ -13360,7 +13319,7 @@ snapshots:
       '@typescript-eslint/parser': 5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3)
       eslint: 9.30.1(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.1(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.30.1(jiti@2.4.2))
       eslint-plugin-react: 7.37.5(eslint@9.30.1(jiti@2.4.2))
@@ -13380,7 +13339,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.1(jiti@2.4.2)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.1
@@ -13395,14 +13354,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3)
       eslint: 9.30.1(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.1(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -13417,7 +13376,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.30.1(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@2.4.2))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@5.62.0(eslint@9.30.1(jiti@2.4.2))(typescript@5.8.3))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2)))(eslint@9.30.1(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -15333,8 +15292,6 @@ snapshots:
       parse-json: 5.2.0
       strip-bom: 4.0.0
       type-fest: 0.6.0
-
-  load-script@1.0.0: {}
 
   local-pkg@1.1.1:
     dependencies:
