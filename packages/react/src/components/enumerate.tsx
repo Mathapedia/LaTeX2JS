@@ -1,16 +1,14 @@
+import React from 'react';
+
 interface EnumerateProps {
-  lines: string[];
+  items?: any[];
+  [key: string]: any;
 }
 
-export default ({ lines }: EnumerateProps) => (
-  <ul className="math">
-    {lines.map((line: string) => {
-      var m = line.match(/\\item (.*)/);
-      if (m) {
-        return <li>{m[1]}</li>;
-      } else {
-        return line;
-      }
-    })}
-  </ul>
+export default ({ items }: EnumerateProps) => (
+  <ol>
+    {items && items.map((item: any, index: number) => (
+      <li key={index}>{item}</li>
+    ))}
+  </ol>
 );

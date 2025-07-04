@@ -1,10 +1,18 @@
+import React from 'react';
+
 interface NiceboxProps {
-  lines: string[];
+  children?: React.ReactNode;
+  [key: string]: any;
 }
 
-export default ({ lines }: NiceboxProps) => (
-  <span
-    className="math nicebox"
-    dangerouslySetInnerHTML={{ __html: lines.join('\n') }}
-  />
+export default ({ children }: NiceboxProps) => (
+  <div className="nicebox" style={{ 
+    border: '1px solid #ccc', 
+    padding: '10px', 
+    margin: '10px 0',
+    borderRadius: '4px',
+    backgroundColor: '#f9f9f9'
+  }}>
+    {children}
+  </div>
 );

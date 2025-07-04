@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { select } from '@latex2js/utils';
 import { psgraph } from '@latex2js/pstricks';
-import Slider from './slider';
+import { slider as Slider } from '@latex2js/react';
 
 interface PspictureProps {
   env: {
