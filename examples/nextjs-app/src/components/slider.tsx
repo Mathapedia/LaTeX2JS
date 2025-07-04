@@ -1,5 +1,39 @@
+import React from 'react';
 import * as d3 from 'd3';
-import { psgraph } from '@latex2js/pstricks';
+
+const psgraph: any = {
+  psplot(svg: any): void {
+    const context = [];
+    context.push('M');
+    if (this.fillstyle === 'solid') {
+      context.push(this.data[0]);
+      context.push(0);
+    } else {
+      context.push(this.data[0]);
+      context.push(this.data[1]);
+    }
+    context.push('L');
+
+    this.data.forEach((data: any) => {
+      context.push(data);
+    });
+
+    if (this.fillstyle === 'solid') {
+      context.push(this.data[this.data.length - 2]);
+      context.push(0);
+      context.push('Z');
+    }
+
+    svg
+      .append('svg:path')
+      .attr('d', context.join(' '))
+      .attr('class', 'psplot')
+      .style('stroke', this.linecolor)
+      .style('stroke-width', this.linewidth)
+      .style('fill', this.fillstyle === 'solid' ? this.fillcolor : 'none')
+      .style('stroke-opacity', 1);
+  }
+};
 
 interface SliderProps {
   env: {
@@ -14,7 +48,7 @@ interface SliderProps {
     min: number;
     max: number;
   };
-  svgRef: React.RefObject<SVGSVGElement>;
+  svgRef: React.RefObject<SVGSVGElement | null>;
   plot: { [key: string]: any };
 }
 

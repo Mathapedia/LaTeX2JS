@@ -1,13 +1,21 @@
 import { psgraph } from '@latex2js/pstricks';
 import * as d3 from 'd3';
 import { useRef, useEffect } from 'react';
-import Slider from './slider.js';
+import Slider from './slider';
 
 interface PspictureProps {
   env: {
-    sliders?: any[];
+    sliders?: Array<{
+      latex: string;
+      scalar: number;
+      variable: string;
+      value: string;
+      min: number;
+      max: number;
+    }>;
+    variables?: { [key: string]: number };
   };
-  plot: any;
+  plot: { [key: string]: any };
   [key: string]: any;
 }
 
