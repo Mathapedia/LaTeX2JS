@@ -17,7 +17,8 @@ class SVGSelection {
     append(tagName) {
         const newElements = [];
         this.elements.forEach(parent => {
-            const element = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+            const elementName = tagName.startsWith('svg:') ? tagName.substring(4) : tagName;
+            const element = document.createElementNS('http://www.w3.org/2000/svg', elementName);
             parent.appendChild(element);
             newElements.push(element);
         });
