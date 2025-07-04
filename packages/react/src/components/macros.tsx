@@ -1,7 +1,10 @@
-import macroStr from '@latex2js/macros';
-export default () => (
-  <div
-    style={{ display: 'none' }}
-    dangerouslySetInnerHTML={{ __html: macroStr }}
-  />
+import React from 'react';
+
+interface MacrosProps {
+  content?: string;
+  [key: string]: any;
+}
+
+export default ({ content }: MacrosProps) => (
+  <div style={{ display: 'none' }}>{content}</div>
 );

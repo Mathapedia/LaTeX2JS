@@ -43,12 +43,7 @@ const TestSVGComponent = () => {
   );
 };
 
-import nicebox from '../components/nicebox';
-import enumerate from '../components/enumerate';
-import verbatim from '../components/verbatim';
-import math from '../components/math';
-import macros from '../components/macros';
-import pspicture from '../components/pspicture';
+import { nicebox, enumerate, verbatim, math, macros, pspicture } from '@latex2js/react';
 
 const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture };
 

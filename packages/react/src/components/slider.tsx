@@ -1,3 +1,4 @@
+import React from 'react';
 import * as d3 from 'd3';
 import { psgraph } from '@latex2js/pstricks';
 
@@ -14,7 +15,7 @@ interface SliderProps {
     min: number;
     max: number;
   };
-  svgRef: React.RefObject<SVGSVGElement>;
+  svgRef: React.RefObject<SVGSVGElement | null>;
   plot: { [key: string]: any };
 }
 

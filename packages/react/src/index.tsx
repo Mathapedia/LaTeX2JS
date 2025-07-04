@@ -9,10 +9,12 @@ import verbatim from './components/verbatim';
 import math from './components/math';
 import macros from './components/macros';
 import pspicture from './components/pspicture';
+import slider from './components/slider';
+import MathJaxProvider from './components/MathJaxProvider';
 
 const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture };
 
-export { nicebox, enumerate, verbatim, math, macros, pspicture };
+export { nicebox, enumerate, verbatim, math, macros, pspicture, slider, MathJaxProvider };
 
 interface LaTeXProps {
   content: string;
