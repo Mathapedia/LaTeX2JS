@@ -1,10 +1,13 @@
 import React from 'react';
 
 interface MathProps {
-  content?: string;
+  lines: string[];
   [key: string]: any;
 }
 
-export default ({ content }: MathProps) => (
-  <span>{content}</span>
+export default ({ lines }: MathProps) => (
+  <span
+    className="math"
+    dangerouslySetInnerHTML={{ __html: lines.join('\n') }}
+  />
 );

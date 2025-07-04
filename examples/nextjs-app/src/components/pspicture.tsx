@@ -515,7 +515,6 @@ const psgraph: any = {
 
     const plots = this.plot;
     function userEvent(coords: any): void {
-      svg.selectAll('.userline').remove();
       svg.selectAll('.psplot').remove();
       var currentEnvironment: { [key: string]: any } = {};
       
