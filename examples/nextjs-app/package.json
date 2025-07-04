@@ -12,6 +12,8 @@
     "@latex2js/mathjax": "workspace:^",
     "@latex2js/pstricks": "workspace:*",
     "@latex2js/react": "workspace:*",
+    "@latex2js/mathjaxjs": "workspace:*",
+    "@latex2js/mathjax-react": "workspace:*",
     "@latex2js/settings": "workspace:*",
     "@latex2js/utils": "workspace:*",
     "@types/d3": "^7.4.0",
