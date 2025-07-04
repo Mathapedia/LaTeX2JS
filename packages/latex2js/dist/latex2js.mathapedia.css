@@ -1,0 +1,33 @@
+/* mathapedia theme */
+
+.math {
+  font-family: 'Arbutus Slab', serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #333333;
+}
+
+span.rm {
+  font-family: 'Arbutus Slab', serif;
+}
+
+body {
+  margin: 0;
+  font-family: 'Arbutus Slab', serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #333333;
+  background-color: #ffffff;
+}
+
+pre.verbatim {
+  background-color: white;
+}
+
+img {
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+  border: 0;
+  -ms-interpolation-mode: bicubic;
+}

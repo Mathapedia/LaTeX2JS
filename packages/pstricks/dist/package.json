@@ -1,9 +1,9 @@
 {
-  "name": "@latex2js/mathjax",
-  "version": "2.1.0",
-  "description": "MathJax utilities for LaTeX2JS",
+  "name": "@latex2js/pstricks",
+  "version": "2.1.2",
+  "description": "PSTricks extension for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
-  "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/mathjax#readme",
+  "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/pstricks#readme",
   "license": "SEE LICENSE IN LICENSE",
   "main": "index.js",
   "module": "esm/index.js",
@@ -16,14 +16,6 @@
     "type": "git",
     "url": "https://github.com/pyramation/latex2js"
   },
-  "keywords": [
-    "latex",
-    "latex2html",
-    "latex2js",
-    "math",
-    "mathematics",
-    "mathjax"
-  ],
   "scripts": {
     "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
     "clean": "rimraf dist",
@@ -38,8 +30,8 @@
     "url": "https://github.com/pyramation/latex2js/issues"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.0",
     "@types/jest": "^29.5.0",
-    "@types/node": "^20.0.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.0",
     "typescript": "^5.2.0",
@@ -47,18 +39,8 @@
     "rimraf": "^5.0.5"
   },
   "dependencies": {
-    "load-script": "^1.0.0"
-  },
-  "peerDependencies": {
-    "react": ">=16.8.0",
-    "next": ">=12.0.0"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    },
-    "next": {
-      "optional": true
-    }
+    "d3": "^4.13.0",
+    "@latex2js/settings": "workspace:*",
+    "@latex2js/utils": "workspace:*"
   }
 }

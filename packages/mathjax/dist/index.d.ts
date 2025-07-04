@@ -35,3 +35,4 @@ export declare const loadMathJax: (callback?: () => void, config?: {
         ready: () => void;
     };
 }) => Promise<void>;
+export { default as MathJaxProvider } from './components/MathJaxProvider';

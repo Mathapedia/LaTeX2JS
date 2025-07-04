@@ -1,10 +1,17 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MathJaxProvider = exports.loadMathJax = exports.getMathJax = exports.DEFAULT_CONFIG = void 0;
-exports.DEFAULT_CONFIG = {
+let React;
+let useEffect;
+let useState;
+try {
+    React = require('react');
+    useEffect = React.useEffect;
+    useState = React.useState;
+}
+catch (e) {
+    React = null;
+}
+const DEFAULT_CONFIG = {
     tex: {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
         displayMath: [['$$', '$$'], ['\\[', '\\]']],
@@ -23,8 +30,7 @@ exports.DEFAULT_CONFIG = {
 };
 let mathJaxInstance = null;
 const getMathJax = () => mathJaxInstance || globalThis.MathJax;
-exports.getMathJax = getMathJax;
-const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG) => {
+const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG) => {
     if (typeof window === 'undefined') {
         callback();
         return;
@@ -68,6 +74,49 @@ const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG
         callback();
     }
 };
-exports.loadMathJax = loadMathJax;
-var MathJaxProvider_1 = require("./components/MathJaxProvider");
-Object.defineProperty(exports, "MathJaxProvider", { enumerable: true, get: function () { return __importDefault(MathJaxProvider_1).default; } });
+function MathJaxProvider({ children, config, loadingComponent, className = "" }) {
+    if (!React) {
+        throw new Error('React is required to use MathJaxProvider. Please ensure React is installed and available.');
+    }
+    if (typeof window === 'undefined') {
+        return loadingComponent || null;
+    }
+    const [isClient, setIsClient] = useState(false);
+    const [mathJaxLoaded, setMathJaxLoaded] = useState(false);
+    const finalConfig = {
+        ...DEFAULT_CONFIG,
+        ...config,
+        tex: {
+            ...DEFAULT_CONFIG.tex,
+            ...config?.tex,
+            packages: config?.tex?.packages || DEFAULT_CONFIG.tex.packages
+        },
+        chtml: { ...DEFAULT_CONFIG.chtml, ...config?.chtml }
+    };
+    useEffect(() => {
+        setIsClient(true);
+        if (getMathJax()) {
+            setMathJaxLoaded(true);
+        }
+        else {
+            loadMathJax(() => {
+                setMathJaxLoaded(true);
+            }, finalConfig);
+        }
+    }, []);
+    useEffect(() => {
+        if (mathJaxLoaded && getMathJax()) {
+            const mathJax = getMathJax();
+            if (mathJax && mathJax.typesetPromise) {
+                mathJax.typesetPromise().then(() => {
+                    console.log('MathJax typesetting complete');
+                });
+            }
+        }
+    }, [mathJaxLoaded]);
+    if (!isClient) {
+        return loadingComponent || React.createElement('div', { className }, 'Loading...');
+    }
+    return React.createElement('div', { className }, mathJaxLoaded ? children : (loadingComponent || React.createElement('div', null, 'Loading MathJax...')));
+}
+exports.default = MathJaxProvider;

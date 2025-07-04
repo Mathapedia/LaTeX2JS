@@ -48,14 +48,14 @@ export declare const Functions: {
         h: number;
     };
     psframe(this: PSTricksContext, m: any): {
-        x1: any;
-        y1: any;
-        x2: any;
-        y2: any;
+        x1: number;
+        y1: number;
+        x2: number;
+        y2: number;
     };
     pscircle(this: PSTricksContext, m: any): {
-        cx: any;
-        cy: any;
+        cx: number;
+        cy: number;
         r: number;
     };
     psaxes(this: PSTricksContext, m: any): any;
@@ -72,35 +72,35 @@ export declare const Functions: {
     psline(this: PSTricksContext, m: any): any;
     uservariable(this: PSTricksContext, m: any): {
         name: any;
-        x: any;
-        y: any;
+        x: number;
+        y: number;
         func: any;
         value: any;
     };
     userline(this: PSTricksContext, m: any): {
-        x1: any;
-        y1: any;
-        x2: any;
-        y2: any;
+        x1: number;
+        y1: number;
+        x2: number;
+        y2: number;
         xExp: any;
         yExp: any;
         xExp2: any;
         yExp2: any;
-        userx: (coords: number[]) => any;
-        usery: (coords: number[]) => any;
-        userx2: (coords: number[]) => any;
-        usery2: (coords: number[]) => any;
+        userx: (coords: number[]) => number;
+        usery: (coords: number[]) => number;
+        userx2: (coords: number[]) => number;
+        usery2: (coords: number[]) => number;
         linecolor: string;
         linestyle: string;
         fillstyle: string;
         fillcolor: string;
         linewidth: number;
-        arrows: any;
-        dots: any;
+        arrows: number[];
+        dots: number[];
     };
     rput(this: PSTricksContext, m: any): {
-        x: any;
-        y: any;
+        x: number;
+        y: number;
         text: any;
     };
     psset(this: PSTricksContext, m: any): {};
@@ -140,14 +140,14 @@ declare const _default: {
             h: number;
         };
         psframe(this: PSTricksContext, m: any): {
-            x1: any;
-            y1: any;
-            x2: any;
-            y2: any;
+            x1: number;
+            y1: number;
+            x2: number;
+            y2: number;
         };
         pscircle(this: PSTricksContext, m: any): {
-            cx: any;
-            cy: any;
+            cx: number;
+            cy: number;
             r: number;
         };
         psaxes(this: PSTricksContext, m: any): any;
@@ -164,35 +164,35 @@ declare const _default: {
         psline(this: PSTricksContext, m: any): any;
         uservariable(this: PSTricksContext, m: any): {
             name: any;
-            x: any;
-            y: any;
+            x: number;
+            y: number;
             func: any;
             value: any;
         };
         userline(this: PSTricksContext, m: any): {
-            x1: any;
-            y1: any;
-            x2: any;
-            y2: any;
+            x1: number;
+            y1: number;
+            x2: number;
+            y2: number;
             xExp: any;
             yExp: any;
             xExp2: any;
             yExp2: any;
-            userx: (coords: number[]) => any;
-            usery: (coords: number[]) => any;
-            userx2: (coords: number[]) => any;
-            usery2: (coords: number[]) => any;
+            userx: (coords: number[]) => number;
+            usery: (coords: number[]) => number;
+            userx2: (coords: number[]) => number;
+            usery2: (coords: number[]) => number;
             linecolor: string;
             linestyle: string;
             fillstyle: string;
             fillcolor: string;
             linewidth: number;
-            arrows: any;
-            dots: any;
+            arrows: number[];
+            dots: number[];
         };
         rput(this: PSTricksContext, m: any): {
-            x: any;
-            y: any;
+            x: number;
+            y: number;
             text: any;
         };
         psset(this: PSTricksContext, m: any): {};

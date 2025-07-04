@@ -61,3 +61,4 @@ export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG)
         callback();
     }
 };
+export { default as MathJaxProvider } from './components/MathJaxProvider';
