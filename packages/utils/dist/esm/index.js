@@ -104,12 +104,22 @@ export const evaluate = function (exp) {
     }
 };
 export const X = function (v) {
+    console.log('X function called with:', { v, w: this.w, x1: this.x1, xunit: this.xunit });
+    if (isNaN(this.w) || isNaN(this.x1) || isNaN(this.xunit)) {
+        console.warn('X function: NaN detected in context properties', { w: this.w, x1: this.x1, xunit: this.xunit });
+        return 0;
+    }
     return (this.w - (this.x1 - Number(v))) * this.xunit;
 };
 export const Xinv = function (v) {
     return Number(v) / this.xunit - this.w + this.x1;
 };
 export const Y = function (v) {
+    console.log('Y function called with:', { v, y1: this.y1, yunit: this.yunit });
+    if (isNaN(this.y1) || isNaN(this.yunit)) {
+        console.warn('Y function: NaN detected in context properties', { y1: this.y1, yunit: this.yunit });
+        return 0;
+    }
     return (this.y1 - Number(v)) * this.yunit;
 };
 export const Yinv = function (v) {

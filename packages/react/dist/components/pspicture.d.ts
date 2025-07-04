@@ -1,9 +1,21 @@
 interface PspictureProps {
     env: {
-        sliders?: any[];
+        sliders?: Array<{
+            latex: string;
+            scalar: number;
+            variable: string;
+            value: string;
+            min: number;
+            max: number;
+        }>;
+        variables?: {
+            [key: string]: number;
+        };
     };
-    plot: any;
+    plot: {
+        [key: string]: any;
+    };
     [key: string]: any;
 }
-declare const _default: (props: PspictureProps) => import("react/jsx-runtime.js").JSX.Element;
+declare const _default: (props: PspictureProps) => import("react/jsx-runtime").JSX.Element;
 export default _default;

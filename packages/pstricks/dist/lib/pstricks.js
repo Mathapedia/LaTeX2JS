@@ -159,11 +159,27 @@ exports.Functions = {
         Object.entries(this.variables || {}).forEach(([name, val]) => {
             expression += 'var ' + name + ' = ' + val + ';';
         });
-        expression += 'with (Math){' + m[4] + '}';
+        const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
+        expression += mathFunctions + 'return ' + m[4] + ';';
+        console.log('psplot expression setup:', { expression, startX, endX, mathExpression: m[4] });
         for (x = startX; x <= endX; x += 0.005) {
             data.push(utils_1.X.call(this, x));
-            // data.push(Y.call(this, Math.cos(x/2)));
-            data.push(utils_1.Y.call(this, eval(expression)));
+            try {
+                const evalFunc = new Function('x', expression);
+                const yValue = evalFunc(x);
+                console.log('psplot evaluation:', { x, yValue, expression: m[4] });
+                if (yValue !== undefined && !isNaN(yValue)) {
+                    data.push(utils_1.Y.call(this, yValue));
+                }
+                else {
+                    console.warn('Invalid yValue:', yValue, 'for x:', x);
+                    data.push(utils_1.Y.call(this, 0));
+                }
+            }
+            catch (err) {
+                console.warn('Error evaluating expression:', err, { x, expression: m[4] });
+                data.push(utils_1.Y.call(this, 0)); // fallback value
+            }
         }
         var obj = {
             linecolor: 'black',
@@ -307,7 +323,17 @@ exports.Functions = {
             x: utils_1.X.call(this, m[3]),
             y: utils_1.Y.call(this, m[4]),
             func: m[5],
-            value: eval(expx1 + expy1 + m[5])
+            value: (() => {
+                try {
+                    const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
+                    const evalFunc = new Function('', mathFunctions + expx1 + expy1 + 'return ' + m[5]);
+                    return evalFunc();
+                }
+                catch (err) {
+                    console.warn('Error evaluating uservariable expression:', err);
+                    return 0;
+                }
+            })()
         };
         return obj;
     },
@@ -320,18 +346,17 @@ exports.Functions = {
         var dots = l.dots;
         var xExp = m[7];
         var yExp = m[8];
+        const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
         if (xExp)
-            xExp = 'with (Math){' + xExp.replace(/^\{/, '').replace(/\}$/, '') + '}';
+            xExp = mathFunctions + xExp.replace(/^\{/, '').replace(/\}$/, '');
         if (yExp)
-            yExp = 'with (Math){' + yExp.replace(/^\{/, '').replace(/\}$/, '') + '}';
+            yExp = mathFunctions + yExp.replace(/^\{/, '').replace(/\}$/, '');
         var xExp2 = m[9];
         var yExp2 = m[10];
         if (xExp2)
-            xExp2 =
-                'with (Math){' + xExp2.replace(/^\{/, '').replace(/\}$/, '') + '}';
+            xExp2 = mathFunctions + xExp2.replace(/^\{/, '').replace(/\}$/, '');
         if (yExp2)
-            yExp2 =
-                'with (Math){' + yExp2.replace(/^\{/, '').replace(/\}$/, '') + '}';
+            yExp2 = mathFunctions + yExp2.replace(/^\{/, '').replace(/\}$/, '');
         var expression = '';
         Object.entries(this.variables || {}).forEach(([name, val]) => {
             expression += 'var ' + name + ' = ' + val + ';';
@@ -350,28 +375,56 @@ exports.Functions = {
                 var ny1 = utils_1.Yinv.call(this, coords[1]);
                 var expx1 = 'var x = ' + nx1 + ';';
                 var expy1 = 'var y = ' + ny1 + ';';
-                return utils_1.X.call(this, eval(expression + expy1 + expx1 + xExp));
+                try {
+                    const evalFunc = new Function('', expression + expy1 + expx1 + 'return ' + xExp);
+                    return utils_1.X.call(this, evalFunc());
+                }
+                catch (err) {
+                    console.warn('Error evaluating userx expression:', err);
+                    return utils_1.X.call(this, 0);
+                }
             },
             usery: (coords) => {
                 var nx2 = utils_1.Xinv.call(this, coords[0]);
                 var ny2 = utils_1.Yinv.call(this, coords[1]);
                 var expx2 = 'var x = ' + nx2 + ';';
                 var expy2 = 'var y = ' + ny2 + ';';
-                return utils_1.Y.call(this, eval(expression + expy2 + expx2 + yExp));
+                try {
+                    const evalFunc = new Function('', expression + expy2 + expx2 + 'return ' + yExp);
+                    return utils_1.Y.call(this, evalFunc());
+                }
+                catch (err) {
+                    console.warn('Error evaluating usery expression:', err);
+                    return utils_1.Y.call(this, 0);
+                }
             },
             userx2: (coords) => {
                 var nx3 = utils_1.Xinv.call(this, coords[0]);
                 var ny3 = utils_1.Yinv.call(this, coords[1]);
                 var expx3 = 'var x = ' + nx3 + ';';
                 var expy3 = 'var y = ' + ny3 + ';';
-                return utils_1.X.call(this, eval(expression + expy3 + expx3 + xExp2));
+                try {
+                    const evalFunc = new Function('', expression + expy3 + expx3 + 'return ' + xExp2);
+                    return utils_1.X.call(this, evalFunc());
+                }
+                catch (err) {
+                    console.warn('Error evaluating userx2 expression:', err);
+                    return utils_1.X.call(this, 0);
+                }
             },
             usery2: (coords) => {
                 var nx4 = utils_1.Xinv.call(this, coords[0]);
                 var ny4 = utils_1.Yinv.call(this, coords[1]);
                 var expx4 = 'var x = ' + nx4 + ';';
                 var expy4 = 'var y = ' + ny4 + ';';
-                return utils_1.Y.call(this, eval(expression + expy4 + expx4 + yExp2));
+                try {
+                    const evalFunc = new Function('', expression + expy4 + expx4 + 'return ' + yExp2);
+                    return utils_1.Y.call(this, evalFunc());
+                }
+                catch (err) {
+                    console.warn('Error evaluating usery2 expression:', err);
+                    return utils_1.Y.call(this, 0);
+                }
             },
             linecolor: 'black',
             linestyle: 'solid',

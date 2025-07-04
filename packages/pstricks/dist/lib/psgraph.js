@@ -172,6 +172,12 @@ const psgraph = {
         var xaxis = [this.bottomLeft[0], this.topRight[0]];
         var yaxis = [this.bottomLeft[1], this.topRight[1]];
         var origin = this.origin;
+        if (!this.dx || isNaN(this.dx)) {
+            this.dx = 1;
+        }
+        if (!this.dy || isNaN(this.dy)) {
+            this.dy = 1;
+        }
         function line(x1, y1, x2, y2) {
             svg
                 .append('svg:path')
@@ -197,14 +203,14 @@ const psgraph = {
         line(origin[0], yaxis[0], origin[0], yaxis[1]);
         // draw ticks
         if (this.ticks.match(/all/)) {
-            xticks();
-            yticks();
+            xticks.call(this);
+            yticks.call(this);
         }
         else if (this.ticks.match(/x/)) {
-            xticks();
+            xticks.call(this);
         }
         else if (this.ticks.match(/y/)) {
-            yticks();
+            yticks.call(this);
         }
         if (this.arrows[0]) {
             svg
@@ -416,7 +422,16 @@ const psgraph = {
             div.style.top = `${y - h}px`;
             div.style.left = `${x - w}px`;
         };
-        window.MathJax.Hub.Queue(['Typeset', window.MathJax.Hub, div], [done]);
+        const mathJax = window.MathJax;
+        if (mathJax && mathJax.typesetPromise) {
+            mathJax.typesetPromise([div]).then(done).catch((err) => {
+                console.error('MathJax typesetting failed:', err);
+                done();
+            });
+        }
+        else {
+            done();
+        }
         // using the queue works, but looks hackier in the UI than this setTimeout does in code
         // setTimeout(done, 1100);
     },

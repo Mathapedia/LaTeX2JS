@@ -6,6 +6,9 @@ export default ({ env, slider, svgRef, plot }) => {
     const onChange = (event) => {
         // update value
         var val = event.target.value / scalar;
+        if (!env.variables) {
+            env.variables = {};
+        }
         env.variables[variable] = val;
         // update svg
         const svg = d3.select(svgRef.current);

@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { psgraph } from '@latex2js/pstricks';
 import * as d3 from 'd3';
 import { useRef, useEffect } from 'react';
-import Slider from './slider.js';
+import Slider from './slider';
 export default (props) => {
     const svgRef = useRef(null);
     const divRef = useRef(null);

@@ -40,7 +40,7 @@ const jsx_runtime_1 = require("react/jsx-runtime");
 const pstricks_1 = require("@latex2js/pstricks");
 const d3 = __importStar(require("d3"));
 const react_1 = require("react");
-const slider_js_1 = __importDefault(require("./slider.js"));
+const slider_1 = __importDefault(require("./slider"));
 exports.default = (props) => {
     const svgRef = (0, react_1.useRef)(null);
     const divRef = (0, react_1.useRef)(null);
@@ -57,6 +57,6 @@ exports.default = (props) => {
     }, [props]);
     return ((0, jsx_runtime_1.jsxs)("div", { className: "pspicture", style: { width: width, height: height }, ref: divRef, children: [(0, jsx_runtime_1.jsx)("svg", { width: size.width, height: size.height, ref: svgRef }), props.env.sliders &&
                 props.env.sliders.map((slider, index) => {
-                    return ((0, jsx_runtime_1.jsx)(slider_js_1.default, { slider: slider, env: props.env, svgRef: svgRef, plot: props.plot }, index));
+                    return ((0, jsx_runtime_1.jsx)(slider_1.default, { slider: slider, env: props.env, svgRef: svgRef, plot: props.plot }, index));
                 })] }));
 };

@@ -213,7 +213,15 @@ class Parser {
     lines.forEach((line) => {
       entries.forEach(([k, exp]: [string, any]) => {
         this.parsePSVariables(line, exp, plot, k, env);
-        this.parsePSExpression(line, exp, plot, k, env);
+        const result = this.parsePSExpression(line, exp, plot, k, env);
+        if (result && k === 'psaxes' && plot[k].length > 0) {
+          const axesData = plot[k][plot[k].length - 1].data;
+          if (axesData && axesData.dx !== undefined) {
+            env.dx = axesData.dx;
+            env.dy = axesData.dy;
+            env.origin = axesData.origin;
+          }
+        }
       });
     });
     return plot;
