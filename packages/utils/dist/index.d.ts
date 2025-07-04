@@ -21,3 +21,12 @@ export declare const X: (this: any, v: number | string) => number;
 export declare const Xinv: (this: any, v: number | string) => any;
 export declare const Y: (this: any, v: number | string) => number;
 export declare const Yinv: (this: any, v: number | string) => number;
+export declare const arrowType: (m: string) => {
+    arrows: number[];
+    dots: number[];
+};
+export declare const dotType: (m: string) => {
+    arrows: number[];
+    dots: number[];
+};
+export { SVGSelection, select } from './svg-utils';

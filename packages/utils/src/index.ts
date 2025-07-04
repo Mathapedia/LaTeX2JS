@@ -129,3 +129,8 @@ export const Y = function (this: any, v: number | string) {
 export const Yinv = function (this: any, v: number | string) {
   return this.y1 - Number(v) / this.yunit;
 };
+
+export const arrowType = parseArrows;
+export const dotType = parseArrows;
+
+export { SVGSelection, select } from './svg-utils';

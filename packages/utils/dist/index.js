@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.parseArrows = exports.parseOptions = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
+exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.parseArrows = exports.parseOptions = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
 const simplerepl = function (regex, replace) {
     return function (_m, contents) {
         return contents.replace(regex, replace);
@@ -138,3 +138,8 @@ const Yinv = function (v) {
     return this.y1 - Number(v) / this.yunit;
 };
 exports.Yinv = Yinv;
+exports.arrowType = exports.parseArrows;
+exports.dotType = exports.parseArrows;
+var svg_utils_1 = require("./svg-utils");
+Object.defineProperty(exports, "SVGSelection", { enumerable: true, get: function () { return svg_utils_1.SVGSelection; } });
+Object.defineProperty(exports, "select", { enumerable: true, get: function () { return svg_utils_1.select; } });

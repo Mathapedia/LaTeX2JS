@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import * as d3 from 'd3';
+import { select } from '@latex2js/utils';
 import Slider from './slider';
 import { Y } from '@latex2js/utils';
 
@@ -515,6 +515,10 @@ const psgraph: any = {
 
     const plots = this.plot;
     function userEvent(coords: any): void {
+      console.log('=== USERLINE DEBUG: userEvent called ===');
+      console.log('Mouse coordinates:', coords);
+      console.log('Available plots:', Object.keys(plots || {}));
+      
       svg.selectAll('.userline').remove();
       svg.selectAll('.psplot').remove();
       var currentEnvironment: { [key: string]: any } = {};
@@ -522,6 +526,7 @@ const psgraph: any = {
       Object.entries(plots || {})
       .forEach(([k, plot]: [string, any]) => {
         if (k.match(/uservariable/)) {
+          console.log('Processing uservariable:', k, plot);
           plot.forEach((data: any) => {
             data.env.userx = coords[0];
             data.env.usery = coords[1];
@@ -534,6 +539,7 @@ const psgraph: any = {
       Object.entries(plots || {})
       .forEach(([k, plot]: [string, any]) => {
         if (k.match(/psplot/)) {
+          console.log('Processing psplot:', k, plot);
           plot.forEach((data: any) => {
             Object.entries(currentEnvironment || {})
             .forEach(([name, variable]: [string, any]) => {
@@ -546,28 +552,70 @@ const psgraph: any = {
           });
         }
         if (k.match(/userline/)) {
-          plot.forEach((data: any) => {
-            var d = data.fn.call(data.env, data.match);
-            data.env.x2 = coords[0];
-            data.env.y2 = coords[1];
-            data.data.x2 = data.env.x2;
-            data.data.y2 = data.env.y2;
-            if (data.data.xExp2) {
-              data.data.x2 = d.userx2(coords);
-              data.data.x1 = d.userx(coords);
-            } else if (data.data.xExp) {
-              data.data.x2 = d.userx(coords);
+          console.log('=== Processing userline:', k);
+          console.log('Userline plot data:', plot);
+          plot.forEach((data: any, index: number) => {
+            console.log(`--- Userline ${index} ---`);
+            console.log('Data object:', data);
+            console.log('Data.data:', data.data);
+            console.log('Expressions - xExp:', data.data.xExp, 'yExp:', data.data.yExp, 'xExp2:', data.data.xExp2, 'yExp2:', data.data.yExp2);
+            
+            try {
+              var d = data.fn.call(data.env, data.match);
+              console.log('Function call result d:', d);
+              
+              data.env.x2 = coords[0];
+              data.env.y2 = coords[1];
+              data.data.x2 = data.env.x2;
+              data.data.y2 = data.env.y2;
+              
+              if (data.data.xExp2) {
+                console.log('Evaluating xExp2 and xExp');
+                data.data.x2 = d.userx2(coords);
+                data.data.x1 = d.userx(coords);
+                console.log('xExp2 result - x1:', data.data.x1, 'x2:', data.data.x2);
+              } else if (data.data.xExp) {
+                console.log('Evaluating xExp only');
+                data.data.x2 = d.userx(coords);
+                console.log('xExp result - x2:', data.data.x2);
+              }
+              
+              if (data.data.yExp2) {
+                console.log('Evaluating yExp2 and yExp');
+                data.data.y2 = d.usery2(coords);
+                data.data.y1 = d.usery(coords);
+                console.log('yExp2 result - y1:', data.data.y1, 'y2:', data.data.y2);
+              } else if (data.data.yExp) {
+                console.log('Evaluating yExp only');
+                data.data.y2 = d.usery(coords);
+                console.log('yExp result - y2:', data.data.y2);
+              }
+              
+              d.global = {};
+              Object.assign(d.global, env);
+              Object.assign(d, data.data);
+              
+              console.log('Final userline data before rendering:', {
+                x1: d.x1, y1: d.y1, x2: d.x2, y2: d.y2,
+                linecolor: d.linecolor, linestyle: d.linestyle,
+                arrows: d.arrows, dots: d.dots
+              });
+              
+              psgraph[k].call(d, svg);
+              console.log('Userline rendered successfully');
+            } catch (error) {
+              console.error('ERROR rendering userline:', error);
+              console.error('Error details:', {
+                data: data,
+                coords: coords,
+                expressions: {
+                  xExp: data.data.xExp,
+                  yExp: data.data.yExp,
+                  xExp2: data.data.xExp2,
+                  yExp2: data.data.yExp2
+                }
+              });
             }
-            if (data.data.yExp2) {
-              data.data.y2 = d.usery2(coords);
-              data.data.y1 = d.usery(coords);
-            } else if (data.data.yExp) {
-              data.data.y2 = d.usery(coords);
-            }
-            d.global = {};
-            Object.assign(d.global, env);
-            Object.assign(d, data.data);
-            psgraph[k].call(d, svg);            
           });
         }
       });
@@ -606,7 +654,7 @@ export default (props: PspictureProps) => {
     console.log('Pspicture useEffect triggered with props:', props);
     if (svgRef.current && divRef.current) {
       console.log('SVG and div refs are available');
-      const d3svg = d3.select(svgRef.current);
+      const d3svg = select(svgRef.current);
       const obj = { ...props };
       obj.$el = divRef.current;
       console.log('Calling psgraph.pspicture with obj:', obj);
@@ -617,13 +665,172 @@ export default (props: PspictureProps) => {
     }
   }, [props]);
 
+  const handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
+    console.log('React mousemove event triggered');
+    const rect = event.currentTarget.getBoundingClientRect();
+    const coords = [
+      event.clientX - rect.left,
+      event.clientY - rect.top
+    ];
+    console.log('Mouse coordinates from React event:', coords);
+    
+    if (svgRef.current) {
+      const d3svg = select(svgRef.current);
+      const obj = { ...props };
+      
+      if (obj.plot) {
+        console.log('Calling userEvent with coordinates:', coords);
+        userEventHandler(coords, d3svg, obj);
+      }
+    }
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<SVGSVGElement>) => {
+    event.preventDefault();
+    console.log('React touchmove event triggered');
+    const rect = event.currentTarget.getBoundingClientRect();
+    const touch = event.touches[0];
+    const coords = [
+      touch.clientX - rect.left,
+      touch.clientY - rect.top
+    ];
+    console.log('Touch coordinates from React event:', coords);
+    
+    if (svgRef.current) {
+      const d3svg = select(svgRef.current);
+      const obj = { ...props };
+      
+      if (obj.plot) {
+        console.log('Calling userEvent with touch coordinates:', coords);
+        userEventHandler(coords, d3svg, obj);
+      }
+    }
+  };
+
+  const userEventHandler = (coords: number[], svg: any, plotObj: any) => {
+    console.log('=== USERLINE DEBUG: userEventHandler called ===');
+    console.log('Mouse coordinates:', coords);
+    console.log('Available plots:', Object.keys(plotObj.plot || {}));
+    
+    svg.selectAll('.userline').remove();
+    svg.selectAll('.psplot').remove();
+    var currentEnvironment: { [key: string]: any } = {};
+    
+    const plots = plotObj.plot;
+    const env = plotObj.env || {};
+    
+    Object.entries(plots || {})
+    .forEach(([k, plot]: [string, any]) => {
+      if (k.match(/uservariable/)) {
+        console.log('Processing uservariable:', k, plot);
+        plot.forEach((data: any) => {
+          data.env.userx = coords[0];
+          data.env.usery = coords[1];
+          var dd = data.fn.call(data.env, data.match);
+          currentEnvironment[data.data.name] = dd.value;
+        });
+      }
+    });
+    
+    Object.entries(plots || {})
+    .forEach(([k, plot]: [string, any]) => {
+      if (k.match(/psplot/)) {
+        console.log('Processing psplot:', k, plot);
+        plot.forEach((data: any) => {
+          Object.entries(currentEnvironment || {})
+          .forEach(([name, variable]: [string, any]) => {
+            data.env.variables[name] = variable;
+          });
+          var d = data.fn.call(data.env, data.match);
+          d.global = {};
+          Object.assign(d.global, env);
+          psgraph[k].call(d, svg);            
+        });
+      }
+      if (k.match(/userline/)) {
+        console.log('=== Processing userline:', k);
+        console.log('Userline plot data:', plot);
+        plot.forEach((data: any, index: number) => {
+          console.log(`--- Userline ${index} ---`);
+          console.log('Data object:', data);
+          console.log('Data.data:', data.data);
+          console.log('Expressions - xExp:', data.data.xExp, 'yExp:', data.data.yExp, 'xExp2:', data.data.xExp2, 'yExp2:', data.data.yExp2);
+          
+          try {
+            var d = data.fn.call(data.env, data.match);
+            console.log('Function call result d:', d);
+            
+            data.env.x2 = coords[0];
+            data.env.y2 = coords[1];
+            data.data.x2 = data.env.x2;
+            data.data.y2 = data.env.y2;
+            
+            if (data.data.xExp2) {
+              console.log('Evaluating xExp2 and xExp');
+              data.data.x2 = d.userx2(coords);
+              data.data.x1 = d.userx(coords);
+              console.log('xExp2 result - x1:', data.data.x1, 'x2:', data.data.x2);
+            } else if (data.data.xExp) {
+              console.log('Evaluating xExp only');
+              data.data.x2 = d.userx(coords);
+              console.log('xExp result - x2:', data.data.x2);
+            }
+            
+            if (data.data.yExp2) {
+              console.log('Evaluating yExp2 and yExp');
+              data.data.y2 = d.usery2(coords);
+              data.data.y1 = d.usery(coords);
+              console.log('yExp2 result - y1:', data.data.y1, 'y2:', data.data.y2);
+            } else if (data.data.yExp) {
+              console.log('Evaluating yExp only');
+              data.data.y2 = d.usery(coords);
+              console.log('yExp result - y2:', data.data.y2);
+            }
+            
+            d.global = {};
+            Object.assign(d.global, env);
+            Object.assign(d, data.data);
+            
+            console.log('Final userline data before rendering:', {
+              x1: d.x1, y1: d.y1, x2: d.x2, y2: d.y2,
+              linecolor: d.linecolor, linestyle: d.linestyle,
+              arrows: d.arrows, dots: d.dots
+            });
+            
+            psgraph[k].call(d, svg);
+            console.log('Userline rendered successfully');
+          } catch (error) {
+            console.error('ERROR rendering userline:', error);
+            console.error('Error details:', {
+              data: data,
+              coords: coords,
+              expressions: {
+                xExp: data.data.xExp,
+                yExp: data.data.yExp,
+                xExp2: data.data.xExp2,
+                yExp2: data.data.yExp2
+              }
+            });
+          }
+        });
+      }
+    });
+  };
+
   return (
     <div
       className="pspicture"
       style={{ width: width, height: height }}
       ref={divRef}
     >
-      <svg width={size.width} height={size.height} ref={svgRef} />
+      <svg 
+        width={size.width} 
+        height={size.height} 
+        ref={svgRef}
+        onMouseMove={handleMouseMove}
+        onTouchMove={handleTouchMove}
+        style={{ cursor: 'crosshair' }}
+      />
       {props.env.sliders &&
         props.env.sliders.map((slider: any, index: number) => {
           return (

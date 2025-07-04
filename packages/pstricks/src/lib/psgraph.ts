@@ -1,4 +1,6 @@
 
+import { select, SVGSelection } from '@latex2js/utils';
+
 // http://mathforum.org/library/drmath/view/54146.html
 function arrow(x1: number, y1: number, x2: number, y2: number) {
   var t = Math.PI / 6;
@@ -61,8 +63,9 @@ const psgraph: any = {
   },
 
   psframe(svg: any): void {
-    svg
-      .append('svg:line')
+    const svgSelection = select(svg);
+    svgSelection
+      .append('line')
       .attr('x1', this.x1)
       .attr('y1', this.y1)
       .attr('x2', this.x2)
@@ -71,8 +74,8 @@ const psgraph: any = {
       .style('stroke', 'rgb(0,0,0)')
       .style('stroke-opacity', 1);
 
-    svg
-      .append('svg:line')
+    svgSelection
+      .append('line')
       .attr('x1', this.x2)
       .attr('y1', this.y1)
       .attr('x2', this.x2)
@@ -81,8 +84,8 @@ const psgraph: any = {
       .style('stroke', 'rgb(0,0,0)')
       .style('stroke-opacity', 1);
 
-    svg
-      .append('svg:line')
+    svgSelection
+      .append('line')
       .attr('x1', this.x2)
       .attr('y1', this.y2)
       .attr('x2', this.x1)
@@ -91,8 +94,8 @@ const psgraph: any = {
       .style('stroke', 'rgb(0,0,0)')
       .style('stroke-opacity', 1);
 
-    svg
-      .append('svg:line')
+    svgSelection
+      .append('line')
       .attr('x1', this.x1)
       .attr('y1', this.y2)
       .attr('x2', this.x1)
@@ -102,8 +105,9 @@ const psgraph: any = {
       .style('stroke-opacity', 1);
   },
   pscircle: function (svg: any): void {
-    svg
-      .append('svg:circle')
+    const svgSelection = select(svg);
+    svgSelection
+      .append('circle')
       .attr('cx', this.cx)
       .attr('cy', this.cy)
       .attr('r', this.r)
@@ -135,8 +139,9 @@ const psgraph: any = {
       context.push('Z');
     }
 
-    svg
-      .append('svg:path')
+    const svgSelection = select(svg);
+    svgSelection
+      .append('path')
       .attr('d', context.join(' '))
       .attr('class', 'psplot')
       .style('stroke-width', this.linewidth)
@@ -157,8 +162,9 @@ const psgraph: any = {
     });
     context.push('Z');
 
-    svg
-      .append('svg:path')
+    const svgSelection = select(svg);
+    svgSelection
+      .append('path')
       .attr('d', context.join(' '))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
@@ -188,8 +194,9 @@ const psgraph: any = {
     context.push(this.B.x);
     context.push(this.B.y);
 
-    svg
-      .append('svg:path')
+    const svgSelection = select(svg);
+    svgSelection
+      .append('path')
       .attr('d', context.join(' '))
       .style('stroke-width', 2)
       .style('stroke-opacity', 1)
@@ -211,8 +218,9 @@ const psgraph: any = {
     }
 
     function line(x1: number, y1: number, x2: number, y2: number): void {
-      svg
-        .append('svg:path')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', 2)
         .style('stroke', 'rgb(0,0,0)')
@@ -280,8 +288,9 @@ const psgraph: any = {
       linecolor = this.linecolor;
 
     function solid(x1: number, y1: number, x2: number, y2: number): void {
-      svg
-        .append('svg:path')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', linewidth)
         .style('stroke', linecolor)
@@ -289,8 +298,9 @@ const psgraph: any = {
     }
 
     function dashed(x1: number, y1: number, x2: number, y2: number): void {
-      svg
-        .append('svg:path')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', linewidth)
         .style('stroke', linecolor)
@@ -299,8 +309,9 @@ const psgraph: any = {
     }
 
     function dotted(x1: number, y1: number, x2: number, y2: number): void {
-      svg
-        .append('svg:path')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', linewidth)
         .style('stroke', linecolor)
@@ -323,8 +334,9 @@ const psgraph: any = {
     // ADD DOTS
 
     if (this.dots[0]) {
-      svg
-        .append('svg:circle')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('circle')
         .attr('cx', this.x1)
         .attr('cy', this.y1)
         .attr('r', 3)
@@ -335,8 +347,9 @@ const psgraph: any = {
     }
 
     if (this.dots[1]) {
-      svg
-        .append('svg:circle')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('circle')
         .attr('cx', this.x2)
         .attr('cy', this.y2)
         .attr('r', 3)
@@ -352,7 +365,8 @@ const psgraph: any = {
       y2 = this.y2;
 
     if (this.arrows[0]) {
-      svg
+      const svgSelection = select(svg);
+      svgSelection
         .append('path')
         .attr('d', arrow(x2, y2, x1, y1))
         .style('fill', this.linecolor)
@@ -360,7 +374,8 @@ const psgraph: any = {
     }
 
     if (this.arrows[1]) {
-      svg
+      const svgSelection = select(svg);
+      svgSelection
         .append('path')
         .attr('d', arrow(x1, y1, x2, y2))
         .style('fill', this.linecolor)
@@ -373,8 +388,9 @@ const psgraph: any = {
       linecolor = this.linecolor;
 
     function solid(x1: number, y1: number, x2: number, y2: number): void {
-      svg
-        .append('svg:path')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('path')
         .attr('class', 'userline')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', linewidth)
@@ -383,8 +399,9 @@ const psgraph: any = {
     }
 
     function dashed(x1: number, y1: number, x2: number, y2: number): void {
-      svg
-        .append('svg:path')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .attr('class', 'userline')
         .style('stroke-width', linewidth)
@@ -394,8 +411,9 @@ const psgraph: any = {
     }
 
     function dotted(x1: number, y1: number, x2: number, y2: number): void {
-      svg
-        .append('svg:path')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .attr('class', 'userline')
         .style('stroke-width', linewidth)
@@ -419,8 +437,9 @@ const psgraph: any = {
     // ADD DOTS
 
     if (this.dots[0]) {
-      svg
-        .append('svg:circle')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('circle')
         .attr('cx', this.x1)
         .attr('cy', this.y1)
         .attr('r', 3)
@@ -432,8 +451,9 @@ const psgraph: any = {
     }
 
     if (this.dots[1]) {
-      svg
-        .append('svg:circle')
+      const svgSelection = select(svg);
+      svgSelection
+        .append('circle')
         .attr('cx', this.x2)
         .attr('cy', this.y2)
         .attr('r', 3)
@@ -450,7 +470,8 @@ const psgraph: any = {
       y2 = this.y2;
 
     if (this.arrows[0]) {
-      svg
+      const svgSelection = select(svg);
+      svgSelection
         .append('path')
         .attr('d', arrow(x2, y2, x1, y1))
         .attr('class', 'userline')
@@ -459,7 +480,8 @@ const psgraph: any = {
     }
 
     if (this.arrows[1]) {
-      svg
+      const svgSelection = select(svg);
+      svgSelection
         .append('path')
         .attr('d', arrow(x1, y1, x2, y2))
         .attr('class', 'userline')
@@ -524,29 +546,29 @@ const psgraph: any = {
       }
     });
 
-    svg.on(
+    const svgSelection = select(svg);
+    svgSelection.on(
       'touchmove',
       function (this: any, event: any) {
         event.preventDefault();
         var touchcoords = event.touches ? event.touches[0] : [0, 0];
         userEvent(touchcoords);
-      },
-      false
+      }
     );
 
-    svg.on(
+    svgSelection.on(
       'mousemove',
       function (this: any, event: any) {
         var coords = [event.offsetX || 0, event.offsetY || 0];
         userEvent(coords);
-      },
-      false
+      }
     );
 
     const plots = this.plot;
     function userEvent(coords: any): void {
-      svg.selectAll('.userline').remove();
-      svg.selectAll('.psplot').remove();
+      const svgSelection = select(svg);
+      svgSelection.selectAll('.userline').remove();
+      svgSelection.selectAll('.psplot').remove();
       var currentEnvironment: { [key: string]: any } = {};
       // find special vars
       Object.entries(plots || {})
