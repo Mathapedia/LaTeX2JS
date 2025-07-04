@@ -8,8 +8,9 @@ import enumerate from './components/enumerate';
 import verbatim from './components/verbatim';
 import math from './components/math';
 import macros from './components/macros';
-const ELEMENTS = { nicebox, enumerate, verbatim, math, macros };
-export { nicebox, enumerate, verbatim, math, macros };
+import pspicture from './components/pspicture';
+const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture };
+export { nicebox, enumerate, verbatim, math, macros, pspicture };
 export class LaTeX extends Component {
     constructor(props) {
         super(props);

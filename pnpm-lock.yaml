@@ -74,6 +74,12 @@ importers:
       '@latex2js/utils':
         specifier: workspace:*
         version: link:../../packages/utils/dist
+      '@types/d3':
+        specifier: ^7.4.0
+        version: 7.4.3
+      d3:
+        specifier: ^7.9.0
+        version: 7.9.0
       latex2js:
         specifier: workspace:*
         version: link:../../packages/latex2js/dist

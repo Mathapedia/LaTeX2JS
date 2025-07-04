@@ -5,7 +5,8 @@ import enumerate from './components/enumerate';
 import verbatim from './components/verbatim';
 import math from './components/math';
 import macros from './components/macros';
-export { nicebox, enumerate, verbatim, math, macros };
+import pspicture from './components/pspicture';
+export { nicebox, enumerate, verbatim, math, macros, pspicture };
 interface LaTeXProps {
     content: string;
 }

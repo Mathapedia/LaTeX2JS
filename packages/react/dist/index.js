@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LaTeX = exports.macros = exports.math = exports.verbatim = exports.enumerate = exports.nicebox = void 0;
+exports.LaTeX = exports.pspicture = exports.macros = exports.math = exports.verbatim = exports.enumerate = exports.nicebox = void 0;
 const jsx_runtime_1 = require("react/jsx-runtime");
 const React = __importStar(require("react"));
 const { Component, createElement } = React;
@@ -52,7 +52,9 @@ const math_1 = __importDefault(require("./components/math"));
 exports.math = math_1.default;
 const macros_1 = __importDefault(require("./components/macros"));
 exports.macros = macros_1.default;
-const ELEMENTS = { nicebox: nicebox_1.default, enumerate: enumerate_1.default, verbatim: verbatim_1.default, math: math_1.default, macros: macros_1.default };
+const pspicture_1 = __importDefault(require("./components/pspicture"));
+exports.pspicture = pspicture_1.default;
+const ELEMENTS = { nicebox: nicebox_1.default, enumerate: enumerate_1.default, verbatim: verbatim_1.default, math: math_1.default, macros: macros_1.default, pspicture: pspicture_1.default };
 class LaTeX extends Component {
     constructor(props) {
         super(props);

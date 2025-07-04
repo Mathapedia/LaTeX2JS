@@ -78,10 +78,6 @@ function MathJaxProvider({ children, config, loadingComponent, className = "" })
     if (!React) {
         throw new Error('React is required to use MathJaxProvider. Please ensure React is installed and available.');
     }
-    if (typeof window === 'undefined') {
-        return loadingComponent || null;
-    }
-    const [isClient, setIsClient] = useState(false);
     const [mathJaxLoaded, setMathJaxLoaded] = useState(false);
     const finalConfig = {
         ...DEFAULT_CONFIG,
@@ -94,14 +90,15 @@ function MathJaxProvider({ children, config, loadingComponent, className = "" })
         chtml: { ...DEFAULT_CONFIG.chtml, ...config?.chtml }
     };
     useEffect(() => {
-        setIsClient(true);
-        if (getMathJax()) {
-            setMathJaxLoaded(true);
-        }
-        else {
-            loadMathJax(() => {
+        if (typeof window !== 'undefined') {
+            if (getMathJax()) {
                 setMathJaxLoaded(true);
-            }, finalConfig);
+            }
+            else {
+                loadMathJax(() => {
+                    setMathJaxLoaded(true);
+                }, finalConfig);
+            }
         }
     }, []);
     useEffect(() => {
@@ -114,9 +111,6 @@ function MathJaxProvider({ children, config, loadingComponent, className = "" })
             }
         }
     }, [mathJaxLoaded]);
-    if (!isClient) {
-        return loadingComponent || React.createElement('div', { className }, 'Loading...');
-    }
     return React.createElement('div', { className }, mathJaxLoaded ? children : (loadingComponent || React.createElement('div', null, 'Loading MathJax...')));
 }
 exports.default = MathJaxProvider;
