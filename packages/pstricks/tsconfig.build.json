@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./main",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "module": "commonjs",
+    "target": "es2017",
+    "moduleResolution": "node",
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": false,
+    "importHelpers": false,
+    "allowImportingTsExtensions": false,
+    "noResolve": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "main", "module"]
+}

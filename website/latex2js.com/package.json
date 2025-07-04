@@ -3,7 +3,7 @@
   "version": "2.1.2",
   "private": true,
   "scripts": {
-    "build": "cp ../../packages/latex2js/latex2js.css ./assets/css/ && cp ../../packages/latex2html5/latex2html5.bundle.js ./assets/js/",
+    "build": "cp ../../packages/latex2js/latex2js.css ./assets/css/ && cp ../../packages/html5/latex2html5.bundle.js ./assets/js/",
     "copy": "rm -rf static && mkdir -p static && cp -r assets static/ && cp -r examples static/ && cp -r installation static/ && cp -r index.html static/",
     "examples": "node bin/examples",
     "upload": "aws s3 sync static/ s3://latex2js.com",

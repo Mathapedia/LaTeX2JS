@@ -1,0 +1,45 @@
+{
+  "name": "mathjaxjs",
+  "version": "2.1.0",
+  "description": "Pure HTML5 MathJax loading utilities without React dependencies",
+  "author": "Dan Lynch <pyramation@gmail.com>",
+  "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/mathjaxjs#readme",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "index.js",
+  "module": "esm/index.js",
+  "types": "index.d.ts",
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pyramation/latex2js"
+  },
+  "keywords": [
+    "latex",
+    "mathjax",
+    "html5",
+    "javascript"
+  ],
+  "scripts": {
+    "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
+    "clean": "rimraf dist",
+    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
+    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
+    "type-check": "tsc --noEmit"
+  },
+  "bugs": {
+    "url": "https://github.com/pyramation/latex2js/issues"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "typescript": "^5.2.0",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.5"
+  },
+  "dependencies": {}
+}
