@@ -6,7 +6,42 @@ import * as React from 'react';
 const { Component, createElement } = React;
 
 import { getMathJax, loadMathJax } from '@latex2js/mathjax';
-import LaTeX2HTML5 from 'latex2js';
+// import LaTeX2HTML5 from 'latex2js'; // Temporarily disabled due to text.js import issue
+
+const TestSVGComponent = () => {
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  
+  React.useEffect(() => {
+    if (svgRef.current) {
+      const { select } = require('@latex2js/utils');
+      const svg = select(svgRef.current);
+      
+      svg.selectAll('*').remove();
+      
+      svg.append('svg:line')
+        .attr('x1', 10)
+        .attr('y1', 10)
+        .attr('x2', 100)
+        .attr('y2', 100)
+        .style('stroke', 'blue')
+        .style('stroke-width', 2);
+        
+      svg.append('svg:circle')
+        .attr('cx', 50)
+        .attr('cy', 50)
+        .attr('r', 20)
+        .style('fill', 'red')
+        .style('stroke', 'black');
+        
+      console.log('SVG utility test completed');
+    }
+  }, []);
+  
+  return (
+    <svg ref={svgRef} width="200" height="200" style={{ border: '1px solid #ccc' }}>
+    </svg>
+  );
+};
 
 import nicebox from '../components/nicebox';
 import enumerate from '../components/enumerate';
@@ -25,85 +60,67 @@ interface LaTeXState {
   mathJaxLoaded: boolean;
 }
 
-class LaTeX extends Component<LaTeXProps, LaTeXState> {
-  private containerRef = React.createRef<HTMLDivElement>();
+const LaTeXComponent: React.FC<LaTeXProps> = ({ content }) => {
+  const [parsedElements, setParsedElements] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  constructor(props: LaTeXProps) {
-    super(props);
-    this.state = {
-      mathJaxLoaded: false
+  React.useEffect(() => {
+    const parseContent = async () => {
+      try {
+        const { default: LaTeX2JS } = await import('latex2js');
+        const parser = new LaTeX2JS();
+        
+        const parsed = parser.parse(content);
+        console.log('Parsed LaTeX content:', parsed);
+        
+        setParsedElements(parsed || []);
+      } catch (error) {
+        console.error('Error parsing LaTeX content:', error);
+        setParsedElements([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    this.onLoad = this.onLoad.bind(this);
+
+    parseContent();
+  }, [content]);
+
+  if (isLoading) {
+    return <div>Loading LaTeX graphics...</div>;
   }
 
-  componentDidMount() {
-    if (getMathJax()) {
-      this.onLoad();
-    } else {
-      loadMathJax(this.onLoad);
-    }
+  if (!parsedElements.length) {
+    return <div>No LaTeX elements to render</div>;
   }
 
-  componentDidUpdate(prevProps: LaTeXProps) {
-    if (prevProps.content !== this.props.content && this.state.mathJaxLoaded) {
-      this.typesetMath();
-    }
-  }
-
-  onLoad() {
-    this.setState({
-      mathJaxLoaded: true
-    }, () => {
-      this.typesetMath();
-    });
-  }
-
-  typesetMath = () => {
-    const mathJax = getMathJax();
-    if (mathJax && mathJax.typesetPromise && this.containerRef.current) {
-      mathJax.typesetPromise([this.containerRef.current]).catch((err: any) => {
-        console.error('MathJax typesetting failed:', err);
-      });
-    }
-  };
-
-  render() {
-    if (!this.state.mathJaxLoaded) {
-      return <div className="latex-container">Loading...</div>;
-    }
-
-    const latex = new LaTeX2HTML5();
-    const parsed = latex.parse(this.props.content);
-
-    console.log('Parsed LaTeX elements:', parsed);
-    if (parsed && parsed.length > 0) {
-      console.log('All element types:', parsed.map((el: any) => el.type));
-      parsed.forEach((el: any, index: number) => {
-        console.log(`Element ${index}:`, el.type, Object.keys(el));
-        if (el.type === 'pspicture') {
-          console.log('Pspicture element details:', el);
-          console.log('Pspicture env:', el.env);
-          console.log('Pspicture settings:', el.settings);
-          console.log('Pspicture plot:', el.plot);
+  return (
+    <div>
+      {parsedElements.map((element, index) => {
+        const Component = ELEMENTS[element.type as keyof typeof ELEMENTS];
+        if (!Component) {
+          console.warn(`Unknown element type: ${element.type}`);
+          return <div key={index}>Unknown element: {element.type}</div>;
         }
-      });
-    }
+        return React.createElement(Component, { key: index, ...element });
+      })}
+    </div>
+  );
+};
 
-    const children: React.ReactElement[] = [];
-
-    parsed &&
-      parsed.forEach &&
-      parsed.forEach((el: any) => {
-        if (ELEMENTS.hasOwnProperty(el.type)) {
-          const elementType = el.type as keyof typeof ELEMENTS;
-          const Component = ELEMENTS[elementType];
-          children.push(createElement(Component as any, { ...el, key: children.length }));
-        }
-      });
-
-    return <div className="latex-container" ref={this.containerRef}>{children}</div>;
-  }
-}
+const SVGUtilityTest = () => {
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-4">SVG Utility Test</h2>
+      <p className="mb-4">Testing custom D3-like SVG utility with chaining syntax:</p>
+      <TestSVGComponent />
+      <div className="mt-4 text-sm text-gray-600">
+        <p>• Blue line from (10,10) to (100,100)</p>
+        <p>• Red circle at (50,50) with radius 20</p>
+        <p>• Check browser console for "SVG utility test completed" message</p>
+      </div>
+    </div>
+  );
+};
 
 export default function Home() {
 
@@ -140,10 +157,13 @@ export default function Home() {
           </div>
         </div>
 
+        <SVGUtilityTest />
+        
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Interactive LaTeX Graphics</h2>
+          <h2 className="text-2xl font-bold mb-4">LaTeX Graphics Test</h2>
+          <p className="mb-4">Testing LaTeX graphics rendering with custom SVG utility:</p>
           <div className="my-4">
-            <LaTeX content={tex} />
+            <LaTeXComponent content={tex} />
           </div>
         </div>
       </main>

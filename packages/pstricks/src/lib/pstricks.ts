@@ -404,7 +404,8 @@ export const Functions = {
         var expx1 = 'var x = ' + nx1 + ';';
         var expy1 = 'var y = ' + ny1 + ';';
         try {
-          const evalFunc = new Function('', expression + expy1 + expx1 + 'return ' + xExp);
+          const cleanExp = xExp ? xExp.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
+          const evalFunc = new Function('', mathFunctions + expression + expy1 + expx1 + 'return ' + cleanExp);
           return X.call(this, evalFunc());
         } catch (err) {
           console.warn('Error evaluating userx expression:', err);
@@ -417,7 +418,8 @@ export const Functions = {
         var expx2 = 'var x = ' + nx2 + ';';
         var expy2 = 'var y = ' + ny2 + ';';
         try {
-          const evalFunc = new Function('', expression + expy2 + expx2 + 'return ' + yExp);
+          const cleanExp = yExp ? yExp.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
+          const evalFunc = new Function('', mathFunctions + expression + expy2 + expx2 + 'return ' + cleanExp);
           return Y.call(this, evalFunc());
         } catch (err) {
           console.warn('Error evaluating usery expression:', err);
@@ -430,7 +432,8 @@ export const Functions = {
         var expx3 = 'var x = ' + nx3 + ';';
         var expy3 = 'var y = ' + ny3 + ';';
         try {
-          const evalFunc = new Function('', expression + expy3 + expx3 + 'return ' + xExp2);
+          const cleanExp = xExp2 ? xExp2.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
+          const evalFunc = new Function('', mathFunctions + expression + expy3 + expx3 + 'return ' + cleanExp);
           return X.call(this, evalFunc());
         } catch (err) {
           console.warn('Error evaluating userx2 expression:', err);
@@ -443,7 +446,8 @@ export const Functions = {
         var expx4 = 'var x = ' + nx4 + ';';
         var expy4 = 'var y = ' + ny4 + ';';
         try {
-          const evalFunc = new Function('', expression + expy4 + expx4 + 'return ' + yExp2);
+          const cleanExp = yExp2 ? yExp2.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
+          const evalFunc = new Function('', mathFunctions + expression + expy4 + expx4 + 'return ' + cleanExp);
           return Y.call(this, evalFunc());
         } catch (err) {
           console.warn('Error evaluating usery2 expression:', err);
