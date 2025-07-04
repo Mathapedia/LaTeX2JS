@@ -101,7 +101,7 @@ const LaTeXComponent: React.FC<LaTeXProps> = ({ content }) => {
           console.warn(`Unknown element type: ${element.type}`);
           return <div key={index}>Unknown element: {element.type}</div>;
         }
-        return React.createElement(Component, { key: index, ...element });
+        return React.createElement(Component as any, { key: index, ...element });
       })}
     </div>
   );
