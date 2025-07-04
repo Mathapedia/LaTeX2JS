@@ -62,6 +62,12 @@ importers:
       '@latex2js/mathjax':
         specifier: workspace:^
         version: link:../../packages/mathjax/dist
+      '@latex2js/mathjax-react':
+        specifier: workspace:*
+        version: link:../../packages/mathjax-react/dist
+      '@latex2js/mathjaxjs':
+        specifier: workspace:*
+        version: link:../../packages/mathjaxjs/dist
       '@latex2js/pstricks':
         specifier: workspace:*
         version: link:../../packages/pstricks/dist
@@ -148,9 +154,9 @@ importers:
       '@latex2js/macros':
         specifier: workspace:*
         version: link:../macros/dist
-      '@latex2js/mathjax':
+      '@latex2js/mathjaxjs':
         specifier: workspace:*
-        version: link:../mathjax/dist
+        version: link:../mathjaxjs/dist
       '@latex2js/pstricks':
         specifier: workspace:*
         version: link:../pstricks/dist
@@ -279,6 +285,45 @@ importers:
         version: 5.8.3
     publishDirectory: dist
 
+  packages/mathjax-react:
+    dependencies:
+      '@latex2js/mathjaxjs':
+        specifier: workspace:*
+        version: link:../mathjaxjs/dist
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.0
+        version: 18.3.23
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.2.0
+        version: 5.8.3
+    publishDirectory: dist
+
+  packages/mathjaxjs:
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.0
+        version: 29.5.14
+      copyfiles:
+        specifier: ^2.4.1
+        version: 2.4.1
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.2.0
+        version: 5.8.3
+    publishDirectory: dist
+
   packages/pstricks:
     dependencies:
       '@latex2js/settings':
@@ -319,9 +364,9 @@ importers:
       '@latex2js/macros':
         specifier: workspace:*
         version: link:../macros/dist
-      '@latex2js/mathjax':
+      '@latex2js/mathjaxjs':
         specifier: workspace:*
-        version: link:../mathjax/dist
+        version: link:../mathjaxjs/dist
       '@latex2js/pstricks':
         specifier: workspace:*
         version: link:../pstricks/dist
@@ -435,9 +480,9 @@ importers:
       '@latex2js/macros':
         specifier: workspace:*
         version: link:../macros/dist
-      '@latex2js/mathjax':
+      '@latex2js/mathjaxjs':
         specifier: workspace:*
-        version: link:../mathjax/dist
+        version: link:../mathjaxjs/dist
       '@latex2js/pstricks':
         specifier: workspace:*
         version: link:../pstricks/dist
@@ -7177,6 +7222,10 @@ packages:
 
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
+
+  react@18.3.1:
+    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
+    engines: {node: '>=0.10.0'}
 
   react@19.1.0:
     resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
@@ -16914,6 +16963,10 @@ snapshots:
   react-is@16.13.1: {}
 
   react-is@18.3.1: {}
+
+  react@18.3.1:
+    dependencies:
+      loose-envify: 1.4.0
 
   react@19.1.0: {}
 
