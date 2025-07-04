@@ -4,7 +4,7 @@ DIR=$(pwd)
 
 yarn build
 
-cd packages/latex2html5
+cd packages/html5
 yarn bundle
 cd $DIR
 

@@ -5,20 +5,12 @@
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/latex2js#readme",
   "license": "SEE LICENSE IN LICENSE",
-  "main": "main/index.js",
-  "module": "module/index.js",
-  "directories": {
-    "lib": "src",
-    "test": "__tests__"
-  },
-  "files": [
-    "main",
-    "module",
-    "latex2js.css",
-    "latex2js.mathapedia.css"
-  ],
+  "main": "index.js",
+  "module": "esm/index.js",
+  "types": "index.d.ts",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "dist"
   },
   "repository": {
     "type": "git",
@@ -37,48 +29,29 @@
     "math diagrams"
   ],
   "scripts": {
-    "build:main": "BABEL_ENV=production babel src --out-dir main --delete-dir-on-start",
-    "build:module": "MODULE=true babel src --out-dir module --delete-dir-on-start",
-    "build": "npm run build:module && npm run build:main && npm run cp-styles",
-    "cp-styles": "cp src/lib/*.css main/lib/ && cp src/lib/*.css module/lib/",
-    "prepare": "npm run build",
-    "lint": "npm run lint:js && npm run lint:style",
-    "lint:js": "eslint src --ext .js",
-    "lint:fix": "eslint src --fix",
-    "lint:style": "stylelint 'src/**/*.js'",
+    "copy": "copyfiles -f ../../LICENSE README.md package.json latex2js.css latex2js.mathapedia.css dist",
+    "clean": "rimraf dist",
+    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
+    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:debug": "node --inspect node_modules/.bin/jest --runInBand"
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
+    "type-check": "tsc --noEmit"
   },
   "bugs": {
     "url": "https://github.com/pyramation/latex2js/issues"
   },
   "devDependencies": {
-    "@babel/cli": "7.10.1",
-    "@babel/core": "7.10.2",
-    "@babel/plugin-proposal-class-properties": "7.10.1",
-    "@babel/plugin-proposal-export-default-from": "7.10.1",
-    "@babel/plugin-proposal-object-rest-spread": "7.10.1",
-    "@babel/plugin-transform-runtime": "7.10.1",
-    "@babel/preset-env": "7.10.2",
-    "@babel/preset-react": "7.10.1",
-    "babel-core": "7.0.0-bridge.0",
-    "babel-eslint": "10.1.0",
-    "babel-plugin-macros": "2.8.0",
-    "eslint": "^7.2.0",
-    "eslint-config-prettier": "^6.10.0",
-    "eslint-config-react-app": "5.2.1",
-    "eslint-plugin-prettier": "^3.1.2",
-    "eslint-plugin-react": "^7.18.3",
-    "eslint-plugin-react-hooks": "4.0.4",
-    "jest": "^25.1.0",
-    "prettier": "^2.0.5",
-    "regenerator-runtime": "^0.13.5"
+    "@types/jest": "^29.5.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.2.0",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.5"
   },
   "dependencies": {
-    "@babel/runtime": "^7.4.2",
-    "latex2js-pstricks": "^2.1.2",
-    "latex2js-settings": "^2.1.2",
-    "latex2js-utils": "^2.1.0"
+    "@latex2js/pstricks": "workspace:*",
+    "@latex2js/settings": "workspace:*",
+    "@latex2js/utils": "workspace:*"
   }
 }

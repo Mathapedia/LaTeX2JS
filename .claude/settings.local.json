@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(/usr/bin/npm run dev)",
+      "Bash(/Users/pyramation/.n/bin/npm run dev)",
+      "Bash(pnpm run:*)",
+      "Bash(npx next:*)",
+      "Bash(npx tsc:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": []
+  }
+}

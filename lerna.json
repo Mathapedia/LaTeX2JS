@@ -1,14 +1,12 @@
 {
-  "lerna": "3.4.2",
-  "useWorkspaces": true,
+  "lerna": "7.4.0",
   "conventionalCommits": true,
-  "npmClient": "yarn",
+  "npmClient": "pnpm",
   "npmClientArgs": [
-    "--no-lockfile"
+    "--no-frozen-lockfile"
   ],
   "packages": [
     "packages/*",
-    "website/*",
     "examples/*"
   ],
   "version": "independent",
@@ -23,6 +21,9 @@
       "allowBranch": "master",
       "conventionalCommits": true,
       "message": "chore(release): publish"
+    },
+    "run": {
+      "concurrency": 1
     }
   }
 }
