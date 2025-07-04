@@ -2,18 +2,46 @@
 
 import { MathJaxProvider } from '@latex2js/mathjax';
 import { tex } from './tex';
+import { useEffect, useState } from 'react';
+
+let LaTeX: any = null;
+try {
+  const reactModule = require('@latex2js/react');
+  LaTeX = reactModule.LaTeX;
+} catch (e) {
+  console.log('LaTeX component not available:', e);
+}
 
 export default function Home() {
+  const [isClient, setIsClient] = useState(false);
+  const [latexLoaded, setLatexLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    
+    if (typeof window !== 'undefined') {
+      import('@latex2js/react')
+        .then((module) => {
+          LaTeX = module.LaTeX;
+          setLatexLoaded(true);
+          console.log('LaTeX component loaded successfully:', LaTeX);
+        })
+        .catch((error) => {
+          console.error('Failed to load LaTeX component:', error);
+        });
+    }
+  }, []);
+
   return (
     <MathJaxProvider className="min-h-screen p-8">
       <header className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">MathJax Next.js Demo</h1>
+        <h1 className="text-4xl font-bold mb-4">LaTeX2JS Demo</h1>
         <p className="text-lg text-gray-600">
-          MathJax integration with reusable React component
+          MathJax equations and LaTeX graphics integration
         </p>
       </header>
 
-      <main className="max-w-4xl mx-auto space-y-6">
+      <main className="max-w-6xl mx-auto space-y-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-bold mb-4">Basic Mathematics</h2>
           <p>When $a \ne 0$, there are two solutions to $ax^2 + bx + c = 0$:</p>
@@ -38,9 +66,14 @@ export default function Home() {
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Series and Summations</h2>
-          <div className="text-center my-4">
-            $${tex}$$
+          <h2 className="text-2xl font-bold mb-4">Interactive LaTeX Graphics</h2>
+          <div className="my-4">
+            <div>
+              <p className="text-gray-600">LaTeX graphics rendering will be implemented here.</p>
+              <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">
+                {tex.substring(0, 500)}...
+              </pre>
+            </div>
           </div>
         </div>
       </main>
