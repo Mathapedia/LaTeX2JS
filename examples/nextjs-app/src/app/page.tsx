@@ -1,23 +1,21 @@
 'use client';
 
-import { MathJaxProvider } from '@latex2js/mathjax-react';
+import { MathJaxProvider } from 'mathjaxjs-react';
+import { LaTeX } from '@latex2js/react';
+
 import { tex } from './tex';
 import * as React from 'react';
-const { Component, createElement } = React;
-
-import { getMathJax, loadMathJax } from 'mathjaxjs';
-// import LaTeX2HTML5 from 'latex2js'; // Temporarily disabled due to text.js import issue
 
 const TestSVGComponent = () => {
   const svgRef = React.useRef<SVGSVGElement>(null);
-  
+
   React.useEffect(() => {
     if (svgRef.current) {
       const { select } = require('@latex2js/utils');
       const svg = select(svgRef.current);
-      
+
       svg.selectAll('*').remove();
-      
+
       svg.append('svg:line')
         .attr('x1', 10)
         .attr('y1', 10)
@@ -25,80 +23,21 @@ const TestSVGComponent = () => {
         .attr('y2', 100)
         .style('stroke', 'blue')
         .style('stroke-width', 2);
-        
+
       svg.append('svg:circle')
         .attr('cx', 50)
         .attr('cy', 50)
         .attr('r', 20)
         .style('fill', 'red')
         .style('stroke', 'black');
-        
+
       console.log('SVG utility test completed');
     }
   }, []);
-  
+
   return (
     <svg ref={svgRef} width="200" height="200" style={{ border: '1px solid #ccc' }}>
     </svg>
-  );
-};
-
-import { nicebox, enumerate, verbatim, math, macros, pspicture, slider } from '@latex2js/react';
-
-const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture, slider };
-
-interface LaTeXProps {
-  content: string;
-}
-
-interface LaTeXState {
-  mathJaxLoaded: boolean;
-}
-
-const LaTeXComponent: React.FC<LaTeXProps> = ({ content }) => {
-  const [parsedElements, setParsedElements] = React.useState<any[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    const parseContent = async () => {
-      try {
-        const { default: LaTeX2JS } = await import('latex2js');
-        const parser = new LaTeX2JS();
-        
-        const parsed = parser.parse(content);
-        console.log('Parsed LaTeX content:', parsed);
-        
-        setParsedElements(parsed || []);
-      } catch (error) {
-        console.error('Error parsing LaTeX content:', error);
-        setParsedElements([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    parseContent();
-  }, [content]);
-
-  if (isLoading) {
-    return <div>Loading LaTeX graphics...</div>;
-  }
-
-  if (!parsedElements.length) {
-    return <div>No LaTeX elements to render</div>;
-  }
-
-  return (
-    <div>
-      {parsedElements.map((element, index) => {
-        const Component = ELEMENTS[element.type as keyof typeof ELEMENTS];
-        if (!Component) {
-          console.warn(`Unknown element type: ${element.type}`);
-          return <div key={index}>Unknown element: {element.type}</div>;
-        }
-        return React.createElement(Component as any, { key: index, ...element });
-      })}
-    </div>
   );
 };
 
@@ -153,12 +92,12 @@ export default function Home() {
         </div>
 
         <SVGUtilityTest />
-        
+
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-bold mb-4">LaTeX Graphics Test</h2>
           <p className="mb-4">Testing LaTeX graphics rendering with custom SVG utility:</p>
           <div className="my-4">
-            <LaTeXComponent content={tex} />
+            <LaTeX content={tex} />
           </div>
         </div>
       </main>

@@ -9,15 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@latex2js/pstricks": "workspace:*",
     "@latex2js/react": "workspace:*",
-    "mathjaxjs": "workspace:*",
-    "@latex2js/mathjax-react": "workspace:*",
-    "@latex2js/settings": "workspace:*",
-    "@latex2js/utils": "workspace:*",
-    "@types/d3": "^7.4.0",
-    "d3": "^7.9.0",
-    "latex2js": "workspace:*",
+    "mathjaxjs-react": "workspace:*",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
