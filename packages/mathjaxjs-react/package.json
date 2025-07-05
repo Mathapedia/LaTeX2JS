@@ -1,6 +1,6 @@
 {
   "name": "mathjaxjs-react",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "React-specific MathJax provider component",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",

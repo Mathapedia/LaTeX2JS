@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/react",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Author interactive math equations and diagrams online using LaTeX and PSTricks",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
