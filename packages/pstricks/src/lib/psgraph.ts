@@ -1,4 +1,4 @@
-import { select, Y } from '@latex2js/utils';
+import { Y } from '@latex2js/utils';
 
 function arrow(x1: number, y1: number, x2: number, y2: number) {
   var t = Math.PI / 6;
@@ -513,62 +513,62 @@ const psgraph: any = {
       svg.selectAll('.userline').remove();
       svg.selectAll('.psplot').remove();
       var currentEnvironment: { [key: string]: any } = {};
-      
+
       Object.entries(plots || {})
-      .forEach(([k, plot]: [string, any]) => {
-        if (k.match(/uservariable/)) {
-          plot.forEach((data: any) => {
-            data.env.userx = coords[0];
-            data.env.usery = coords[1];
-            var dd = data.fn.call(data.env, data.match);
-            currentEnvironment[data.data.name] = dd.value;
-          });
-        }
-      });
-      
-      Object.entries(plots || {})
-      .forEach(([k, plot]: [string, any]) => {
-        if (k.match(/psplot/)) {
-          plot.forEach((data: any) => {
-            Object.entries(currentEnvironment || {})
-            .forEach(([name, variable]: [string, any]) => {
-              data.env.variables[name] = variable;
+        .forEach(([k, plot]: [string, any]) => {
+          if (k.match(/uservariable/)) {
+            plot.forEach((data: any) => {
+              data.env.userx = coords[0];
+              data.env.usery = coords[1];
+              var dd = data.fn.call(data.env, data.match);
+              currentEnvironment[data.data.name] = dd.value;
             });
-            var d = data.fn.call(data.env, data.match);
-            d.global = {};
-            Object.assign(d.global, env);
-            psgraph[k].call(d, svg);            
-          });
-        }
-        if (k.match(/userline/)) {
-          plot.forEach((data: any) => {
-            var d = data.fn.call(data.env, data.match);
-            data.env.x2 = coords[0];
-            data.env.y2 = coords[1];
-            data.data.x2 = data.env.x2;
-            data.data.y2 = data.env.y2;
-            
-            if (data.data.xExp2) {
-              data.data.x2 = d.userx2(coords);
-              data.data.x1 = d.userx(coords);
-            } else if (data.data.xExp) {
-              data.data.x2 = d.userx(coords);
-            }
-            
-            if (data.data.yExp2) {
-              data.data.y2 = d.usery2(coords);
-              data.data.y1 = d.usery(coords);
-            } else if (data.data.yExp) {
-              data.data.y2 = d.usery(coords);
-            }
-            
-            d.global = {};
-            Object.assign(d.global, env);
-            Object.assign(d, data.data);
-            psgraph[k].call(d, svg);            
-          });
-        }
-      });
+          }
+        });
+
+      Object.entries(plots || {})
+        .forEach(([k, plot]: [string, any]) => {
+          if (k.match(/psplot/)) {
+            plot.forEach((data: any) => {
+              Object.entries(currentEnvironment || {})
+                .forEach(([name, variable]: [string, any]) => {
+                  data.env.variables[name] = variable;
+                });
+              var d = data.fn.call(data.env, data.match);
+              d.global = {};
+              Object.assign(d.global, env);
+              psgraph[k].call(d, svg);
+            });
+          }
+          if (k.match(/userline/)) {
+            plot.forEach((data: any) => {
+              var d = data.fn.call(data.env, data.match);
+              data.env.x2 = coords[0];
+              data.env.y2 = coords[1];
+              data.data.x2 = data.env.x2;
+              data.data.y2 = data.env.y2;
+
+              if (data.data.xExp2) {
+                data.data.x2 = d.userx2(coords);
+                data.data.x1 = d.userx(coords);
+              } else if (data.data.xExp) {
+                data.data.x2 = d.userx(coords);
+              }
+
+              if (data.data.yExp2) {
+                data.data.y2 = d.usery2(coords);
+                data.data.y1 = d.usery(coords);
+              } else if (data.data.yExp) {
+                data.data.y2 = d.usery(coords);
+              }
+
+              d.global = {};
+              Object.assign(d.global, env);
+              Object.assign(d, data.data);
+              psgraph[k].call(d, svg);
+            });
+          }
+        });
     }
 
     this.plot.rput.forEach((rput: any) => {
