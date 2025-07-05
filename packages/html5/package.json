@@ -19,8 +19,8 @@
   "scripts": {
     "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
     "clean": "rimraf dist",
-    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
-    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
+    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run bundle",
+    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run bundle",
     "bundle": "browserify dist/index.js --s LaTeX2HTML5 -o dist/latex2html5.bundle.js",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -35,5 +35,8 @@
     "@latex2js/utils": "workspace:*",
     "latex2js": "workspace:*",
     "mathjaxjs": "workspace:*"
+  },
+  "devDependencies": {
+    "browserify": "^17.0.0"
   }
 }
