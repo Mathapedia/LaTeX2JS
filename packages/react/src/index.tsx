@@ -9,7 +9,9 @@ import math from './components/math';
 import macros from './components/macros';
 import pspicture from './components/pspicture';
 import slider from './components/slider';
-import MathJaxProvider from './components/MathJaxProvider';
+
+import { getMathJax, loadMathJax } from 'mathjaxjs';
+import { MathJaxProvider } from 'mathjaxjs-react';
 
 const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture, slider };
 
@@ -31,11 +33,14 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
     this.state = {
       mathJaxLoaded: false
     };
-    this.onLoad = this.onLoad.bind(this);
   }
 
   componentDidMount() {
-    this.onLoad();
+    loadMathJax(() => {
+      this.setState({ mathJaxLoaded: true }, () => {
+        this.typesetMath();
+      });
+    });
   }
 
   componentDidUpdate(prevProps: LaTeXProps) {
@@ -44,17 +49,10 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
     }
   }
 
-  onLoad() {
-    this.setState({
-      mathJaxLoaded: true
-    }, () => {
-      this.typesetMath();
-    });
-  }
-
   typesetMath = () => {
-    if (window.MathJax && window.MathJax.typesetPromise && this.containerRef.current) {
-      window.MathJax.typesetPromise([this.containerRef.current]).catch((err: any) => {
+    const mathJax = getMathJax();
+    if (mathJax && mathJax.typesetPromise && this.containerRef.current) {
+      mathJax.typesetPromise([this.containerRef.current]).catch((err: any) => {
         console.error('MathJax typesetting failed:', err);
       });
     }
