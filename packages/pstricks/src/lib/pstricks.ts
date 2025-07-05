@@ -17,45 +17,45 @@ export const Expressions = {
   psplot: /\\psplot(\[[^\]]*\])?\{([^\}]*)\}\{([^\}]*)\}\{([^\}]*)\}/,
   psarc: new RegExp(
     '\\\\psarc' +
-      RE.options +
-      RE.type +
-      RE.coords +
-      RE.squiggle +
-      RE.squiggle +
-      RE.squiggle
+    RE.options +
+    RE.type +
+    RE.coords +
+    RE.squiggle +
+    RE.squiggle +
+    RE.squiggle
   ),
   pscircle: /\\pscircle.*\(\s*(.*),(.*)\s*\)\{(.*)\}/,
   pspolygon: new RegExp('\\\\pspolygon' + RE.options + '(.*)'),
   psaxes: new RegExp(
     '\\\\psaxes' +
-      RE.options +
-      RE.type +
-      RE.coords +
-      RE.coordsOpt +
-      RE.coordsOpt
+    RE.options +
+    RE.type +
+    RE.coords +
+    RE.coordsOpt +
+    RE.coordsOpt
   ),
   slider: new RegExp(
     '\\\\slider' +
-      RE.options +
-      RE.squiggle +
-      RE.squiggle +
-      RE.squiggle +
-      RE.squiggle +
-      RE.squiggle
+    RE.options +
+    RE.squiggle +
+    RE.squiggle +
+    RE.squiggle +
+    RE.squiggle +
+    RE.squiggle
   ),
   psline: new RegExp(
     '\\\\psline' + RE.options + RE.type + RE.coords + RE.coordsOpt
   ),
   userline: new RegExp(
     '\\\\userline' +
-      RE.options +
-      RE.type +
-      RE.coords +
-      RE.coords +
-      RE.squiggleOpt +
-      RE.squiggleOpt +
-      RE.squiggleOpt +
-      RE.squiggleOpt
+    RE.options +
+    RE.type +
+    RE.coords +
+    RE.coords +
+    RE.squiggleOpt +
+    RE.squiggleOpt +
+    RE.squiggleOpt +
+    RE.squiggleOpt
   ),
   uservariable: new RegExp(
     '\\\\uservariable' + RE.options + RE.squiggle + RE.coords + RE.squiggle
@@ -191,26 +191,21 @@ export const Functions = {
     Object.entries(this.variables || {}).forEach(([name, val]) => {
       expression += 'var ' + name + ' = ' + val + ';';
     });
-    
+
     const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
     expression += mathFunctions + 'return ' + m[4] + ';';
-    
-    console.log('psplot expression setup:', { expression, startX, endX, mathExpression: m[4] });
-    
+
     for (x = startX; x <= endX; x += 0.005) {
       data.push(X.call(this, x));
       try {
         const evalFunc = new Function('x', expression);
         const yValue = evalFunc(x);
-        console.log('psplot evaluation:', { x, yValue, expression: m[4] });
         if (yValue !== undefined && !isNaN(yValue)) {
           data.push(Y.call(this, yValue));
         } else {
-          console.warn('Invalid yValue:', yValue, 'for x:', x);
           data.push(Y.call(this, 0));
         }
       } catch (err) {
-        console.warn('Error evaluating expression:', err, { x, expression: m[4] });
         data.push(Y.call(this, 0)); // fallback value
       }
     }
@@ -374,7 +369,7 @@ export const Functions = {
     var xExp = m[7];
     var yExp = m[8];
     const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
-    
+
     if (xExp)
       xExp = mathFunctions + xExp.replace(/^\{/, '').replace(/\}$/, '');
     if (yExp)

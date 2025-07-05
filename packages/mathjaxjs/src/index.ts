@@ -20,7 +20,7 @@ let mathJaxInstance: any = null;
 
 export const getMathJax = () => mathJaxInstance || (globalThis as any).MathJax;
 
-export const loadMathJax = async (callback = () => {}, config = DEFAULT_CONFIG) => {
+export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG) => {
   if (typeof window === 'undefined') {
     callback();
     return;
@@ -40,7 +40,6 @@ export const loadMathJax = async (callback = () => {}, config = DEFAULT_CONFIG) 
         ready: () => {
           (globalThis as any).MathJax.startup.defaultReady();
           mathJaxInstance = (globalThis as any).MathJax;
-          console.log('MathJax v3 loaded and initialized successfully');
           if (config.startup?.ready) {
             config.startup.ready();
           }
@@ -60,9 +59,9 @@ export const loadMathJax = async (callback = () => {}, config = DEFAULT_CONFIG) 
       console.error('Failed to load MathJax v3 from CDN');
       callback();
     };
-    
+
     document.head.appendChild(script);
-    
+
   } catch (error) {
     console.error('Failed to load MathJax v3:', error);
     callback();

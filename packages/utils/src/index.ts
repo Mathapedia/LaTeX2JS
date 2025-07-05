@@ -105,7 +105,6 @@ export const evaluate = function (this: any, exp: string) {
 };
 
 export const X = function (this: any, v: number | string) {
-  console.log('X function called with:', { v, w: this.w, x1: this.x1, xunit: this.xunit });
   if (isNaN(this.w) || isNaN(this.x1) || isNaN(this.xunit)) {
     console.warn('X function: NaN detected in context properties', { w: this.w, x1: this.x1, xunit: this.xunit });
     return 0;
@@ -118,7 +117,6 @@ export const Xinv = function (this: any, v: number | string) {
 };
 
 export const Y = function (this: any, v: number | string) {
-  console.log('Y function called with:', { v, y1: this.y1, yunit: this.yunit });
   if (isNaN(this.y1) || isNaN(this.yunit)) {
     console.warn('Y function: NaN detected in context properties', { y1: this.y1, yunit: this.yunit });
     return 0;
