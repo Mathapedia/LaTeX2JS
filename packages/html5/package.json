@@ -30,11 +30,11 @@
     "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
-    "@latex2js/macros": "workspace:*",
-    "@latex2js/pstricks": "workspace:*",
-    "@latex2js/utils": "workspace:*",
-    "latex2js": "workspace:*",
-    "mathjaxjs": "workspace:*"
+    "@latex2js/macros": "workspace:^",
+    "@latex2js/pstricks": "workspace:^",
+    "@latex2js/utils": "workspace:^",
+    "latex2js": "workspace:^",
+    "mathjaxjs": "workspace:^"
   },
   "devDependencies": {
     "browserify": "^17.0.0"

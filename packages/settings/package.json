@@ -29,6 +29,6 @@
     "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
-    "@latex2js/utils": "workspace:*"
+    "@latex2js/utils": "workspace:^"
   }
 }
