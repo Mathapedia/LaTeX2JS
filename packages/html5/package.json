@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/html5",
-  "version": "2.1.3",
+  "version": "3.0.0",
   "description": "Author interactive math equations and diagrams online using LaTeX and PSTricks",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/html5#readme",
@@ -30,9 +30,9 @@
     "url": "https://github.com/pyramation/latex2js/issues"
   },
   "dependencies": {
-    "mathjaxjs": "workspace:*",
-    "latex2js": "workspace:*",
+    "@latex2js/macros": "workspace:*",
     "@latex2js/pstricks": "workspace:*",
-    "@latex2js/macros": "workspace:*"
+    "latex2js": "workspace:*",
+    "mathjaxjs": "workspace:*"
   }
 }

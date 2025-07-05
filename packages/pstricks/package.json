@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/pstricks",
-  "version": "2.1.2",
+  "version": "3.0.0",
   "description": "PSTricks extension for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/pstricks#readme",

@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/vue",
-  "version": "2.2.2",
+  "version": "3.0.0",
   "description": "Vue components for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/vue#readme",
@@ -42,11 +42,11 @@
     "vue-tsc": "^1.8.0"
   },
   "dependencies": {
-    "vue": "^3.3.0",
-    "mathjaxjs": "workspace:*",
-    "latex2js": "workspace:*",
+    "@latex2js/macros": "workspace:*",
     "@latex2js/pstricks": "workspace:*",
-    "@latex2js/macros": "workspace:*"
+    "latex2js": "workspace:*",
+    "mathjaxjs": "workspace:*",
+    "vue": "^3.3.0"
   },
   "peerDependencies": {
     "vue": ">=3.0.0"

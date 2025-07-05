@@ -1,6 +1,6 @@
 {
   "name": "nuxt-app",
-  "version": "2.2.2",
+  "version": "3.0.0",
   "description": "Nuxt.js project",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "private": true,
@@ -13,8 +13,8 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@nuxt/devtools": "latest",
     "@latex2js/vue": "workspace:*",
+    "@nuxt/devtools": "latest",
     "nuxt": "^3.8.0",
     "vue": "^3.3.0",
     "vue-router": "^4.2.0"

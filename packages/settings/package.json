@@ -1,34 +1,34 @@
 {
-    "name": "@latex2js/settings",
-    "version": "2.1.2",
-    "description": "latex2js settings",
-    "author": "Dan Lynch <pyramation@gmail.com>",
-    "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/settings#readme",
-    "license": "SEE LICENSE IN LICENSE",
-    "main": "index.js",
-    "module": "esm/index.js",
-    "types": "index.d.ts",
-    "publishConfig": {
-        "access": "public",
-        "directory": "dist"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/pyramation/latex2js"
-    },
-    "scripts": {
-        "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
-        "clean": "rimraf dist",
-        "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
-        "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
-        "test": "jest",
-        "test:watch": "jest --watch",
-        "test:debug": "node --inspect node_modules/.bin/jest --runInBand"
-    },
-    "bugs": {
-        "url": "https://github.com/pyramation/latex2js/issues"
-    },
-    "dependencies": {
-        "@latex2js/utils": "workspace:*"
-    }
+  "name": "@latex2js/settings",
+  "version": "3.0.0",
+  "description": "latex2js settings",
+  "author": "Dan Lynch <pyramation@gmail.com>",
+  "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/settings#readme",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "index.js",
+  "module": "esm/index.js",
+  "types": "index.d.ts",
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pyramation/latex2js"
+  },
+  "scripts": {
+    "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
+    "clean": "rimraf dist",
+    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
+    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand"
+  },
+  "bugs": {
+    "url": "https://github.com/pyramation/latex2js/issues"
+  },
+  "dependencies": {
+    "@latex2js/utils": "workspace:*"
+  }
 }
