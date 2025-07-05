@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/settings",
-  "version": "3.0.9",
+  "version": "3.0.10",
   "description": "latex2js settings",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
@@ -29,6 +29,6 @@
     "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
-    "@latex2js/utils": "^3.0.7"
+    "@latex2js/utils": "workspace:*"
   }
 }

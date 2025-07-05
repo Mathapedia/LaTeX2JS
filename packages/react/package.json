@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/react",
-  "version": "3.0.9",
+  "version": "3.0.10",
   "description": "Author interactive math equations and diagrams online using LaTeX and PSTricks",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
@@ -42,12 +42,12 @@
     "@types/react-dom": "^18.2.0"
   },
   "dependencies": {
-    "@latex2js/macros": "^3.0.7",
-    "@latex2js/pstricks": "^3.0.9",
-    "@latex2js/utils": "^3.0.7",
-    "latex2js": "^3.0.9",
-    "mathjaxjs": "^3.0.7",
-    "mathjaxjs-react": "^3.0.9",
+    "@latex2js/macros": "workspace:*",
+    "@latex2js/pstricks": "workspace:*",
+    "@latex2js/utils": "workspace:*",
+    "latex2js": "workspace:*",
+    "mathjaxjs": "workspace:*",
+    "mathjaxjs-react": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

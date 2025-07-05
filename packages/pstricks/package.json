@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/pstricks",
-  "version": "3.0.9",
+  "version": "3.0.10",
   "description": "PSTricks extension for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
@@ -29,7 +29,7 @@
     "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
-    "@latex2js/settings": "^3.0.9",
-    "@latex2js/utils": "^3.0.7"
+    "@latex2js/settings": "workspace:*",
+    "@latex2js/utils": "workspace:*"
   }
 }
