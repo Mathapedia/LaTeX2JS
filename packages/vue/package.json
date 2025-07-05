@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/vue",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "description": "Vue components for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
@@ -43,10 +43,10 @@
   },
   "dependencies": {
     "@latex2js/macros": "^3.0.5",
-    "@latex2js/pstricks": "^3.0.6",
+    "@latex2js/pstricks": "^3.0.7",
     "@latex2js/utils": "^3.0.5",
-    "latex2js": "^3.0.6",
-    "mathjaxjs": "^3.0.4",
+    "latex2js": "^3.0.7",
+    "mathjaxjs": "^3.0.5",
     "vue": "^3.3.0"
   },
   "peerDependencies": {
