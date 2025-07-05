@@ -1,7 +1,7 @@
 {
   "name": "@latex2js/utils",
   "version": "3.0.9",
-  "description": "latex2js utils",
+  "description": "latex2js utilities",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
   "license": "SEE LICENSE IN LICENSE",
