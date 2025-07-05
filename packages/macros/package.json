@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/macros",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "description": "latex2js macros",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",

@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/html5",
-  "version": "3.0.8",
+  "version": "3.0.9",
   "description": "Author interactive math equations and diagrams online using LaTeX and PSTricks",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
@@ -30,11 +30,11 @@
     "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
-    "@latex2js/macros": "^3.0.6",
-    "@latex2js/pstricks": "^3.0.8",
-    "@latex2js/utils": "^3.0.6",
-    "latex2js": "^3.0.8",
-    "mathjaxjs": "^3.0.6"
+    "@latex2js/macros": "^3.0.7",
+    "@latex2js/pstricks": "^3.0.9",
+    "@latex2js/utils": "^3.0.7",
+    "latex2js": "^3.0.9",
+    "mathjaxjs": "^3.0.7"
   },
   "devDependencies": {
     "browserify": "^17.0.0"

@@ -1,6 +1,6 @@
 {
   "name": "latex2js",
-  "version": "3.0.8",
+  "version": "3.0.9",
   "description": "LaTeX and PSTricks rendering & components for the Web",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
@@ -41,8 +41,8 @@
     "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
-    "@latex2js/pstricks": "^3.0.8",
-    "@latex2js/settings": "^3.0.8",
-    "@latex2js/utils": "^3.0.6"
+    "@latex2js/pstricks": "^3.0.9",
+    "@latex2js/settings": "^3.0.9",
+    "@latex2js/utils": "^3.0.7"
   }
 }
