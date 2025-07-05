@@ -1,4 +1,4 @@
-name: LaunchQL tests
+name: LaTeX2JS tests
 on:
   push:
   workflow_dispatch:
