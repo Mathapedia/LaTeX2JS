@@ -1,6 +1,6 @@
 {
   "name": "mathjaxjs-react",
-  "version": "3.0.7",
+  "version": "3.0.8",
   "description": "React-specific MathJax provider component",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
@@ -35,7 +35,7 @@
     "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
-    "mathjaxjs": "^3.0.5"
+    "mathjaxjs": "^3.0.6"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"
