@@ -1,42 +1,171 @@
-# LaTeX2HTML5
+# @latex2js/html5
 
-```sh
-yarn add latex2html5
+Pure HTML5 implementation for LaTeX rendering with automatic discovery and bundled JavaScript distribution. Perfect for vanilla HTML pages and simple integrations.
+
+## Installation
+
+### NPM Package
+
+```bash
+npm install @latex2js/html5
 ```
 
-## installation
+## Features
 
-This is for those who just want to make a simple HTML page with `LaTeX2JS`. The object provided is called `LaTeX2HTML5`:
+- **Zero Dependencies**: Works with pure HTML - no build tools required
+- **Automatic Discovery**: Finds and renders LaTeX content automatically
+- **Bundled Distribution**: Single JS file includes everything needed
+- **Interactive Graphics**: Full PSTricks support with sliders and animations
+- **Mathematical Notation**: Integrated MathJax rendering
+- **Multiple Environments**: Support for various LaTeX environments
+- **Easy Integration**: Drop-in solution for any website
 
-1. Download the JS and CSS files! You can go get the JS [https://github.com/Mathapedia/LaTeX2JS/blob/master/libs/latex2html5/latex2html5.bundle.js](here) and CSS here [https://github.com/Mathapedia/LaTeX2JS/blob/master/core/latex2js/latex2js.css](here).
+## Quick Start
 
 ```html
+<!DOCTYPE html>
 <html>
-  <head>
-    <link rel="stylesheet" href="/path/to/your/css/latex2js.css">
-    <script src="/path/to/your/js/latex2html5.bundle.js"></script>
-  </head>
-```
+<head>
+  <title>LaTeX2JS Example</title>
+  <link rel="stylesheet" href="path/to/latex2js.css">
+  <script src="path/to/latex2html5.bundle.js"></script>
+</head>
+<body>
+  <h1>Mathematical Document</h1>
+  
+  <script type="text/latex">
+  Here is some great equation:
 
-2. Then, write your \LaTeX inside of a script tag with _type_ set to `text/latex`:
+  $$x = \frac{{-b \pm \sqrt{b^2-4ac}}}{{2a}}$$
 
-```html
-  <body>
-    <script type="text/latex">
-    you can write any \LaTeX here!
-    </script>
+  And now for a great diagram:
 
-    <script type="text/latex">
-    some more ...
-    </script>
-```
+  \begin{pspicture}(0,-3)(8,3)
+  \rput(0,0){$x(t)$}
+  \rput(4,1.5){$f(t)$}
+  \rput(4,-1.5){$g(t)$}
+  \rput(8.2,0){$y(t)$}
+  \rput(1.5,-2){$h(t)$}
+  \psframe(1,-2.5)(7,2.5)
+  \psframe(3,1)(5,2)
+  \psframe(3,-1)(5,-2)
+  \rput(4,0){$X_k = \frac{1}{p} \sum \limits_{n=\langle p\rangle}x(n)e^{-ik\omega_0n}$}
+  \psline{->}(0.5,0)(1.5,0)
+  \psline{->}(1.5,1.5)(3,1.5)
+  \psline{->}(1.5,-1.5)(3,-1.5)
+  \psline{->}(6.5,1.5)(6.5,0.25)
+  \psline{->}(6.5,-1.5)(6.5,-0.25)
+  \psline{->}(6.75,0)(7.75,0)
+  \psline(1.5,-1.5)(1.5,1.5)
+  \psline(5,1.5)(6.5,1.5)
+  \psline(5,-1.5)(6.5,-1.5)
+  \psline(6,-1.5)(6.5,-1.5)
+  \pscircle(6.5,0){0.25}
+  \psline(6.25,0)(6.75,0)
+  \psline(6.5,0.5)(6.5,-0.5)
+  \end{pspicture}
+  </script>
 
-3. Lastly, towards the end of your HTML page, call the `init` method
+  <script type="text/latex">
+  \begin{nicebox}[title=Theorem]
+  For any continuous function $f$ on $[a,b]$:
+  $$\int_a^b f(x) dx = F(b) - F(a)$$
+  where $F'(x) = f(x)$.
+  \end{nicebox}
+  </script>
 
-```html
-    <script>
+  <script>
     LaTeX2HTML5.init();
-    </script>
-  </body>
+  </script>
+</body>
 </html>
+```
+
+### Method 2: `init` and `render` methods
+
+```javascript
+import { init, render } from '@latex2js/html5';
+
+// Auto-discover and render all LaTeX content
+init();
+
+// Or render specific content
+const content = `
+Here is some great equation:
+
+$$x = \frac{{-b \pm \sqrt{b^2-4ac}}}{{2a}}$$
+
+And now for a great diagram:
+
+\begin{pspicture}(0,-3)(8,3)
+\rput(0,0){$x(t)$}
+\rput(4,1.5){$f(t)$}
+\rput(4,-1.5){$g(t)$}
+\rput(8.2,0){$y(t)$}
+\rput(1.5,-2){$h(t)$}
+\psframe(1,-2.5)(7,2.5)
+\psframe(3,1)(5,2)
+\psframe(3,-1)(5,-2)
+\rput(4,0){$X_k = \frac{1}{p} \sum \limits_{n=\langle p\rangle}x(n)e^{-ik\omega_0n}$}
+\psline{->}(0.5,0)(1.5,0)
+\psline{->}(1.5,1.5)(3,1.5)
+\psline{->}(1.5,-1.5)(3,-1.5)
+\psline{->}(6.5,1.5)(6.5,0.25)
+\psline{->}(6.5,-1.5)(6.5,-0.25)
+\psline{->}(6.75,0)(7.75,0)
+\psline(1.5,-1.5)(1.5,1.5)
+\psline(5,1.5)(6.5,1.5)
+\psline(5,-1.5)(6.5,-1.5)
+\psline(6,-1.5)(6.5,-1.5)
+\pscircle(6.5,0){0.25}
+\psline(6.25,0)(6.75,0)
+\psline(6.5,0.5)(6.5,-0.5)
+\end{pspicture}
+`;
+
+render(content, document.getElementById('target'));
+```
+
+## Usage Examples
+
+### Automatic Content Discovery
+
+```html
+<!-- LaTeX content is automatically discovered and rendered -->
+<script type="text/latex">
+Here is some great equation:
+
+$$x = \frac{{-b \pm \sqrt{b^2-4ac}}}{{2a}}$$
+
+And now for a great diagram:
+
+\begin{pspicture}(0,-3)(8,3)
+\rput(0,0){$x(t)$}
+\rput(4,1.5){$f(t)$}
+\rput(4,-1.5){$g(t)$}
+\rput(8.2,0){$y(t)$}
+\rput(1.5,-2){$h(t)$}
+\psframe(1,-2.5)(7,2.5)
+\psframe(3,1)(5,2)
+\psframe(3,-1)(5,-2)
+\rput(4,0){$X_k = \frac{1}{p} \sum \limits_{n=\langle p\rangle}x(n)e^{-ik\omega_0n}$}
+\psline{->}(0.5,0)(1.5,0)
+\psline{->}(1.5,1.5)(3,1.5)
+\psline{->}(1.5,-1.5)(3,-1.5)
+\psline{->}(6.5,1.5)(6.5,0.25)
+\psline{->}(6.5,-1.5)(6.5,-0.25)
+\psline{->}(6.75,0)(7.75,0)
+\psline(1.5,-1.5)(1.5,1.5)
+\psline(5,1.5)(6.5,1.5)
+\psline(5,-1.5)(6.5,-1.5)
+\psline(6,-1.5)(6.5,-1.5)
+\pscircle(6.5,0){0.25}
+\psline(6.25,0)(6.75,0)
+\psline(6.5,0.5)(6.5,-0.5)
+\end{pspicture}
+</script>
+
+<script>
+  LaTeX2HTML5.init(); // Renders all LaTeX content
+</script>
 ```

@@ -1,25 +1,30 @@
-# LaTeX2React
+# @latex2js/react
 
-## installation
+React components for LaTeX rendering with full support for mathematical notation, PSTricks graphics, and interactive elements.
 
-1. Install the library!
+## Installation
 
-```sh
-yarn add @latex2js/react
+```bash
+npm install @latex2js/react
 ```
 
-2. import the `latex2js` CSS file, and the `LaTeX` React component
+## Features
 
-```js
-import 'latex2js/latex2js.css';
-import { LaTeX } from '@latex2js/react';
-```
+- **React Integration**: Native React components with proper lifecycle management
+- **LaTeX Rendering**: Complete LaTeX document and expression support
+- **Interactive Graphics**: PSTricks support with sliders and animations
+- **Mathematical Notation**: Seamless MathJax integration
+- **TypeScript Support**: Full type definitions included
+- **Performance Optimized**: Only re-renders when content changes
+- **Server-Side Rendering**: SSR-compatible with proper hydration
 
-3. Load your {\tt TeX} into the {\tt content} property. Enjoy!
+## Basic Usage
 
-```js
-const diagramAndTex = String.raw`
+```jsx
+import React from 'react';
+import { LaTeX, MathJaxProvider } from '@latex2js/react';
 
+const content = String.raw`
 Here is some great equation:
 
 $$x = \frac{{-b \pm \sqrt{b^2-4ac}}}{{2a}}$$
@@ -52,9 +57,60 @@ And now for a great diagram:
 \end{pspicture}
 `;
 
-class App extends Component {
-  render() {
-    return <LaTeX content={diagram} />;
-  }
+function App() {
+  return (
+    <MathJaxProvider>
+      <div>
+        <h1>Mathematical Document</h1>
+        <LaTeX content={content} />
+      </div>
+    </MathJaxProvider>
+  );
 }
+
+export default App;
+```
+
+## API Reference
+
+### LaTeX Component
+
+The main component for rendering LaTeX content:
+
+```jsx
+import { LaTeX } from '@latex2js/react';
+
+<LaTeX
+  content={latexString}        // LaTeX content to render
+  macros={macroDefinitions}    // Optional: Custom macros
+  className="custom-class"     // Optional: CSS class
+  style={styleObject}          // Optional: Inline styles
+  onRender={(element) => {}}   // Optional: Callback after rendering
+  onError={(error) => {}}      // Optional: Error handler
+/>
+```
+
+#### Props
+
+- **content** (string, required): LaTeX content to render
+- **macros** (string, optional): Custom macro definitions
+- **className** (string, optional): CSS class name
+- **style** (object, optional): React style object
+- **onRender** (function, optional): Called after successful rendering
+- **onError** (function, optional): Called if rendering fails
+
+### MathJaxProvider
+
+Provides MathJax context for mathematical rendering:
+
+```jsx
+import { MathJaxProvider } from '@latex2js/react';
+
+<MathJaxProvider
+  config={mathJaxConfig}       // Optional: MathJax configuration
+  loading={<Loading />}        // Optional: Loading component
+  error={<Error />}            // Optional: Error component
+>
+  {children}
+</MathJaxProvider>
 ```

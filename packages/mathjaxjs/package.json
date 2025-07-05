@@ -1,7 +1,7 @@
 {
   "name": "mathjaxjs",
   "version": "3.0.8",
-  "description": "Pure HTML5 MathJax loading utilities without React dependencies",
+  "description": "MathJax loading utilities",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
   "license": "SEE LICENSE IN LICENSE",
