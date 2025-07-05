@@ -6,7 +6,7 @@ on:
 jobs:
   container-job:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,13 +17,13 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Install pnpm@10.12.2
+        run: npm install -g pnpm@10.12.2
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
+      - name: Build packages
         run: pnpm build
 
       - name: Run tests for latex2js
