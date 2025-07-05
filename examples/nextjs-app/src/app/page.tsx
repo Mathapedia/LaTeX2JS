@@ -2,7 +2,7 @@
 
 import { MathJaxProvider } from 'mathjaxjs-react';
 import { LaTeX } from '@latex2js/react';
-
+import { select } from '@latex2js/utils';
 import { tex } from './tex';
 import * as React from 'react';
 
@@ -11,7 +11,6 @@ const TestSVGComponent = () => {
 
   React.useEffect(() => {
     if (svgRef.current) {
-      const { select } = require('@latex2js/utils');
       const svg = select(svgRef.current);
 
       svg.selectAll('*').remove();

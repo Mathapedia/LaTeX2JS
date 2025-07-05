@@ -81,5 +81,3 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
     return <div className="latex-container" ref={this.containerRef}>{children}</div>;
   }
 }
-
-export default LaTeX;
