@@ -17,9 +17,10 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Install pnpm@10.12.2
-        run: npm install -g pnpm@10.12.2
-
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          
       - name: Install dependencies
         run: pnpm install
 
