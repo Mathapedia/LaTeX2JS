@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/vue",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Vue components for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",

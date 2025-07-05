@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/html5",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Author interactive math equations and diagrams online using LaTeX and PSTricks",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
