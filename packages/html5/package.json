@@ -32,7 +32,9 @@
   "dependencies": {
     "@latex2js/macros": "workspace:*",
     "@latex2js/pstricks": "workspace:*",
+    "@latex2js/utils": "workspace:*",
     "latex2js": "workspace:*",
     "mathjaxjs": "workspace:*"
-  }
+  },
+  "gitHead": "53db1d50a534274273c2b1b7cceed210fdc9fdea"
 }

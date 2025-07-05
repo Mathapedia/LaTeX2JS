@@ -27,10 +27,10 @@ export default (props: PspictureProps) => {
 
   useEffect(() => {
     if (svgRef.current && divRef.current) {
-      const d3svg = select(svgRef.current);
+      const svgEl = select(svgRef.current);
       const obj = { ...props };
       obj.$el = divRef.current;
-      psgraph.pspicture.call(obj, d3svg);
+      psgraph.pspicture.call(obj, svgEl);
     }
   }, [props]);
 
@@ -52,9 +52,9 @@ export default (props: PspictureProps) => {
   const userEventHandler = (coords: number[]) => {
     if (!svgRef.current) return;
 
-    const d3svg = select(svgRef.current);
-    d3svg.selectAll('.userline').remove();
-    d3svg.selectAll('.psplot').remove();
+    const svgEl = select(svgRef.current);
+    svgEl.selectAll('.userline').remove();
+    svgEl.selectAll('.psplot').remove();
 
     var currentEnvironment: { [key: string]: any } = {};
     const plots = props.plot;
@@ -79,7 +79,7 @@ export default (props: PspictureProps) => {
           var d = data.fn.call(data.env, data.match);
           d.global = {};
           Object.assign(d.global, props.env);
-          psgraph[k].call(d, d3svg);
+          psgraph[k].call(d, svgEl);
         });
       }
       if (k.match(/userline/)) {
@@ -107,7 +107,7 @@ export default (props: PspictureProps) => {
           d.global = {};
           Object.assign(d.global, props.env);
           Object.assign(d, data.data);
-          psgraph[k].call(d, d3svg);
+          psgraph[k].call(d, svgEl);
         });
       }
     });

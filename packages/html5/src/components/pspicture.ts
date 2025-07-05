@@ -1,5 +1,5 @@
 import { psgraph } from '@latex2js/pstricks';
-import * as d3 from 'd3';
+import { select } from '@latex2js/utils';
 
 interface ComponentProps {
   env: {
@@ -28,9 +28,9 @@ export default function render(that: ComponentProps): HTMLDivElement {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', width);
   svg.setAttribute('height', height);
-  var d3svg = d3.select(svg);
+  var svgEl = select(svg);
   (that as any).$el = div;
-  psgraph.pspicture.call(that, d3svg);
+  psgraph.pspicture.call(that, svgEl);
   div.appendChild(svg);
 
   const { env, plot } = that;
@@ -46,13 +46,13 @@ export default function render(that: ComponentProps): HTMLDivElement {
         if (!env.variables) env.variables = {};
         env.variables[variable] = val;
 
-        d3svg.selectAll('.psplot').remove();
+        svgEl.selectAll('.psplot').remove();
         Object.entries(plot).forEach(([k, plotData]: [string, any]) => {
           if (k.match(/psplot/)) {
             plotData.forEach((data: any) => {
               const d = data.fn.call(data.env, data.match);
-              if (psgraph[k] && d && d3svg) {
-                psgraph[k].call(d, d3svg);
+              if (psgraph[k] && d && svgEl) {
+                psgraph[k].call(d, svgEl);
               }
             });
           }
