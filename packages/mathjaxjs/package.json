@@ -1,6 +1,6 @@
 {
   "name": "mathjaxjs",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Pure HTML5 MathJax loading utilities without React dependencies",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/mathjaxjs#readme",

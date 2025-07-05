@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/utils",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "latex2js utils",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/utils#readme",

@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/vue",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Vue components for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/vue#readme",

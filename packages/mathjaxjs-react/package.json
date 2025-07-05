@@ -1,6 +1,6 @@
 {
   "name": "mathjaxjs-react",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "React-specific MathJax provider component",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/pyramation/latex2js/tree/master/packages/mathjax-react#readme",
