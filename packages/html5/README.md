@@ -8,7 +8,7 @@ yarn add latex2html5
 
 This is for those who just want to make a simple HTML page with `LaTeX2JS`. The object provided is called `LaTeX2HTML5`:
 
-1. Download the JS and CSS files! You can go get the JS [https://github.com/pyramation/LaTeX2JS/blob/master/libs/latex2html5/latex2html5.bundle.js](here) and CSS here [https://github.com/pyramation/LaTeX2JS/blob/master/core/latex2js/latex2js.css](here).
+1. Download the JS and CSS files! You can go get the JS [https://github.com/Mathapedia/LaTeX2JS/blob/master/libs/latex2html5/latex2html5.bundle.js](here) and CSS here [https://github.com/Mathapedia/LaTeX2JS/blob/master/core/latex2js/latex2js.css](here).
 
 ```html
 <html>

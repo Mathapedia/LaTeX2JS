@@ -54,16 +54,16 @@ const HEADER = `
 </head>
 <body>
 
-<a href="https://github.com/pyramation/LaTeX2JS" target="latexisawesome"><img style="position: fixed; z-index: 10000000; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png" alt="Fork me on GitHub"></a>
+<a href="https://github.com/Mathapedia/LaTeX2JS" target="latexisawesome"><img style="position: fixed; z-index: 10000000; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png" alt="Fork me on GitHub"></a>
 
 <a href="/">Home</a>
 <a href="/examples/index.html">Examples</a>
 <a href="/installation/index.html">Installation</a>
-<a href="https://github.com/pyramation/LaTeX2JS/tree/master/examples">Github Examples</a>
+<a href="https://github.com/Mathapedia/LaTeX2JS/tree/master/examples">Github Examples</a>
 
 <div class="centered">
   <h1>LaTeX2JS Examples</h1>
-  <p> Be sure to checkout the example apps on Github <a href="https://github.com/pyramation/LaTeX2JS/tree/master/examples">here</a>! </p>
+  <p> Be sure to checkout the example apps on Github <a href="https://github.com/Mathapedia/LaTeX2JS/tree/master/examples">here</a>! </p>
 </div>
 
 <script type="text/latex">

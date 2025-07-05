@@ -7,17 +7,17 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-- modularize codebase by consolidating duplicated code ([dc15597](https://github.com/pyramation/latex2js/commit/dc155973ea5f412a4cf4b257f1bc7814e7ab553b))
+- modularize codebase by consolidating duplicated code ([dc15597](https://github.com/Mathapedia/LaTeX2JS/commit/dc155973ea5f412a4cf4b257f1bc7814e7ab553b))
 
-## [2.1.2](https://github.com/pyramation/latex2js/compare/latex2js-pstricks@2.1.1...latex2js-pstricks@2.1.2) (2020-06-12)
-
-**Note:** Version bump only for package latex2js-pstricks
-
-## [2.1.1](https://github.com/pyramation/latex2js/compare/latex2js-pstricks@2.1.0...latex2js-pstricks@2.1.1) (2020-06-12)
+## [2.1.2](https://github.com/Mathapedia/LaTeX2JS/compare/latex2js-pstricks@2.1.1...latex2js-pstricks@2.1.2) (2020-06-12)
 
 **Note:** Version bump only for package latex2js-pstricks
 
-# [2.1.0](https://github.com/pyramation/latex2js/compare/latex2js-pstricks@2.0.0...latex2js-pstricks@2.1.0) (2020-06-12)
+## [2.1.1](https://github.com/Mathapedia/LaTeX2JS/compare/latex2js-pstricks@2.1.0...latex2js-pstricks@2.1.1) (2020-06-12)
+
+**Note:** Version bump only for package latex2js-pstricks
+
+# [2.1.0](https://github.com/Mathapedia/LaTeX2JS/compare/latex2js-pstricks@2.0.0...latex2js-pstricks@2.1.0) (2020-06-12)
 
 **Note:** Version bump only for package latex2js-pstricks
 
