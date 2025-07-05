@@ -8,14 +8,6 @@ React wrapper component for MathJax integration, providing easy LaTeX mathematic
 npm install mathjaxjs-react
 ```
 
-## Features
-
-- **React Integration**: Seamless MathJax integration with React lifecycle
-- **Automatic Typesetting**: Auto-renders math content when component mounts/updates
-- **Performance Optimized**: Only re-renders when content changes
-- **TypeScript Support**: Full type definitions included
-- **Flexible**: Works with any MathJax configuration
-
 ## Basic Usage
 
 ```jsx

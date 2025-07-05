@@ -1,14 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Parser parse 1`] = `
-Array [
-  Object {
-    "lines": Array [
+[
+  {
+    "lines": [
       "<br>",
       "Let's get to the point. The core of PSTricks is graphics!",
       "<br>",
     ],
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "linecolor": "black",
       "linestyle": "solid",
@@ -19,8 +19,8 @@ Array [
     },
     "type": "math",
   },
-  Object {
-    "env": Object {
+  {
+    "env": {
       "h": 10,
       "w": 10,
       "x0": -5,
@@ -30,29 +30,29 @@ Array [
       "y1": 5,
       "yunit": 50,
     },
-    "lines": Array [
-      "\\\\psline{->}(0,-3.75)(0,3.75)",
-      "\\\\psline{->}(-3.75,0)(3.75,0)",
-      "\\\\pscircle(0,0){ 3 }",
+    "lines": [
+      "\\psline{->}(0,-3.75)(0,3.75)",
+      "\\psline{->}(-3.75,0)(3.75,0)",
+      "\\pscircle(0,0){ 3 }",
     ],
-    "match": Array [
-      "\\\\begin{pspicture}(-5,-5)(5,5)",
+    "match": [
+      "\\begin{pspicture}(-5,-5)(5,5)",
       "-5",
       "-5",
       "5",
       "5",
     ],
-    "plot": Object {
-      "psarc": Array [],
-      "psaxes": Array [],
-      "pscircle": Array [
-        Object {
-          "data": Object {
+    "plot": {
+      "psarc": [],
+      "psaxes": [],
+      "pscircle": [
+        {
+          "data": {
             "cx": 250,
             "cy": 250,
             "r": 150,
           },
-          "env": Object {
+          "env": {
             "h": 10,
             "w": 10,
             "x0": -5,
@@ -63,23 +63,23 @@ Array [
             "yunit": 50,
           },
           "fn": [Function],
-          "match": Array [
-            "\\\\pscircle(0,0){ 3 }",
+          "match": [
+            "\\pscircle(0,0){ 3 }",
             "0",
             "0",
             " 3 ",
           ],
         },
       ],
-      "psframe": Array [],
-      "psline": Array [
-        Object {
-          "data": Object {
-            "arrows": Array [
+      "psframe": [],
+      "psline": [
+        {
+          "data": {
+            "arrows": [
               0,
               1,
             ],
-            "dots": Array [
+            "dots": [
               0,
               0,
             ],
@@ -93,7 +93,7 @@ Array [
             "y1": 437.5,
             "y2": 62.5,
           },
-          "env": Object {
+          "env": {
             "h": 10,
             "w": 10,
             "x0": -5,
@@ -104,8 +104,8 @@ Array [
             "yunit": 50,
           },
           "fn": [Function],
-          "match": Array [
-            "\\\\psline{->}(0,-3.75)(0,3.75)",
+          "match": [
+            "\\psline{->}(0,-3.75)(0,3.75)",
             undefined,
             "{->}",
             "0",
@@ -115,13 +115,13 @@ Array [
             "3.75",
           ],
         },
-        Object {
-          "data": Object {
-            "arrows": Array [
+        {
+          "data": {
+            "arrows": [
               0,
               1,
             ],
-            "dots": Array [
+            "dots": [
               0,
               0,
             ],
@@ -135,7 +135,7 @@ Array [
             "y1": 250,
             "y2": 250,
           },
-          "env": Object {
+          "env": {
             "h": 10,
             "w": 10,
             "x0": -5,
@@ -146,8 +146,8 @@ Array [
             "yunit": 50,
           },
           "fn": [Function],
-          "match": Array [
-            "\\\\psline{->}(-3.75,0)(3.75,0)",
+          "match": [
+            "\\psline{->}(-3.75,0)(3.75,0)",
             undefined,
             "{->}",
             "-3.75",
@@ -158,16 +158,16 @@ Array [
           ],
         },
       ],
-      "pspicture": Array [],
-      "psplot": Array [],
-      "pspolygon": Array [],
-      "psset": Array [],
-      "rput": Array [],
-      "slider": Array [],
-      "userline": Array [],
-      "uservariable": Array [],
+      "pspicture": [],
+      "psplot": [],
+      "pspolygon": [],
+      "psset": [],
+      "rput": [],
+      "slider": [],
+      "userline": [],
+      "uservariable": [],
     },
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "h": 10,
       "linecolor": "black",
@@ -184,13 +184,13 @@ Array [
     },
     "type": "pspicture",
   },
-  Object {
-    "lines": Array [
+  {
+    "lines": [
       "<br>",
-      "which can be produced using the following $\\\\TeX$:",
+      "which can be produced using the following $\\TeX$:",
       "<br>",
     ],
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "h": 10,
       "linecolor": "black",
@@ -207,15 +207,15 @@ Array [
     },
     "type": "math",
   },
-  Object {
-    "lines": Array [
-      "\\\\begin{pspicture}(-5,-5)(5,5)",
-      "\\\\psline{->}(0,-3.75)(0,3.75)",
-      "\\\\psline{->}(-3.75,0)(3.75,0)",
-      "\\\\pscircle(0,0){ 3 }",
-      "\\\\end{pspicture}",
+  {
+    "lines": [
+      "\\begin{pspicture}(-5,-5)(5,5)",
+      "\\psline{->}(0,-3.75)(0,3.75)",
+      "\\psline{->}(-3.75,0)(3.75,0)",
+      "\\pscircle(0,0){ 3 }",
+      "\\end{pspicture}",
     ],
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "h": 10,
       "linecolor": "black",
@@ -232,11 +232,11 @@ Array [
     },
     "type": "verbatim",
   },
-  Object {
-    "lines": Array [
+  {
+    "lines": [
       "<br>",
     ],
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "h": 10,
       "linecolor": "black",
@@ -257,14 +257,14 @@ Array [
 `;
 
 exports[`Parser parser 1`] = `
-Array [
-  Object {
-    "lines": Array [
+[
+  {
+    "lines": [
       "<br>",
       "Let's get to the point. The core of PSTricks is graphics!",
       "<br>",
     ],
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "linecolor": "black",
       "linestyle": "solid",
@@ -275,8 +275,8 @@ Array [
     },
     "type": "math",
   },
-  Object {
-    "env": Object {
+  {
+    "env": {
       "h": 10,
       "w": 10,
       "x0": -5,
@@ -286,29 +286,29 @@ Array [
       "y1": 5,
       "yunit": 50,
     },
-    "lines": Array [
-      "\\\\psline{->}(0,-3.75)(0,3.75)",
-      "\\\\psline{->}(-3.75,0)(3.75,0)",
-      "\\\\pscircle(0,0){ 3 }",
+    "lines": [
+      "\\psline{->}(0,-3.75)(0,3.75)",
+      "\\psline{->}(-3.75,0)(3.75,0)",
+      "\\pscircle(0,0){ 3 }",
     ],
-    "match": Array [
-      "\\\\begin{pspicture}(-5,-5)(5,5)",
+    "match": [
+      "\\begin{pspicture}(-5,-5)(5,5)",
       "-5",
       "-5",
       "5",
       "5",
     ],
-    "plot": Object {
-      "psarc": Array [],
-      "psaxes": Array [],
-      "pscircle": Array [
-        Object {
-          "data": Object {
+    "plot": {
+      "psarc": [],
+      "psaxes": [],
+      "pscircle": [
+        {
+          "data": {
             "cx": 250,
             "cy": 250,
             "r": 150,
           },
-          "env": Object {
+          "env": {
             "h": 10,
             "w": 10,
             "x0": -5,
@@ -319,23 +319,23 @@ Array [
             "yunit": 50,
           },
           "fn": [Function],
-          "match": Array [
-            "\\\\pscircle(0,0){ 3 }",
+          "match": [
+            "\\pscircle(0,0){ 3 }",
             "0",
             "0",
             " 3 ",
           ],
         },
       ],
-      "psframe": Array [],
-      "psline": Array [
-        Object {
-          "data": Object {
-            "arrows": Array [
+      "psframe": [],
+      "psline": [
+        {
+          "data": {
+            "arrows": [
               0,
               1,
             ],
-            "dots": Array [
+            "dots": [
               0,
               0,
             ],
@@ -349,7 +349,7 @@ Array [
             "y1": 437.5,
             "y2": 62.5,
           },
-          "env": Object {
+          "env": {
             "h": 10,
             "w": 10,
             "x0": -5,
@@ -360,8 +360,8 @@ Array [
             "yunit": 50,
           },
           "fn": [Function],
-          "match": Array [
-            "\\\\psline{->}(0,-3.75)(0,3.75)",
+          "match": [
+            "\\psline{->}(0,-3.75)(0,3.75)",
             undefined,
             "{->}",
             "0",
@@ -371,13 +371,13 @@ Array [
             "3.75",
           ],
         },
-        Object {
-          "data": Object {
-            "arrows": Array [
+        {
+          "data": {
+            "arrows": [
               0,
               1,
             ],
-            "dots": Array [
+            "dots": [
               0,
               0,
             ],
@@ -391,7 +391,7 @@ Array [
             "y1": 250,
             "y2": 250,
           },
-          "env": Object {
+          "env": {
             "h": 10,
             "w": 10,
             "x0": -5,
@@ -402,8 +402,8 @@ Array [
             "yunit": 50,
           },
           "fn": [Function],
-          "match": Array [
-            "\\\\psline{->}(-3.75,0)(3.75,0)",
+          "match": [
+            "\\psline{->}(-3.75,0)(3.75,0)",
             undefined,
             "{->}",
             "-3.75",
@@ -414,16 +414,16 @@ Array [
           ],
         },
       ],
-      "pspicture": Array [],
-      "psplot": Array [],
-      "pspolygon": Array [],
-      "psset": Array [],
-      "rput": Array [],
-      "slider": Array [],
-      "userline": Array [],
-      "uservariable": Array [],
+      "pspicture": [],
+      "psplot": [],
+      "pspolygon": [],
+      "psset": [],
+      "rput": [],
+      "slider": [],
+      "userline": [],
+      "uservariable": [],
     },
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "h": 10,
       "linecolor": "black",
@@ -440,13 +440,13 @@ Array [
     },
     "type": "pspicture",
   },
-  Object {
-    "lines": Array [
+  {
+    "lines": [
       "<br>",
-      "which can be produced using the following $\\\\TeX$:",
+      "which can be produced using the following $\\TeX$:",
       "<br>",
     ],
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "h": 10,
       "linecolor": "black",
@@ -463,15 +463,15 @@ Array [
     },
     "type": "math",
   },
-  Object {
-    "lines": Array [
-      "\\\\begin{pspicture}(-5,-5)(5,5)",
-      "\\\\psline{->}(0,-3.75)(0,3.75)",
-      "\\\\psline{->}(-3.75,0)(3.75,0)",
-      "\\\\pscircle(0,0){ 3 }",
-      "\\\\end{pspicture}",
+  {
+    "lines": [
+      "\\begin{pspicture}(-5,-5)(5,5)",
+      "\\psline{->}(0,-3.75)(0,3.75)",
+      "\\psline{->}(-3.75,0)(3.75,0)",
+      "\\pscircle(0,0){ 3 }",
+      "\\end{pspicture}",
     ],
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "h": 10,
       "linecolor": "black",
@@ -488,11 +488,11 @@ Array [
     },
     "type": "verbatim",
   },
-  Object {
-    "lines": Array [
+  {
+    "lines": [
       "<br>",
     ],
-    "settings": Object {
+    "settings": {
       "fillstyle": "none",
       "h": 10,
       "linecolor": "black",

@@ -10,13 +10,9 @@ npm install latex2js
 
 ## Features
 
-- **Complete LaTeX Parser**: Handles LaTeX documents, environments, and commands
 - **Mathematical Notation**: Seamless integration with MathJax for math rendering
-- **PSTricks Graphics**: Full support for interactive PSTricks diagrams
+- **PSTricks Graphics**: Support for interactive PSTricks diagrams
 - **Environment Support**: Built-in support for common LaTeX environments
-- **Extensible Architecture**: Plugin system for custom environments and commands
-- **Header Management**: Automatic processing of LaTeX document headers
-- **Text Processing**: Advanced text formatting and structure handling
 
 ## API Reference
 

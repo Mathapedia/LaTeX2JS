@@ -14,9 +14,6 @@ npm install @latex2js/vue
 - **LaTeX Rendering**: Complete LaTeX document and expression support
 - **Interactive Graphics**: PSTricks support with sliders and animations
 - **Mathematical Notation**: Seamless MathJax integration
-- **TypeScript Support**: Full type definitions included
-- **Composition API**: Supports both Options and Composition API
-- **SSR Compatible**: Works with Nuxt.js and server-side rendering
 
 ## Basic Usage
 

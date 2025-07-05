@@ -1,6 +1,6 @@
 # @latex2js/react
 
-React components for LaTeX rendering with full support for mathematical notation, PSTricks graphics, and interactive elements.
+React components for LaTeX rendering with support for mathematical notation, PSTricks graphics, and interactive elements.
 
 ## Installation
 
@@ -14,9 +14,6 @@ npm install @latex2js/react
 - **LaTeX Rendering**: Complete LaTeX document and expression support
 - **Interactive Graphics**: PSTricks support with sliders and animations
 - **Mathematical Notation**: Seamless MathJax integration
-- **TypeScript Support**: Full type definitions included
-- **Performance Optimized**: Only re-renders when content changes
-- **Server-Side Rendering**: SSR-compatible with proper hydration
 
 ## Basic Usage
 

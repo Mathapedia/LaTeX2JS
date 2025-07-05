@@ -13,7 +13,6 @@ npm install mathjaxjs
 - **Framework Agnostic**: Works with any JavaScript framework or vanilla HTML
 - **Async Loading**: Non-blocking MathJax loading from CDN
 - **Configurable**: Customizable MathJax configuration
-- **TypeScript Support**: Full type definitions included
 - **Lightweight**: Minimal dependencies
 
 ## API Reference

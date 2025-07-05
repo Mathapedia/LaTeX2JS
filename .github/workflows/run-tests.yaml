@@ -1,0 +1,21 @@
+name: LaunchQL tests
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  container-job:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: deps
+        run: pnpm install
+
+      - name: build
+        run: pnpm build
+
+      - name: latex2js
+        run: cd ./packages/latex2js && yarn test

@@ -15,7 +15,7 @@ npm install @latex2js/html5
 - **Zero Dependencies**: Works with pure HTML - no build tools required
 - **Automatic Discovery**: Finds and renders LaTeX content automatically
 - **Bundled Distribution**: Single JS file includes everything needed
-- **Interactive Graphics**: Full PSTricks support with sliders and animations
+- **Interactive Graphics**: PSTricks support with sliders and animations
 - **Mathematical Notation**: Integrated MathJax rendering
 - **Multiple Environments**: Support for various LaTeX environments
 - **Easy Integration**: Drop-in solution for any website
