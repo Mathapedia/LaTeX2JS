@@ -7,7 +7,11 @@
       "Bash(pnpm run:*)",
       "Bash(npx next:*)",
       "Bash(npx tsc:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(pnpm:*)",
+      "Bash(ls:*)",
+      "Bash(lerna list:*)",
+      "Bash(npx lerna list:*)"
     ],
     "deny": []
   }

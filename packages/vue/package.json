@@ -42,11 +42,11 @@
     "vue-tsc": "^1.8.0"
   },
   "dependencies": {
-    "@latex2js/macros": "3.0.0",
-    "@latex2js/pstricks": "3.0.0",
-    "@latex2js/utils": "3.0.0",
-    "latex2js": "3.0.0",
-    "mathjaxjs": "3.0.0",
+    "@latex2js/macros": "workspace:*",
+    "@latex2js/pstricks": "workspace:*",
+    "@latex2js/utils": "workspace:*",
+    "latex2js": "workspace:*",
+    "mathjaxjs": "workspace:*",
     "vue": "^3.3.0"
   },
   "peerDependencies": {

@@ -1,29 +1,5 @@
 {
-  "lerna": "7.4.0",
-  "conventionalCommits": true,
-  "npmClient": "pnpm",
-  "npmClientArgs": [
-    "--no-frozen-lockfile"
-  ],
-  "packages": [
-    "packages/*",
-    "examples/*"
-  ],
+  "$schema": "node_modules/lerna/schemas/lerna-schema.json",
   "version": "independent",
-  "registry": "https://registry.npmjs.org",
-  "command": {
-    "create": {
-      "homepage": "https://github.com/pyramation/latex2js",
-      "license": "SEE LICENSE IN LICENSE",
-      "access": "restricted"
-    },
-    "publish": {
-      "allowBranch": "master",
-      "conventionalCommits": true,
-      "message": "chore(release): publish"
-    },
-    "run": {
-      "concurrency": 1
-    }
-  }
+  "npmClient": "pnpm"
 }
