@@ -41,8 +41,8 @@
     "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
-    "@latex2js/pstricks": "workspace:*",
-    "@latex2js/settings": "workspace:*",
-    "@latex2js/utils": "workspace:*"
+    "@latex2js/pstricks": "^3.0.5",
+    "@latex2js/settings": "^3.0.5",
+    "@latex2js/utils": "^3.0.5"
   }
 }

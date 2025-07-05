@@ -42,12 +42,12 @@
     "@types/react-dom": "^18.2.0"
   },
   "dependencies": {
-    "@latex2js/macros": "workspace:*",
-    "@latex2js/pstricks": "workspace:*",
-    "@latex2js/utils": "workspace:*",
-    "latex2js": "workspace:*",
-    "mathjaxjs": "workspace:*",
-    "mathjaxjs-react": "workspace:*",
+    "@latex2js/macros": "^3.0.5",
+    "@latex2js/pstricks": "^3.0.5",
+    "@latex2js/utils": "^3.0.5",
+    "latex2js": "^3.0.5",
+    "mathjaxjs": "^3.0.5",
+    "mathjaxjs-react": "^3.0.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
