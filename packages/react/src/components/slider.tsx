@@ -1,5 +1,5 @@
 import React from 'react';
-import * as d3 from 'd3';
+import { select } from '@latex2js/utils';
 import { psgraph } from '@latex2js/pstricks';
 
 interface SliderProps {
@@ -31,8 +31,9 @@ export default ({ env, slider, svgRef, plot }: SliderProps) => {
     env.variables[variable] = val;
 
     // update svg
-    const svg = d3.select(svgRef.current);
-    svg.selectAll('.psplot').remove();
+    if (svgRef.current) {
+      const svg = select(svgRef.current);
+      svg.selectAll('.psplot').remove();
     Object.entries(plot).forEach(([k, plotData]: [string, any]) => {
       if (k.match(/psplot/)) {
         plotData.forEach((data: any) => {
@@ -43,6 +44,7 @@ export default ({ env, slider, svgRef, plot }: SliderProps) => {
         });
       }
     });
+    }
   };
 
   return (
