@@ -1,0 +1,27 @@
+{
+  "name": "@mathapedia/css",
+  "version": "3.0.0",
+  "description": "Mathapedia CSS",
+  "author": "Dan Lynch <pyramation@gmail.com>",
+  "homepage": "https://github.com/Mathapedia/LaTeX2JS",
+  "license": "SEE LICENSE IN LICENSE",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mathapedia/LaTeX2JS"
+  },
+  "keywords": [
+    "math",
+    "mathematics",
+    "mathapedia",
+    "css"
+  ],
+  "scripts": {
+    "copy": "copyfiles latex2js.css latex2js.mathapedia.css ../latex2js"
+  },
+  "bugs": {
+    "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
+  }
+}
