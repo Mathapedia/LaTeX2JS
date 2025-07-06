@@ -1,5 +1,5 @@
 {
-  "name": "@latex2js/vue",
+  "name": "latex2vue",
   "version": "3.1.1",
   "description": "Vue components for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",

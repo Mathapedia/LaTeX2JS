@@ -5,7 +5,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # 3.0.0 (2025-07-05)
 
-**Note:** Version bump only for package @latex2js/vue
+**Note:** Version bump only for package latex2vue
 
 ## [2.2.2](https://github.com/Mathapedia/LaTeX2JS/compare/latex2vue@2.2.1...latex2vue@2.2.2) (2020-06-12)
 

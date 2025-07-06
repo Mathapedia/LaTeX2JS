@@ -1,5 +1,5 @@
 {
-  "name": "@latex2js/html5",
+  "name": "latex2html5",
   "version": "3.1.1",
   "description": "Author interactive math equations and diagrams online using LaTeX and PSTricks",
   "author": "Dan Lynch <pyramation@gmail.com>",

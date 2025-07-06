@@ -5,7 +5,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 # 3.0.0 (2025-07-05)
 
-**Note:** Version bump only for package @latex2js/html5
+**Note:** Version bump only for package latex2html5
 
 ## [2.1.3](https://github.com/Mathapedia/LaTeX2JS/compare/latex2html5@2.1.2...latex2html5@2.1.3) (2020-06-12)
 

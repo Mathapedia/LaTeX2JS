@@ -7,9 +7,9 @@ Author interactive math equations and diagrams online using LaTeX and PSTricks
 Author real LaTeX+PSTricks in React, Vue.js, or pure HTML5.
 
 ```sh
-npm install @latex2js/html5
-npm install @latex2js/vue
-npm install @latex2js/react
+npm install latex2html5
+npm install latex2vue
+npm install latex2react
 ```
 
 [LaTeX2JS website](https://latex2js.com)
@@ -29,9 +29,9 @@ These are the relevant packages for usage:
 | Package | Description | Documentation |
 |---------|-------------|---------------|
 | [latex2js](packages/latex2js) | Core LaTeX parsing and rendering engine with environment support | [README](packages/latex2js/README.md) |
-| [@latex2js/html5](packages/html5) | Pure HTML5 implementation with automatic discovery and bundled JavaScript distribution | [README](packages/html5/README.md) |
-| [@latex2js/react](packages/react) | React components for LaTeX rendering with interactive graphics and mathematical notation | [README](packages/react/README.md) |
-| [@latex2js/vue](packages/vue) | Vue.js components for LaTeX rendering with Composition API and SSR support | [README](packages/vue/README.md) |
+| [latex2html5](packages/html5) | Pure HTML5 implementation with automatic discovery and bundled JavaScript distribution | [README](packages/html5/README.md) |
+| [latex2react](packages/react) | React components for LaTeX rendering with interactive graphics and mathematical notation | [README](packages/react/README.md) |
+| [latex2vue](packages/vue) | Vue.js components for LaTeX rendering with Composition API and SSR support | [README](packages/vue/README.md) |
 
 ## MathJax Packages
 

@@ -1,11 +1,11 @@
-# @latex2js/vue
+# latex2vue
 
 Vue.js components for LaTeX rendering with full support for mathematical notation, PSTricks graphics, and interactive elements.
 
 ## Installation
 
 ```bash
-npm install @latex2js/vue
+npm install latex2vue
 ```
 
 ## Features
@@ -29,7 +29,7 @@ npm install @latex2js/vue
 
 <script setup>
 import { ref } from 'vue';
-import { latex } from '@latex2js/vue';
+import { latex } from 'latex2vue';
 
 const content = ref(`
   \\section{Introduction}
@@ -56,7 +56,7 @@ const content = ref(`
 </template>
 
 <script>
-import { latex } from '@latex2js/vue';
+import { latex } from 'latex2vue';
 
 export default {
   components: {
@@ -81,7 +81,7 @@ export default {
 
 ```javascript
 import { createApp } from 'vue';
-import LaTeX2Vue from '@latex2js/vue';
+import LaTeX2Vue from 'latex2vue';
 import App from './App.vue';
 
 const app = createApp(App);
@@ -94,7 +94,7 @@ app.mount('#app');
 Create `plugins/latex2vue.js`:
 
 ```javascript
-import LaTeX2Vue from '@latex2js/vue';
+import LaTeX2Vue from 'latex2vue';
 
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.use(LaTeX2Vue);

@@ -1,4 +1,4 @@
-# @latex2js/html5
+# latex2html5
 
 Pure HTML5 implementation for LaTeX rendering with automatic discovery and bundled JavaScript distribution. Perfect for vanilla HTML pages and simple integrations.
 
@@ -7,7 +7,7 @@ Pure HTML5 implementation for LaTeX rendering with automatic discovery and bundl
 ### NPM Package
 
 ```bash
-npm install @latex2js/html5
+npm install latex2html5
 ```
 
 ## Features
@@ -84,7 +84,7 @@ npm install @latex2js/html5
 ### Method 2: `init` and `render` methods
 
 ```javascript
-import { init, render } from '@latex2js/html5';
+import { init, render } from 'latex2html5';
 
 // Auto-discover and render all LaTeX content
 init();

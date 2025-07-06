@@ -161,7 +161,7 @@ The package includes over 140 macro definitions covering:
 ### With React Components
 
 ```jsx
-import { LaTeX } from '@latex2js/react';
+import { LaTeX } from 'latex2react';
 import macros from '@latex2js/macros';
 
 function MathDocument() {

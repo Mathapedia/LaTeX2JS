@@ -1,11 +1,11 @@
-# @latex2js/react
+# latex2react
 
 React components for LaTeX rendering with support for mathematical notation, PSTricks graphics, and interactive elements.
 
 ## Installation
 
 ```bash
-npm install @latex2js/react
+npm install latex2react
 ```
 
 ## Features
@@ -19,7 +19,7 @@ npm install @latex2js/react
 
 ```jsx
 import React from 'react';
-import { LaTeX, MathJaxProvider } from '@latex2js/react';
+import { LaTeX, MathJaxProvider } from 'latex2react';
 
 const content = String.raw`
 Here is some great equation:
@@ -75,7 +75,7 @@ export default App;
 The main component for rendering LaTeX content:
 
 ```jsx
-import { LaTeX } from '@latex2js/react';
+import { LaTeX } from 'latex2react';
 
 <LaTeX
   content={latexString}        // LaTeX content to render
@@ -101,7 +101,7 @@ import { LaTeX } from '@latex2js/react';
 Provides MathJax context for mathematical rendering:
 
 ```jsx
-import { MathJaxProvider } from '@latex2js/react';
+import { MathJaxProvider } from 'latex2react';
 
 <MathJaxProvider
   config={mathJaxConfig}       // Optional: MathJax configuration

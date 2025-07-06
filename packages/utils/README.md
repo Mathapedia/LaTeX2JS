@@ -110,4 +110,4 @@ This package serves as the foundation for all other LaTeX2JS packages:
 - **@latex2js/settings**: Uses utilities for option parsing and unit conversion
 - **@latex2js/pstricks**: Heavily relies on coordinate transformation and SVG manipulation
 - **latex2js**: Uses string processing utilities for LaTeX parsing
-- **@latex2js/html5**: Uses SVG utilities for rendering graphics
+- **latex2html5**: Uses SVG utilities for rendering graphics

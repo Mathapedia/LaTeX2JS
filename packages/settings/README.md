@@ -114,7 +114,7 @@ The package automatically handles:
 This package is used by:
 - **@latex2js/pstricks**: For processing PSTricks command options
 - **latex2js**: For handling LaTeX document settings
-- **@latex2js/html5**: For applying settings during rendering
+- **latex2html5**: For applying settings during rendering
 
 ## TypeScript Support
 
