@@ -19,7 +19,7 @@ npm install latex2react
 
 ```jsx
 import React from 'react';
-import { LaTeX, MathJaxProvider } from 'latex2react';
+import { LaTeX } from 'latex2react';
 
 const content = String.raw`
 Here is some great equation:
@@ -56,12 +56,7 @@ And now for a great diagram:
 
 function App() {
   return (
-    <MathJaxProvider>
-      <div>
-        <h1>Mathematical Document</h1>
-        <LaTeX content={content} />
-      </div>
-    </MathJaxProvider>
+    <LaTeX content={content} />
   );
 }
 
