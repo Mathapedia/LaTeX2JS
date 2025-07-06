@@ -1,6 +1,6 @@
 {
   "name": "latex2js",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "LaTeX and PSTricks rendering & components for the Web",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
