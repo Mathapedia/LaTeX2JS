@@ -16,8 +16,6 @@ npm install latex2react
 
 [Example Diagrams](https://latex2js.com/examples)
 
-[Github Examples](https://github.com/Mathapedia/LaTeX2JS/tree/master/examples)
-
 [Installation](https://latex2js.com/installation)
 
 [Original Video](http://www.youtube.com/watch?v=QYMLMUKJyFc)
