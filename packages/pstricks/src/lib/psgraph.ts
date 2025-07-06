@@ -447,7 +447,6 @@ const psgraph: any = {
     const x = this.x;
     const y = this.y;
 
-    div.innerHTML = this.text;
     div.className = 'math';
     div.style.visibility = 'hidden';
     div.style.position = 'absolute';
@@ -467,11 +466,13 @@ const psgraph: any = {
 
     const mathJax = (window as any).MathJax;
     if (mathJax && mathJax.typesetPromise) {
+      div.innerHTML = this.text;
       mathJax.typesetPromise([div]).then(done).catch((err: any) => {
         console.error('MathJax typesetting failed:', err);
         done();
       });
     } else {
+      div.innerHTML = this.text;
       done();
     }
   },
@@ -570,6 +571,10 @@ const psgraph: any = {
           }
         });
     }
+
+    // Clear existing rput elements to prevent duplication
+    const existingRputElements = el.querySelectorAll('.math');
+    existingRputElements.forEach((element: any) => element.remove());
 
     this.plot.rput.forEach((rput: any) => {
       psgraph.rput.call(rput.data, el);
