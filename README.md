@@ -8,10 +8,17 @@ Author real LaTeX+PSTricks in React, Vue.js, or pure HTML5.
 
 ## Quick Start
 
+Choose the package for your platform:
+
 ```sh
+# For pure HTML5
 npm install latex2html5
-npm install latex2vue
+
+# For React
 npm install latex2react
+
+# For Vue.js
+npm install latex2vue
 ```
 
 ## Resources

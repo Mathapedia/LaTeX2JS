@@ -21,7 +21,7 @@
     "clean": "rimraf dist",
     "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run bundle",
     "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run bundle",
-    "bundle": "browserify dist/index.js --s LaTeX2HTML5 -o dist/latex2html5.bundle.js",
+    "bundle": "browserify dist/index.js --s LaTeX2HTML5 -o dist/latex2html5.bundle.js && cp dist/latex2html5.bundle.js ../../bundle/latex2html5.bundle.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand"
