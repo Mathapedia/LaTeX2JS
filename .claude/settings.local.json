@@ -12,7 +12,8 @@
       "Bash(ls:*)",
       "Bash(lerna list:*)",
       "Bash(npx lerna list:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

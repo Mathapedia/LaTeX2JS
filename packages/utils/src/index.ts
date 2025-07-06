@@ -88,28 +88,83 @@ export const parseArrows = function (m: string) {
   };
 };
 
-export const evaluate = function (this: any, exp: string) {
-  var num = Number(exp);
-  if (isNaN(num)) {
-    var expression = '';
-    this.variables = this.variables || {};
-    Object.keys(this.variables).map((name: string) => {
-      const val = this.variables[name];
-      expression += 'var ' + name + ' = ' + val + ';';
-    })
-    expression += 'with (Math){' + exp + '}';
-    return eval(expression);
-  } else {
-    return num;
+// export const evaluate = function (this: any, exp: string) {
+//   var num = Number(exp);
+//   if (isNaN(num)) {
+//     var expression = '';
+//     this.variables = this.variables || {};
+//     Object.keys(this.variables).map((name: string) => {
+//       const val = this.variables[name];
+//       expression += 'var ' + name + ' = ' + val + ';';
+//     })
+//     expression += 'with (Math){' + exp + '}';
+//     return eval(expression);
+//   } else {
+//     return num;
+//   }
+// };
+
+export const evaluate = function (this: any, exp: string): number {
+  const num = Number(exp);
+  if (!isNaN(num)) return num;
+
+  this.variables = this.variables || {};
+
+  const mathKeys = Object.keys(Math) as (keyof Math)[];
+  const varKeys = Object.keys(this.variables);
+  const allKeys = [...mathKeys, ...varKeys];
+  const allValues = [
+    ...mathKeys.map(k => (Math[k] as any)),
+    ...varKeys.map(k => this.variables[k])
+  ];
+
+  try {
+    // @ts-ignore
+    const fn = new Function(...allKeys, `return (${exp});`);
+    return fn(...allValues);
+  } catch (e) {
+    console.warn('Evaluation error:', e);
+    return NaN;
   }
 };
 
+
 export const X = function (this: any, v: number | string) {
+  // Enhanced validation for coordinate transformation
+  const numV = typeof v === 'string' ? parseFloat(v) : v;
+  
+  if (isNaN(numV)) {
+    console.warn('X function: Invalid input value', { input: v, parsed: numV });
+    return 0;
+  }
+  
   if (isNaN(this.w) || isNaN(this.x1) || isNaN(this.xunit)) {
     console.warn('X function: NaN detected in context properties', { w: this.w, x1: this.x1, xunit: this.xunit });
     return 0;
   }
-  return (this.w - (this.x1 - Number(v))) * this.xunit;
+  
+  // Validate context properties are reasonable
+  if (this.xunit <= 0) {
+    console.warn('X function: Invalid xunit value', { xunit: this.xunit });
+    return 0;
+  }
+  
+  // Use more precise calculation with proper parentheses
+  const result = (this.w - (this.x1 - numV)) * this.xunit;
+  
+  // Validate result is finite
+  if (!isFinite(result)) {
+    console.warn('X function: Non-finite result', { 
+      input: numV, 
+      w: this.w, 
+      x1: this.x1, 
+      xunit: this.xunit, 
+      result 
+    });
+    return 0;
+  }
+  
+  return Math.round(result * 100) / 100; // Round to 2 decimal places for pixel precision
 };
 
 export const Xinv = function (this: any, v: number | string) {
@@ -117,11 +172,40 @@ export const Xinv = function (this: any, v: number | string) {
 };
 
 export const Y = function (this: any, v: number | string) {
+  // Enhanced validation for coordinate transformation
+  const numV = typeof v === 'string' ? parseFloat(v) : v;
+  
+  if (isNaN(numV)) {
+    console.warn('Y function: Invalid input value', { input: v, parsed: numV });
+    return 0;
+  }
+  
   if (isNaN(this.y1) || isNaN(this.yunit)) {
     console.warn('Y function: NaN detected in context properties', { y1: this.y1, yunit: this.yunit });
     return 0;
   }
-  return (this.y1 - Number(v)) * this.yunit;
+  
+  // Validate context properties are reasonable
+  if (this.yunit <= 0) {
+    console.warn('Y function: Invalid yunit value', { yunit: this.yunit });
+    return 0;
+  }
+  
+  // Use more precise calculation for Y coordinate inversion
+  const result = (this.y1 - numV) * this.yunit;
+  
+  // Validate result is finite
+  if (!isFinite(result)) {
+    console.warn('Y function: Non-finite result', { 
+      input: numV, 
+      y1: this.y1, 
+      yunit: this.yunit, 
+      result 
+    });
+    return 0;
+  }
+  
+  return Math.round(result * 100) / 100; // Round to 2 decimal places for pixel precision
 };
 
 export const Yinv = function (this: any, v: number | string) {

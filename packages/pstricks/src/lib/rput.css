@@ -1,0 +1,78 @@
+/* RPUT Element Styling for Better Positioning and Performance */
+
+.math {
+  /* Essential positioning properties */
+  position: absolute;
+  z-index: 10; /* Ensure RPUT elements appear above SVG */
+  
+  /* Performance optimizations */
+  will-change: transform; /* Hint browser for GPU acceleration */
+  backface-visibility: hidden; /* Prevent subpixel rendering issues */
+  
+  /* Text rendering optimizations */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Prevent layout interference during positioning */
+  white-space: nowrap;
+  overflow: visible;
+  
+  /* Ensure consistent box model */
+  box-sizing: border-box;
+  
+  /* Prevent selection during positioning */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Hidden state for measurement */
+.math[data-rput-measuring] {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Ensure proper container positioning */
+.pspicture-container {
+  position: relative;
+  overflow: visible; /* Allow RPUT elements to extend beyond SVG bounds */
+}
+
+/* Debug styling (can be enabled for troubleshooting) */
+.math[data-debug="true"] {
+  border: 1px dashed rgba(255, 0, 0, 0.5);
+  background: rgba(255, 255, 0, 0.1);
+}
+
+.math[data-debug="true"]::before {
+  content: attr(data-rput-x) "," attr(data-rput-y);
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-size: 10px;
+  color: red;
+  background: white;
+  padding: 2px;
+  border-radius: 2px;
+  font-family: monospace;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .math {
+    /* Ensure readability on mobile */
+    min-height: 24px;
+    line-height: 1.2;
+  }
+}
+
+/* Print styles */
+@media print {
+  .math {
+    /* Ensure RPUT elements print correctly */
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+}
