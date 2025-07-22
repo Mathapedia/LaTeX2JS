@@ -38,6 +38,8 @@ importers:
         specifier: ^5.2.0
         version: 5.8.3
 
+  packages/css: {}
+
   packages/html5:
     dependencies:
       "@latex2js/macros":
