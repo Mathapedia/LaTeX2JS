@@ -605,7 +605,9 @@ const psgraph: any = {
       'touchmove',
       function (this: any, event: any) {
         event.preventDefault();
-        var touchcoords = event.touches ? event.touches[0] : [0, 0];
+        var touch = event.touches ? event.touches[0] : null;
+        var rect = event.target.getBoundingClientRect();
+        var touchcoords = touch ? [touch.clientX - rect.left, touch.clientY - rect.top] : [0, 0];
         userEvent(touchcoords);
       }
     );
