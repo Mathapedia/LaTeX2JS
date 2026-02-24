@@ -1,3 +1,6 @@
+/** 默认 MathJax 脚本地址，可由用户通过 config.scriptURL 覆盖 */
+export const DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+
 export const DEFAULT_CONFIG = {
   tex: {
     inlineMath: [['$', '$'], ['\\(', '\\)']],
@@ -21,11 +24,19 @@ export const DEFAULT_CONFIG = {
   }
 };
 
+/** 扩展配置：可传入 scriptURL 自定义加载地址 */
+export interface LoadMathJaxConfig extends Record<string, unknown> {
+  scriptURL?: string;
+}
+
 let mathJaxInstance: any = null;
 
 export const getMathJax = () => mathJaxInstance || (globalThis as any).MathJax;
 
-export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG) => {
+export const loadMathJax = async (
+  callback = () => { },
+  config: typeof DEFAULT_CONFIG & LoadMathJaxConfig = DEFAULT_CONFIG
+) => {
   if (typeof window === 'undefined') {
     callback();
     return;
@@ -36,6 +47,8 @@ export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG)
     callback();
     return;
   }
+
+  const scriptURL = config.scriptURL ?? DEFAULT_SCRIPT_URL;
 
   try {
     (globalThis as any).MathJax = {
@@ -54,7 +67,7 @@ export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG)
     };
 
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+    script.src = scriptURL;
     script.async = true;
     script.id = 'MathJax-script';
     script.onload = () => {

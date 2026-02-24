@@ -8,6 +8,8 @@ declare global {
 }
 
 interface MathJaxConfig {
+  /** 自定义 MathJax 脚本地址，不传则使用默认 CDN */
+  scriptURL?: string;
   tex?: {
     inlineMath?: string[][];
     displayMath?: string[][];

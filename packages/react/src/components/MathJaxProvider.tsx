@@ -7,6 +7,8 @@ declare global {
 }
 
 interface MathJaxConfig {
+  /** 自定义 MathJax 脚本地址 */
+  scriptURL?: string;
   tex?: {
     inlineMath?: string[][];
     displayMath?: string[][];
@@ -17,9 +19,13 @@ interface MathJaxConfig {
   };
 }
 
+const DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+
 interface MathJaxProviderProps {
   children: ReactNode;
   config?: MathJaxConfig;
+  /** 自定义 MathJax 脚本地址，不传则使用默认 CDN */
+  scriptURL?: string;
   loadingComponent?: ReactNode;
   className?: string;
 }
@@ -27,6 +33,7 @@ interface MathJaxProviderProps {
 export default function MathJaxProvider({ 
   children, 
   config,
+  scriptURL: scriptURLProp,
   loadingComponent,
   className = ""
 }: MathJaxProviderProps) {
@@ -51,6 +58,8 @@ export default function MathJaxProvider({
     chtml: { ...defaultConfig.chtml, ...config?.chtml }
   };
 
+  const scriptURL = scriptURLProp ?? config?.scriptURL ?? DEFAULT_SCRIPT_URL;
+
   useEffect(() => {
     setIsClient(true);
     
@@ -66,7 +75,7 @@ export default function MathJaxProvider({
     };
 
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+    script.src = scriptURL;
     script.async = true;
     script.onload = () => {
       console.log('MathJax script loaded');
