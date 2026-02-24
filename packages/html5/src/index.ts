@@ -1,5 +1,5 @@
 import LaTeX2JS from 'latex2js';
-import { getMathJax, loadMathJax } from 'mathjaxjs';
+import { getMathJax, loadMathJax, DEFAULT_CONFIG, type LoadMathJaxConfig } from 'mathjaxjs';
 import pspicture from './components/pspicture.js';
 import nicebox from './components/nicebox.js';
 import enumerate from './components/enumerate.js';
@@ -9,7 +9,7 @@ import macros from './components/macros';
 
 const ELEMENTS = { pspicture, nicebox, enumerate, verbatim, math, macros };
 
-export { pspicture, nicebox, enumerate, verbatim, math, macros };
+export { pspicture, nicebox, enumerate, verbatim, math, macros ,DEFAULT_CONFIG};
 
 export default function render(tex: string, resolve: (div: HTMLDivElement) => void): void {
   const done = () => {
@@ -34,8 +34,9 @@ export default function render(tex: string, resolve: (div: HTMLDivElement) => vo
   loadMathJax(done);
 }
 
-export const init = (): void => {
-  loadMathJax();
+
+export const init = (config?: typeof DEFAULT_CONFIG & LoadMathJaxConfig): void => {
+  loadMathJax(undefined, config);
   document.querySelectorAll('script[type="text/latex"]').forEach((el) => {
     render(el.innerHTML, (div: HTMLDivElement) => {
       if (el.parentNode) {
