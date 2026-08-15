@@ -222,12 +222,26 @@ function normalizePlots(src, bindings) {
   return { text, freeVars: [...unresolved] }
 }
 
-/** Splits a file into its pspicture blocks; a file with none is one whole-document unit. */
+/**
+ * Splits a file into its pspicture blocks.
+ *
+ * `\psset` applies to everything that follows it, and the corpus routinely
+ * sets the unit once above several pictures. Extracting a picture without the
+ * settings that governed it renders at the wrong scale, which under
+ * `standalone` cropping produces a plausible-looking but wrong reference — so
+ * each block carries the settings in scope where it appeared.
+ *
+ * A file with no pictures is one whole-document unit.
+ */
 function splitPictures(src) {
   const blocks = []
-  const re = /\\begin\{pspicture\}[\s\S]*?\\end\{pspicture\}/g
+  const re = /\\psset\{[^{}]*\}|\\begin\{pspicture\}[\s\S]*?\\end\{pspicture\}/g
+  const settings = []
   let m
-  while ((m = re.exec(src))) blocks.push(m[0])
+  while ((m = re.exec(src))) {
+    if (m[0].startsWith('\\psset')) settings.push(m[0])
+    else blocks.push({ body: m[0], settings: [...settings] })
+  }
   return blocks
 }
 
@@ -290,10 +304,14 @@ for (const file of files) {
     continue
   }
 
-  pictures.forEach((body, n) => {
+  pictures.forEach((picture, n) => {
     const id = pictures.length === 1 ? stem : `${stem}--p${String(n + 1).padStart(2, '0')}`
+    const body = [...picture.settings, picture.body].join('\n')
     writeFileSync(join(outDir, 'doc', `${id}.tex`), wrapDocument(body, { document: false }))
-    manifest[id] = { source: file, index: n + 1, kind: 'picture', shims, bindings, freeVars, body }
+    manifest[id] = {
+      source: file, index: n + 1, kind: 'picture',
+      shims, bindings, freeVars, settings: picture.settings, body,
+    }
   })
 }
 
