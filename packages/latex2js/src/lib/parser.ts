@@ -512,8 +512,16 @@ class Parser {
   // Text / header transforms (reused from the old parser, string-based)
   // -------------------------------------------------------------------------
 
-  parseTextExpression(line: string, exp: RegExp, k: string, contents: string): string {
-    var match = line.match(exp);
+  /**
+   * Text transforms run in sequence over one line, so each must match the
+   * value the previous ones produced. Matching the pristine line instead makes
+   * `matchrepl` search `contents` for a literal that an earlier transform has
+   * already rewritten, and the replacement silently does nothing — which is
+   * why `\section{Cauchy--Schwarz}` survived as source text once `--` had
+   * become an en dash.
+   */
+  parseTextExpression(_line: string, exp: RegExp, k: string, contents: string): string {
+    var match = contents.match(exp);
     if (match) {
       return this.Text.Functions[k].call(this, match, contents);
     }

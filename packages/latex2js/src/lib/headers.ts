@@ -63,7 +63,10 @@ export const Functions = {
   example: () => '<h4>Example</h4>',
   problem: () => '<h4>Problem</h4>',
   proof: () => '<h4>Proof</h4>',
-  qed: () => '$\\qed$',
+  // amsthm closes a proof with an open square. Emitted as a character rather
+  // than as math: MathJax defines no \qed, so the previous `$\qed$` surfaced
+  // an "Undefined control sequence" box at the end of every proof.
+  qed: () => '<span class="qed">□</span>',
   solution: () => '<h4>Solution</h4>',
   theorem: () => '<h4>Theorem</h4>'
 };
