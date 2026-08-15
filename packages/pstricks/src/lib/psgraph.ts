@@ -71,6 +71,45 @@ function buildCurvePath(data: number[], closed: boolean): string {
   return d;
 }
 
+const TAU = Math.PI * 2;
+
+/**
+ * SVG arc flags for a PSTricks arc running from `angleA` to `angleB`.
+ *
+ * PSTricks always sweeps counter-clockwise in its own coordinates, taking the
+ * long way round when the end angle precedes the start. `Y` inverts the axis,
+ * so that counter-clockwise sweep is drawn with SVG's sweep-flag 0 — using 1
+ * traces the complementary arc, which is what bowed every `\pswedge` inward
+ * and turned a pie chart into a star.
+ *
+ * @param angleA - start angle in radians
+ * @param angleB - end angle in radians
+ * @returns the sweep span plus SVG's large-arc and sweep flags
+ */
+function arcFlags(angleA: number, angleB: number): { delta: number; large: number; sweep: number } {
+  let delta = angleB - angleA;
+  if (!isFinite(delta)) delta = 0;
+  delta = ((delta % TAU) + TAU) % TAU;
+  return { delta, large: delta > Math.PI ? 1 : 0, sweep: 0 };
+}
+
+/**
+ * A full turn cannot be expressed as one SVG arc, because the start and end
+ * points coincide. Such a sweep is emitted as two half-turns instead.
+ *
+ * @param cx - centre x in device units
+ * @param cy - centre y in device units
+ * @param r - radius in device units
+ * @returns a closed circular path
+ */
+function fullCirclePath(cx: number, cy: number, r: number): string {
+  return (
+    'M ' + (cx - r) + ' ' + cy +
+    ' A ' + r + ' ' + r + ' 0 1 0 ' + (cx + r) + ' ' + cy +
+    ' A ' + r + ' ' + r + ' 0 1 0 ' + (cx - r) + ' ' + cy + ' Z'
+  );
+}
+
 function curveRenderer(this: any, svg: any): void {
   const d = buildCurvePath(this.data, !!this.closed);
   if (!d) return;
@@ -224,17 +263,16 @@ const psgraph: any = {
   },
 
   psarc(svg: any): void {
-    const sweep = this.angleB - this.angleA > 0 ? 1 : 0;
-    const large = Math.abs(this.angleB - this.angleA) > Math.PI ? 1 : 0;
+    const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
     const filled = this.filled || this.fillstyle === 'solid';
-    const d = filled
-      ? 'M ' + this.cx + ' ' + this.cy +
-        ' L ' + this.A.x + ' ' + this.A.y +
-        ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
-        ' ' + this.B.x + ' ' + this.B.y + ' Z'
-      : 'M ' + this.A.x + ' ' + this.A.y +
-        ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
-        ' ' + this.B.x + ' ' + this.B.y;
+    const arc =
+      ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
+      ' ' + this.B.x + ' ' + this.B.y;
+    const d = delta === 0
+      ? fullCirclePath(this.cx, this.cy, this.r)
+      : filled
+        ? 'M ' + this.cx + ' ' + this.cy + ' L ' + this.A.x + ' ' + this.A.y + arc + ' Z'
+        : 'M ' + this.A.x + ' ' + this.A.y + arc;
     svg
       .append('svg:path')
       .attr('d', d)
@@ -829,17 +867,16 @@ const psgraph: any = {
   psccurve: curveRenderer,
 
   pswedge(svg: any): void {
-    const sweep = this.angleB - this.angleA > 0 ? 1 : 0;
-    const large = Math.abs(this.angleB - this.angleA) > Math.PI ? 1 : 0;
-    svg
-      .append('svg:path')
-      .attr(
-        'd',
-        'M ' + this.cx + ' ' + this.cy +
+    const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
+    const d = delta === 0
+      ? fullCirclePath(this.cx, this.cy, this.r)
+      : 'M ' + this.cx + ' ' + this.cy +
         ' L ' + this.A.x + ' ' + this.A.y +
         ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
-        ' ' + this.B.x + ' ' + this.B.y + ' Z'
-      )
+        ' ' + this.B.x + ' ' + this.B.y + ' Z';
+    svg
+      .append('svg:path')
+      .attr('d', d)
       .style('stroke-width', this.linewidth)
       .style('stroke', this.linecolor)
       .style('stroke-opacity', 1)
