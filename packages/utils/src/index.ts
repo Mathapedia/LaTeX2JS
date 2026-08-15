@@ -45,6 +45,61 @@ export const RE = {
   coords: '\\(\\s*([^\\)]*),([^\\)]*)\\s*\\)'
 };
 
+/** Option keys whose value names a colour. */
+const COLOR_KEYS = ['linecolor', 'fillcolor', 'hatchcolor', 'gridcolor', 'bordercolor', 'shadowcolor', 'labelcolor'];
+
+/**
+ * Base colours xcolor mixes against, as RGB triples. Only the names that can
+ * appear on the left of a `!` need resolving; every other colour is handed to
+ * the browser unchanged, so plain names keep whatever CSS already gives them.
+ */
+const BASE_COLORS: { [name: string]: [number, number, number] } = {
+  red: [255, 0, 0], green: [0, 255, 0], blue: [0, 0, 255],
+  cyan: [0, 255, 255], magenta: [255, 0, 255], yellow: [255, 255, 0],
+  black: [0, 0, 0], white: [255, 255, 255], gray: [128, 128, 128],
+  grey: [128, 128, 128], orange: [255, 165, 0], purple: [128, 0, 128],
+  brown: [165, 42, 42], pink: [255, 192, 203], olive: [128, 128, 0],
+  violet: [148, 0, 211], teal: [0, 128, 128], lime: [0, 255, 0],
+};
+
+/**
+ * Resolves an xcolor tint expression to a CSS colour.
+ *
+ * `gray!40` means forty percent gray against white, and `gray!40!red` mixes
+ * against red instead. A browser cannot read either, and an unparsable fill
+ * silently falls back to black — which is how a light grey plane rendered as
+ * a solid black one.
+ *
+ * @param value - a colour name, optionally with `!` mix terms
+ * @returns a CSS colour; names without a mix term are returned untouched
+ */
+export const resolveColor = function (value: string): string {
+  const parts = String(value).split('!').map((p) => p.trim());
+  if (parts.length < 2) return value;
+
+  const rgb = (name: string): [number, number, number] | null =>
+    BASE_COLORS[name.toLowerCase()] ?? null;
+
+  let current = rgb(parts[0]);
+  if (!current) return value;
+
+  for (let i = 1; i < parts.length; i += 2) {
+    const pct = Number(parts[i]);
+    if (!isFinite(pct)) return value;
+    // An omitted second operand mixes against white, as xcolor does.
+    const against = parts[i + 1] ? rgb(parts[i + 1]) : ([255, 255, 255] as [number, number, number]);
+    if (!against) return value;
+    const w = Math.max(0, Math.min(100, pct)) / 100;
+    current = [
+      Math.round(current[0] * w + against[0] * (1 - w)),
+      Math.round(current[1] * w + against[1] * (1 - w)),
+      Math.round(current[2] * w + against[2] * (1 - w)),
+    ];
+  }
+
+  return 'rgb(' + current[0] + ',' + current[1] + ',' + current[2] + ')';
+};
+
 // OPTIONS
 // converts [showorigin=false,labels=none, Dx=3.14] to {showorigin: 'false', labels: 'none', Dx: '3.14'}
 export const parseOptions = function (opts: string) {
@@ -54,7 +109,9 @@ export const parseOptions = function (opts: string) {
   all.forEach((option: string) => {
     var kv = option.split('=');
     if (kv.length == 2) {
-      obj[kv[0].trim()] = kv[1].trim();
+      const key = kv[0].trim();
+      const value = kv[1].trim();
+      obj[key] = COLOR_KEYS.indexOf(key) === -1 ? value : resolveColor(value);
     }
   });
   return obj;

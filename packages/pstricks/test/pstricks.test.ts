@@ -143,7 +143,9 @@ describe('pstricks Functions', () => {
     const m = match(Expressions.pscustom, '\\pscustom[fillstyle=solid,fillcolor=gray!40]{\\psline(0,0)(4,1.2)}');
     const data = Functions.pscustom.call(ctx, m);
     expect(data.fillstyle).toBe('solid');
-    expect(data.fillcolor).toBe('gray!40');
+    // xcolor tints are resolved at parse time; passing `gray!40` through to the
+    // browser produced an unusable fill value, which renders as black.
+    expect(data.fillcolor).toBe('rgb(204,204,204)');
     expect(data.body).toContain('\\psline(0,0)(4,1.2)');
   });
 
