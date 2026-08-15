@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaTeX2JS Playground</title>
+</head>
+<body>
+  <header class="topbar">
+    <h1>LaTeX2JS <span class="badge">playground</span></h1>
+    <nav id="examples" class="examples"></nav>
+  </header>
+
+  <main class="layout">
+    <section class="pane editor-pane">
+      <textarea id="editor" class="editor" spellcheck="false" autocomplete="off"
+        autocorrect="off" autocapitalize="off"></textarea>
+      <div id="diagnostics" class="diagnostics"></div>
+    </section>
+    <section class="pane preview-pane">
+      <div id="output" class="preview"></div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

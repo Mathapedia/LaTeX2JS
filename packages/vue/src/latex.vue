@@ -31,6 +31,8 @@ export default {
     pspicture,
     nicebox,
     enumerate,
+    itemize: enumerate,
+    description: enumerate,
     verbatim,
     slider,
     math,

@@ -3,6 +3,7 @@ import {
   parseOptions,
   parseArrows,
   evaluate,
+  parseExpression,
   X,
   Xinv,
   Y,
@@ -11,12 +12,22 @@ import {
 
 import Settings from '@latex2js/settings';
 
+/**
+ * Parse a PSTricks linewidth value: a bare number is used as-is (SVG px),
+ * a `pt` value is converted to px (1pt ≈ 1.333px).
+ */
+function parseLinewidth(value: string): number {
+  const m = value.trim().match(/^([\d.]+)\s*(pt)?$/);
+  if (!m) return 2;
+  return Number(m[1]) * (m[2] ? 1.333 : 1);
+}
+
 export const Expressions = {
   pspicture: /\\begin\{pspicture\}\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
-  psframe: /\\psframe\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
-  psplot: /\\psplot(\[[^\]]*\])?\{([^\}]*)\}\{([^\}]*)\}\{([^\}]*)\}/,
+  psframe: /\\psframe\*?(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
+  psplot: /\\psplot\*?(\[[^\]]*\])?\{([^\}]*)\}\{([^\}]*)\}\{([^\}]*)\}/,
   psarc: new RegExp(
-    '\\\\psarc' +
+    '\\\\psarc\\*?' +
     RE.options +
     RE.type +
     RE.coords +
@@ -25,9 +36,9 @@ export const Expressions = {
     RE.squiggle
   ),
   pscircle: /\\pscircle.*\(\s*(.*),(.*)\s*\)\{(.*)\}/,
-  pspolygon: new RegExp('\\\\pspolygon' + RE.options + '(.*)'),
+  pspolygon: new RegExp('\\\\pspolygon\\*?' + RE.options + '(.*)'),
   psaxes: new RegExp(
-    '\\\\psaxes' +
+    '\\\\psaxes\\*?' +
     RE.options +
     RE.type +
     RE.coords +
@@ -44,7 +55,7 @@ export const Expressions = {
     RE.squiggle
   ),
   psline: new RegExp(
-    '\\\\psline' + RE.options + RE.type + RE.coords + RE.coordsOpt
+    '\\\\psline\\*?' + RE.options + RE.type + RE.coords + RE.coordsOpt
   ),
   userline: new RegExp(
     '\\\\userline' +
@@ -61,7 +72,19 @@ export const Expressions = {
     '\\\\uservariable' + RE.options + RE.squiggle + RE.coords + RE.squiggle
   ),
   rput: /\\rput\((.*),(.*)\)\{(.*)\}/,
-  psset: /\\psset\{(.*)\}/
+  psset: /\\psset\{(.*)\}/,
+  psdots: new RegExp('\\\\psdots' + RE.options + '(.*)'),
+  psgrid: new RegExp(
+    '\\\\psgrid' + RE.options + RE.coordsOpt + RE.coordsOpt + RE.coordsOpt
+  ),
+  psellipse: /\\psellipse.*\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
+  psbezier: /\\psbezier(\[[^\]]*\])?\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)/,
+  pscurve: new RegExp('\\\\pscurve' + RE.options + RE.coords + '(.*)'),
+  psecurve: new RegExp('\\\\psecurve' + RE.options + RE.coords + '(.*)'),
+  psccurve: new RegExp('\\\\psccurve' + RE.options + RE.coords + '(.*)'),
+  pswedge: /\\pswedge(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\{(.*)\}\{(.*)\}\{(.*)\}/,
+  pscustom: /\\pscustom(\[[^\]]*\])?\{([\s\S]*)\}/,
+  multido: /\\multido\{([^}]*)\}\{([^}]*)\}\{([\s\S]*)\}/
 };
 
 export interface PSTricksContext {
@@ -114,20 +137,35 @@ export const Functions = {
     return Object.assign(p, s);
   },
   psframe(this: PSTricksContext, m: any) {
-    var obj = {
-      x1: X.call(this, m[1]),
-      y1: Y.call(this, m[2]),
-      x2: X.call(this, m[3]),
-      y2: Y.call(this, m[4])
+    var obj: any = {
+      x1: X.call(this, m[2]),
+      y1: Y.call(this, m[3]),
+      x2: X.call(this, m[4]),
+      y2: Y.call(this, m[5]),
+      linecolor: 'black',
+      linestyle: 'solid',
+      fillstyle: 'none',
+      fillcolor: 'black',
+      linewidth: 2,
+      filled: /\\psframe\*/.test(m[0])
     };
+    if (m[1]) Object.assign(obj, parseOptions(m[1]));
     return obj;
   },
   pscircle(this: PSTricksContext, m: any) {
-    var obj = {
+    var obj: any = {
       cx: X.call(this, m[1]),
       cy: Y.call(this, m[2]),
-      r: this.xunit * m[3]
+      r: this.xunit * m[3],
+      linecolor: 'black',
+      linestyle: 'solid',
+      fillstyle: 'none',
+      fillcolor: 'black',
+      linewidth: 2,
+      filled: /\\pscircle\*/.test(m[0])
     };
+    var opts = m[0].match(/\[([^\]]*)\]/);
+    if (opts) Object.assign(obj, parseOptions(opts[1]));
     return obj;
   },
   psaxes(this: PSTricksContext, m: any) {
@@ -184,31 +222,9 @@ export const Functions = {
   psplot(this: PSTricksContext, m: any) {
     var startX = evaluate.call(this, m[2]);
     var endX = evaluate.call(this, m[3]);
-    var data = [];
+    var data: number[] = [];
     var x;
-    // get env
-    var expression = '';
-    Object.entries(this.variables || {}).forEach(([name, val]) => {
-      expression += 'var ' + name + ' = ' + val + ';';
-    });
 
-    const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
-    expression += mathFunctions + 'return ' + m[4] + ';';
-
-    for (x = startX; x <= endX; x += 0.005) {
-      data.push(X.call(this, x));
-      try {
-        const evalFunc = new Function('x', expression);
-        const yValue = evalFunc(x);
-        if (yValue !== undefined && !isNaN(yValue)) {
-          data.push(Y.call(this, yValue));
-        } else {
-          data.push(Y.call(this, 0));
-        }
-      } catch (err) {
-        data.push(Y.call(this, 0)); // fallback value
-      }
-    }
     var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
@@ -217,6 +233,37 @@ export const Functions = {
       linewidth: 2
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
+
+    // Sampling: honor `plotpoints=N` (number of samples); default to a
+    // fixed 0.005 step like the original implementation.
+    var step = 0.005;
+    var plotpoints = obj.plotpoints ? Number(obj.plotpoints) : 0;
+    if (plotpoints > 1) {
+      step = (endX - startX) / (plotpoints - 1);
+    }
+
+    // Compile the plot expression once; evaluate per sample against a
+    // reused scope (compile-once / evaluate-many).
+    let compiled;
+    try {
+      compiled = parseExpression(m[4]);
+    } catch (err) {
+      console.warn('psplot: could not parse expression:', (err as Error).message);
+      obj.data = data;
+      return obj;
+    }
+    const scope: any = Object.assign({}, this.variables || {});
+
+    for (x = startX; x <= endX + step / 2; x += step) {
+      data.push(X.call(this, x));
+      scope.x = x;
+      const yValue = compiled.evaluate(scope);
+      if (yValue !== undefined && !isNaN(yValue)) {
+        data.push(Y.call(this, yValue));
+      } else {
+        data.push(Y.call(this, 0));
+      }
+    }
     obj.data = data;
     return obj;
   },
@@ -234,12 +281,13 @@ export const Functions = {
         data.push(Y.call(this, d[2]));
       }
     });
-    var obj = {
+    var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
       fillstyle: 'none',
       fillcolor: 'black',
       linewidth: 2,
+      filled: /\\pspolygon\*/.test(m[0]),
       data: data
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
@@ -257,6 +305,7 @@ export const Functions = {
       linewidth: 2,
       arrows: arrows,
       dots: dots,
+      filled: /\\psarc\*/.test(m[0]),
       cx: X.call(this, 0),
       cy: Y.call(this, 0)
     };
@@ -303,7 +352,8 @@ export const Functions = {
       fillcolor: 'black',
       linewidth: 2,
       arrows: arrows,
-      dots: dots
+      dots: dots,
+      filled: /\\psline\*/.test(m[0])
     };
     if (m[5]) {
       obj.x1 = X.call(this, m[3]);
@@ -321,7 +371,7 @@ export const Functions = {
     }
     // TODO: add regex
     if (typeof obj.linewidth === 'string') {
-      obj.linewidth = 2;
+      obj.linewidth = parseLinewidth(obj.linewidth);
     }
     return obj;
   },
@@ -338,25 +388,20 @@ export const Functions = {
     }
     var nx1 = Xinv.call(this, coords[0]);
     var ny1 = Yinv.call(this, coords[1]);
-    var expx1 = 'var x = ' + nx1 + ';';
-    var expy1 = 'var y = ' + ny1 + ';';
-    // return X.call(this, eval(expy1 + expx1 + xExp));
-    var obj = {
+    var obj: any = {
       name: m[2],
       x: X.call(this, m[3]),
       y: Y.call(this, m[4]),
       func: m[5],
-      value: (() => {
-        try {
-          const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
-          const evalFunc = new Function('', mathFunctions + expx1 + expy1 + 'return ' + m[5]);
-          return evalFunc();
-        } catch (err) {
-          console.warn('Error evaluating uservariable expression:', err);
-          return 0;
-        }
-      })()
+      value: 0
     };
+    try {
+      obj.value = parseExpression(m[5]).evaluate(
+        Object.assign({ x: nx1, y: ny1 }, this.variables || {})
+      );
+    } catch (err) {
+      console.warn('Error evaluating uservariable expression:', (err as Error).message);
+    }
     return obj;
   },
   userline(this: PSTricksContext, m: any) {
@@ -366,42 +411,42 @@ export const Functions = {
     var l = parseArrows(lineType);
     var arrows = l.arrows;
     var dots = l.dots;
-    var xExp = m[7];
-    var yExp = m[8];
-    const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
 
-    if (xExp)
-      xExp = mathFunctions + xExp.replace(/^\{/, '').replace(/\}$/, '');
-    if (yExp)
-      yExp = mathFunctions + yExp.replace(/^\{/, '').replace(/\}$/, '');
-    var xExp2 = m[9];
-    var yExp2 = m[10];
-    if (xExp2)
-      xExp2 = mathFunctions + xExp2.replace(/^\{/, '').replace(/\}$/, '');
-    if (yExp2)
-      yExp2 = mathFunctions + yExp2.replace(/^\{/, '').replace(/\}$/, '');
-    var expression = '';
-    Object.entries(this.variables || {}).forEach(([name, val]) => {
-      expression += 'var ' + name + ' = ' + val + ';';
-    });
-    var obj = {
+    // Compile the interactive head/tail expressions once; each mousemove just
+    // re-evaluates them against a fresh {x, y} scope (compile-once).
+    const stripBraces = (s?: string) => (s ? s.replace(/^\{/, '').replace(/\}$/, '').trim() : null);
+    const compileOpt = (src: string | null) => {
+      if (!src) return null;
+      try {
+        return parseExpression(src);
+      } catch (err) {
+        console.warn('userline: could not parse expression:', (err as Error).message);
+        return null;
+      }
+    };
+    const xExp = compileOpt(stripBraces(m[7]));
+    const yExp = compileOpt(stripBraces(m[8]));
+    const xExp2 = compileOpt(stripBraces(m[9]));
+    const yExp2 = compileOpt(stripBraces(m[10]));
+    const variables = this.variables || {};
+
+    const evalAt = (compiled: any, x: number, y: number) =>
+      compiled.evaluate(Object.assign({ x: x, y: y }, variables));
+
+    var obj: any = {
       x1: X.call(this, m[3]),
       y1: Y.call(this, m[4]),
       x2: X.call(this, m[5]),
       y2: Y.call(this, m[6]),
-      xExp: xExp,
-      yExp: yExp,
-      xExp2: xExp2,
-      yExp2: yExp2,
+      xExp: m[7],
+      yExp: m[8],
+      xExp2: m[9],
+      yExp2: m[10],
       userx: (coords: number[]) => {
         var nx1 = Xinv.call(this, coords[0]);
         var ny1 = Yinv.call(this, coords[1]);
-        var expx1 = 'var x = ' + nx1 + ';';
-        var expy1 = 'var y = ' + ny1 + ';';
         try {
-          const cleanExp = xExp ? xExp.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-          const evalFunc = new Function('', mathFunctions + expression + expy1 + expx1 + 'return (' + cleanExp + ')');
-          return X.call(this, evalFunc());
+          return X.call(this, xExp ? evalAt(xExp, nx1, ny1) : 0);
         } catch (err) {
           console.warn('Error evaluating userx expression:', err);
           return X.call(this, 0);
@@ -410,12 +455,8 @@ export const Functions = {
       usery: (coords: number[]) => {
         var nx2 = Xinv.call(this, coords[0]);
         var ny2 = Yinv.call(this, coords[1]);
-        var expx2 = 'var x = ' + nx2 + ';';
-        var expy2 = 'var y = ' + ny2 + ';';
         try {
-          const cleanExp = yExp ? yExp.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-          const evalFunc = new Function('', mathFunctions + expression + expy2 + expx2 + 'return (' + cleanExp + ')');
-          return Y.call(this, evalFunc());
+          return Y.call(this, yExp ? evalAt(yExp, nx2, ny2) : 0);
         } catch (err) {
           console.warn('Error evaluating usery expression:', err);
           return Y.call(this, 0);
@@ -424,12 +465,8 @@ export const Functions = {
       userx2: (coords: number[]) => {
         var nx3 = Xinv.call(this, coords[0]);
         var ny3 = Yinv.call(this, coords[1]);
-        var expx3 = 'var x = ' + nx3 + ';';
-        var expy3 = 'var y = ' + ny3 + ';';
         try {
-          const cleanExp = xExp2 ? xExp2.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-          const evalFunc = new Function('', mathFunctions + expression + expy3 + expx3 + 'return (' + cleanExp + ')');
-          return X.call(this, evalFunc());
+          return X.call(this, xExp2 ? evalAt(xExp2, nx3, ny3) : 0);
         } catch (err) {
           console.warn('Error evaluating userx2 expression:', err);
           return X.call(this, 0);
@@ -438,12 +475,8 @@ export const Functions = {
       usery2: (coords: number[]) => {
         var nx4 = Xinv.call(this, coords[0]);
         var ny4 = Yinv.call(this, coords[1]);
-        var expx4 = 'var x = ' + nx4 + ';';
-        var expy4 = 'var y = ' + ny4 + ';';
         try {
-          const cleanExp = yExp2 ? yExp2.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-          const evalFunc = new Function('', mathFunctions + expression + expy4 + expx4 + 'return (' + cleanExp + ')');
-          return Y.call(this, evalFunc());
+          return Y.call(this, yExp2 ? evalAt(yExp2, nx4, ny4) : 0);
         } catch (err) {
           console.warn('Error evaluating usery2 expression:', err);
           return Y.call(this, 0);
@@ -462,7 +495,7 @@ export const Functions = {
     }
     // TODO: add regex
     if (typeof obj.linewidth === 'string') {
-      obj.linewidth = 2;
+      obj.linewidth = parseLinewidth(obj.linewidth);
     }
     return obj;
   },
@@ -487,8 +520,159 @@ export const Functions = {
       });
     });
     return obj;
+  },
+  psdots(this: PSTricksContext, m: any) {
+    var obj: any = {
+      linecolor: 'black',
+      dotstyle: 'dot',
+      dotsize: 2,
+      data: parseCoordList.call(this, m[2])
+    };
+    if (m[1]) Object.assign(obj, parseOptions(m[1]));
+    return obj;
+  },
+  psgrid(this: PSTricksContext, m: any) {
+    var obj: any = {
+      linecolor: 'black',
+      linestyle: 'solid',
+      linewidth: 0.5,
+      gridwidth: 0.5
+    };
+    if (m[1]) Object.assign(obj, parseOptions(m[1]));
+    // \psgrid[opts](x0,y0)(x1,y1) — defaults to the whole pspicture bounds.
+    // coordsOpt outer groups: m[2]/m[5]/m[8] = '(x,y)' strings, m[3],m[4] etc.
+    var has0 = m[3] !== undefined;
+    var has1 = m[6] !== undefined;
+    var x0 = has0 ? X.call(this, m[3]) : X.call(this, this.x0);
+    var y0 = has0 ? Y.call(this, m[4]) : Y.call(this, this.y0);
+    var x1 = has1 ? X.call(this, m[6]) : X.call(this, this.x1);
+    var y1 = has1 ? Y.call(this, m[7]) : Y.call(this, this.y1);
+    obj.x0 = Math.min(x0, x1);
+    obj.y0 = Math.min(y0, y1);
+    obj.x1 = Math.max(x0, x1);
+    obj.y1 = Math.max(y0, y1);
+    obj.xunit = this.xunit;
+    obj.yunit = this.yunit;
+    return obj;
+  },
+  psellipse(this: PSTricksContext, m: any) {
+    var obj: any = {
+      linecolor: 'black',
+      linestyle: 'solid',
+      fillstyle: 'none',
+      fillcolor: 'black',
+      linewidth: 2
+    };
+    var opts = m[0].match(/\[([^\]]*)\]/);
+    if (opts) Object.assign(obj, parseOptions(opts[1]));
+    obj.cx = X.call(this, m[1]);
+    obj.cy = Y.call(this, m[2]);
+    obj.rx = Math.abs(Number(m[3])) * this.xunit;
+    obj.ry = Math.abs(Number(m[4])) * this.yunit;
+    return obj;
+  },
+  psbezier(this: PSTricksContext, m: any) {
+    var obj: any = {
+      linecolor: 'black',
+      linestyle: 'solid',
+      linewidth: 2
+    };
+    if (m[1]) Object.assign(obj, parseOptions(m[1]));
+    obj.x1 = X.call(this, m[2]);
+    obj.y1 = Y.call(this, m[3]);
+    obj.x2 = X.call(this, m[4]);
+    obj.y2 = Y.call(this, m[5]);
+    obj.x3 = X.call(this, m[6]);
+    obj.y3 = Y.call(this, m[7]);
+    obj.x4 = X.call(this, m[8]);
+    obj.y4 = Y.call(this, m[9]);
+    return obj;
+  },
+  pscurve(this: PSTricksContext, m: any) {
+    var obj: any = {
+      linecolor: 'black',
+      linestyle: 'solid',
+      fillstyle: 'none',
+      fillcolor: 'black',
+      linewidth: 2,
+      closed: /\\psecurve|\\psccurve/.test(m[0])
+    };
+    if (m[1]) Object.assign(obj, parseOptions(m[1]));
+    // first point is captured separately (m[2], m[3]); the rest follow
+    obj.data = [X.call(this, m[2]), Y.call(this, m[3])].concat(
+      parseCoordList.call(this, m[4] || '')
+    );
+    return obj;
+  },
+  psecurve(this: PSTricksContext, m: any) {
+    return Functions.pscurve.call(this, m);
+  },
+  psccurve(this: PSTricksContext, m: any) {
+    return Functions.pscurve.call(this, m);
+  },
+  pswedge(this: PSTricksContext, m: any) {
+    var obj: any = {
+      linecolor: 'black',
+      linestyle: 'solid',
+      fillstyle: 'solid',
+      fillcolor: 'black',
+      linewidth: 2
+    };
+    if (m[1]) Object.assign(obj, parseOptions(m[1]));
+    obj.cx = X.call(this, m[2]);
+    obj.cy = Y.call(this, m[3]);
+    obj.r = Number(m[4]) * this.xunit;
+    obj.angleA = (Number(m[5]) * Math.PI) / 180;
+    obj.angleB = (Number(m[6]) * Math.PI) / 180;
+    obj.A = {
+      x: X.call(this, Number(m[4]) * Math.cos(obj.angleA)),
+      y: Y.call(this, Number(m[4]) * Math.sin(obj.angleA))
+    };
+    obj.B = {
+      x: X.call(this, Number(m[4]) * Math.cos(obj.angleB)),
+      y: Y.call(this, Number(m[4]) * Math.sin(obj.angleB))
+    };
+    return obj;
+  },
+  pscustom(this: PSTricksContext, m: any) {
+    var obj: any = {
+      linecolor: 'black',
+      linestyle: 'solid',
+      fillstyle: 'none',
+      fillcolor: 'black',
+      linewidth: 2,
+      body: m[2]
+    };
+    if (m[1]) Object.assign(obj, parseOptions(m[1]));
+    return obj;
+  },
+  multido(this: PSTricksContext, m: any) {
+    var spec = m[1] || '';
+    var varMatch = spec.match(/\\([a-zA-Z@]+)\s*=\s*([\d.+-]+)\s*\+\s*([\d.+-]+)/);
+    return {
+      variable: varMatch ? varMatch[1] : null,
+      start: varMatch ? Number(varMatch[2]) : 0,
+      step: varMatch ? Number(varMatch[3]) : 1,
+      count: Number(m[2]),
+      body: m[3]
+    };
   }
 };
+
+/**
+ * Parse a coordinate list like `(0,0)(1,1)(2,2)` into a flat
+ * [x0,y0,x1,y1,...] pixel array.
+ */
+function parseCoordList(this: PSTricksContext, coords: string): number[] {
+  var data: number[] = [];
+  var re = new RegExp(RE.coords, 'g');
+  var m: RegExpExecArray | null;
+  while ((m = re.exec(coords)) !== null) {
+    data.push(X.call(this, m[1]));
+    data.push(Y.call(this, m[2]));
+  }
+  return data;
+}
 
 export default {
   Expressions,

@@ -1,3 +1,6 @@
+import { parseExpression } from './expression';
+import type { CompiledExpression } from './expression';
+
 export const simplerepl = function (regex: RegExp, replace: string) {
   return function (_m: any, contents: string) {
     return contents.replace(regex, replace);
@@ -110,23 +113,30 @@ export const evaluate = function (this: any, exp: string): number {
 
   this.variables = this.variables || {};
 
-  const mathKeys = Object.keys(Math) as (keyof Math)[];
-  const varKeys = Object.keys(this.variables);
-  const allKeys = [...mathKeys, ...varKeys];
-  const allValues = [
-    ...mathKeys.map(k => (Math[k] as any)),
-    ...varKeys.map(k => this.variables[k])
-  ];
-
   try {
-    // @ts-ignore
-    const fn = new Function(...allKeys, `return (${exp});`);
-    return fn(...allValues);
+    return getCompiled(exp).evaluate(this.variables);
   } catch (e) {
-    console.warn('Evaluation error:', e);
+    console.warn('Evaluation error:', (e as Error).message);
     return NaN;
   }
 };
+
+// Small bounded cache so repeated identical expressions (e.g. plot bounds,
+// slider-driven re-evaluation) skip re-parsing entirely.
+const expressionCache = new Map<string, CompiledExpression>();
+const EXPRESSION_CACHE_MAX = 500;
+
+function getCompiled(exp: string): CompiledExpression {
+  let compiled = expressionCache.get(exp);
+  if (!compiled) {
+    compiled = parseExpression(exp);
+    if (expressionCache.size >= EXPRESSION_CACHE_MAX) {
+      expressionCache.clear();
+    }
+    expressionCache.set(exp, compiled);
+  }
+  return compiled;
+}
 
 
 export const X = function (this: any, v: number | string) {
@@ -216,3 +226,10 @@ export const arrowType = parseArrows;
 export const dotType = parseArrows;
 
 export { SVGSelection, select } from './svg-utils';
+export {
+  parseExpression,
+  ExpressionError,
+  MATH_FUNCTIONS,
+  MATH_CONSTANTS,
+} from './expression';
+export type { CompiledExpression } from './expression';

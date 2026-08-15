@@ -1,12 +1,17 @@
 {
   "name": "latex2js-workspace",
   "version": "0.0.1",
+  "packageManager": "pnpm@11.15.1",
   "publishConfig": {
     "access": "restricted"
   },
   "private": true,
   "scripts": {
-    "build": "lerna run build"
+    "build": "lerna run build",
+    "dev": "pnpm --filter @latex2js/playground dev",
+    "dev:build": "pnpm --filter @latex2js/playground build",
+    "e2e": "pnpm --filter @latex2js/playground e2e",
+    "test": "lerna run test -- --passWithNoTests"
   },
   "devDependencies": {
     "copyfiles": "^2.4.1",
@@ -16,6 +21,7 @@
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "lerna": "^8.2.3",
     "typescript": "^5.2.0",
     "ts-node": "^10.9.2"

@@ -1,0 +1,7 @@
+\psset{unit=0.75cm}
+\begin{pspicture}(-4,-3)(4,6)
+\uservariable{alpha}(0.1,0){x}
+\psplot[algebraic,linewidth=2pt]{-4}{4}{pow(x,2)}
+\psplot[algebraic,linecolor=blue,linewidth=3]{-4}{4}{4*(x-alpha)*alpha}
+\psline{->}(-4,0)(4,0)
+\end{pspicture}

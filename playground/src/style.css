@@ -1,0 +1,147 @@
+:root {
+  --bg: #101418;
+  --bg-panel: #161b21;
+  --bg-editor: #0d1117;
+  --fg: #dbe2ea;
+  --fg-dim: #8b98a5;
+  --accent: #4f8cff;
+  --error: #ff6b6b;
+  --border: #2a333d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+#app,
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  flex: none;
+}
+
+.topbar h1 {
+  font-size: 16px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.example-btn {
+  background: transparent;
+  color: var(--fg-dim);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.example-btn:hover {
+  color: var(--fg);
+  border-color: var(--accent);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 42%) 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.pane {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-pane {
+  border-right: 1px solid var(--border);
+}
+
+.editor {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border: none;
+  outline: none;
+  background: var(--bg-editor);
+  color: #c9d4e0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 14px;
+  tab-size: 2;
+}
+
+.diagnostics {
+  flex: none;
+  max-height: 130px;
+  overflow: auto;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  padding: 8px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--fg-dim);
+}
+
+.diag-error {
+  color: var(--error);
+}
+
+.preview-pane {
+  overflow: auto;
+  padding: 20px;
+}
+
+.preview {
+  min-height: 100%;
+}
+
+.render-error {
+  color: var(--error);
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+
+/* the rendered diagrams shouldn't shrink on narrow previews */
+.pspicture {
+  max-width: 100%;
+}

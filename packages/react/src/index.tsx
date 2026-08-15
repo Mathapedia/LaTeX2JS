@@ -13,7 +13,7 @@ import slider from './components/slider';
 import { getMathJax, loadMathJax } from 'mathjaxjs';
 import { MathJaxProvider } from 'mathjaxjs-react';
 
-const ELEMENTS = { nicebox, enumerate, verbatim, math, macros, pspicture, slider };
+const ELEMENTS = { nicebox, enumerate, itemize: enumerate, description: enumerate, verbatim, math, macros, pspicture, slider };
 
 export { nicebox, enumerate, verbatim, math, macros, pspicture, slider, MathJaxProvider };
 

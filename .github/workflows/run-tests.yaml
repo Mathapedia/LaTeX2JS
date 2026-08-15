@@ -1,10 +1,13 @@
-name: LaTeX2JS tests
+name: LaTeX2JS CI
+
 on:
   push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 jobs:
-  container-job:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,20 +17,67 @@ jobs:
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: 10
+          version: 11
           run_install: false
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Build packages
+      - name: Build all packages
         run: pnpm build
 
-      - name: Run tests for latex2js
-        run: cd ./packages/latex2js && pnpm test
+      - name: Run all tests (parser, rendering, corpus, units)
+        run: pnpm test
+
+      - name: Generated grammar is up to date
+        # Fails if the committed src/grammar/parser.js no longer matches
+        # grammar.pegjs (e.g. after editing the grammar without regenerating).
+        run: |
+          pnpm --filter latex2js grammar
+          git diff --exit-code -- packages/latex2js/src/grammar/
+
+      - name: Playground production build
+        run: pnpm dev:build
+
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 11
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers (workspace-local)
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="$GITHUB_WORKSPACE/playground/.browsers"
+          pnpm --filter @latex2js/playground exec playwright install --with-deps chromium
+
+      - name: Run browser tests (gallery + interactive)
+        run: pnpm e2e
+
+      - name: Upload renderings as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-renderings
+          path: playground/renders/*.png
+          if-no-files-found: error

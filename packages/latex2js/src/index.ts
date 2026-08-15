@@ -14,6 +14,7 @@ export default class LaTeX2HTML5 {
   PSTricks: any;
   Views: any;
   Delimiters: any;
+  lastDiagnostics: any[] = [];
 
   constructor(
     Text = TextExt,
@@ -79,6 +80,7 @@ export default class LaTeX2HTML5 {
   parse(text: string): any[] {
     const parser = new Parser(this);
     const parsed = parser.parse(text);
+    this.lastDiagnostics = parser.diagnostics;
     parsed.forEach((element) => {
       if (!element.hasOwnProperty('type')) {
         throw new Error('no type!');

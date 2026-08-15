@@ -35,6 +35,54 @@ function arrow(x1: number, y1: number, x2: number, y2: number) {
   return context.join(' ');
 }
 
+/**
+ * Catmull-Rom → cubic Bézier path for a flat [x0,y0,x1,y1,...] point list.
+ * `closed` wraps the curve back to the start point.
+ */
+function buildCurvePath(data: number[], closed: boolean): string {
+  const pts: Array<[number, number]> = [];
+  for (let i = 0; i < data.length; i += 2) pts.push([data[i], data[i + 1]]);
+  const n = pts.length;
+  if (n < 2) return '';
+  const at = (i: number) => pts[((i % n) + n) % n];
+  let d = 'M ' + pts[0][0] + ' ' + pts[0][1];
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = closed ? at(i - 1) : i === 0 ? pts[0] : pts[i - 1];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = closed ? at(i + 2) : i + 2 < n ? pts[i + 2] : pts[i + 1];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p2[0] + ' ' + p2[1];
+  }
+  if (closed) {
+    const pn1 = pts[n - 1];
+    const p0 = pts[0];
+    const pn2 = pts[n - 2];
+    const p1 = pts[1];
+    const c1x = pn1[0] + (p0[0] - pn2[0]) / 6;
+    const c1y = pn1[1] + (p0[1] - pn2[1]) / 6;
+    const c2x = p0[0] - (p1[0] - pn1[0]) / 6;
+    const c2y = p0[1] - (p1[1] - pn1[1]) / 6;
+    d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p0[0] + ' ' + p0[1] + ' Z';
+  }
+  return d;
+}
+
+function curveRenderer(this: any, svg: any): void {
+  const d = buildCurvePath(this.data, !!this.closed);
+  if (!d) return;
+  svg
+    .append('svg:path')
+    .attr('d', d)
+    .style('stroke-width', this.linewidth)
+    .style('stroke', this.linecolor)
+    .style('stroke-opacity', 1)
+    .style('fill', this.fillstyle === 'solid' || this.filled ? this.fillcolor : 'none');
+}
+
 const psgraph: any = {
   env: null as any,
   getSize(): { width: number; height: number } {
@@ -56,6 +104,18 @@ const psgraph: any = {
   },
 
   psframe(svg: any): void {
+    const filled = this.filled || this.fillstyle === 'solid';
+    if (filled) {
+      svg
+        .append('svg:rect')
+        .attr('x', Math.min(this.x1, this.x2))
+        .attr('y', Math.min(this.y1, this.y2))
+        .attr('width', Math.abs(this.x2 - this.x1))
+        .attr('height', Math.abs(this.y2 - this.y1))
+        .style('fill', this.fillcolor)
+        .style('stroke', 'none');
+    }
+
     svg
       .append('svg:line')
       .attr('x1', this.x1)
@@ -98,14 +158,15 @@ const psgraph: any = {
   },
 
   pscircle: function (svg: any) {
+    const filled = this.filled || this.fillstyle === 'solid';
     svg
       .append('svg:circle')
       .attr('cx', this.cx)
       .attr('cy', this.cy)
       .attr('r', this.r)
-      .style('stroke', 'black')
-      .style('fill', 'none')
-      .style('stroke-width', 2)
+      .style('stroke', this.linecolor)
+      .style('fill', filled ? this.fillcolor : 'none')
+      .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1);
   },
 
@@ -158,38 +219,29 @@ const psgraph: any = {
       .attr('d', context.join(' '))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
-      .style('fill', this.fillstyle === 'none' ? 'none' : this.fillcolor)
+      .style('fill', this.fillstyle === 'none' && !this.filled ? 'none' : this.fillcolor)
       .style('stroke', 'black');
   },
 
   psarc(svg: any): void {
-    var context = [];
-    context.push('M');
-    context.push(this.cx);
-    context.push(this.cy);
-    context.push('L');
-    context.push(this.A.x);
-    context.push(this.A.y);
-
-    context.push('A');
-
-    context.push(this.A.x);
-    context.push(this.A.y);
-
-    context.push(0);
-    context.push(0);
-    context.push(0);
-
-    context.push(this.B.x);
-    context.push(this.B.y);
-
+    const sweep = this.angleB - this.angleA > 0 ? 1 : 0;
+    const large = Math.abs(this.angleB - this.angleA) > Math.PI ? 1 : 0;
+    const filled = this.filled || this.fillstyle === 'solid';
+    const d = filled
+      ? 'M ' + this.cx + ' ' + this.cy +
+        ' L ' + this.A.x + ' ' + this.A.y +
+        ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
+        ' ' + this.B.x + ' ' + this.B.y + ' Z'
+      : 'M ' + this.A.x + ' ' + this.A.y +
+        ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
+        ' ' + this.B.x + ' ' + this.B.y;
     svg
       .append('svg:path')
-      .attr('d', context.join(' '))
-      .style('stroke-width', 2)
+      .attr('d', d)
+      .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
-      .style('fill', 'blue')
-      .style('stroke', 'black');
+      .style('fill', filled ? this.fillcolor : 'none')
+      .style('stroke', this.linecolor);
   },
 
   psaxes(svg: any): void {
@@ -590,16 +642,29 @@ const psgraph: any = {
     var env = this.env;
     var el = this.$el;
 
-    Object.keys(this.plot).forEach((key) => {
-      const plot = this.plot[key];
-      if (key.match(/rput/)) return;
-      if (psgraph.hasOwnProperty(key)) {
-        plot.forEach((data: any) => {
-          data.data.global = env;
-          psgraph[key].call(data.data, svg);
-        });
-      }
-    });
+    // Source-order initial draw: the parser records `env.elements` in
+    // document order, so layers (fills under lines, etc.) respect the author's
+    // order. Falls back to the old type-grouped iteration for legacy data.
+    const elements = env && env.elements;
+    if (elements && elements.length) {
+      elements.forEach((item: any) => {
+        if (!item || !item.name || item.name.match(/rput/)) return;
+        if (!psgraph.hasOwnProperty(item.name)) return;
+        item.data.global = env;
+        psgraph[item.name].call(item.data, svg);
+      });
+    } else {
+      Object.keys(this.plot).forEach((key) => {
+        const plot = this.plot[key];
+        if (key.match(/rput/)) return;
+        if (psgraph.hasOwnProperty(key)) {
+          plot.forEach((data: any) => {
+            data.data.global = env;
+            psgraph[key].call(data.data, svg);
+          });
+        }
+      });
+    }
 
     svg.on(
       'touchmove',
@@ -683,9 +748,143 @@ const psgraph: any = {
         });
     }
 
-    // Enhanced cleanup and RPUT processing
-    psgraph.processRputElements.call(this, el);
+  // Enhanced cleanup and RPUT processing
+  psgraph.processRputElements.call(this, el);
   },
+
+  psdots(svg: any): void {
+    for (let i = 0; i < this.data.length; i += 2) {
+      svg
+        .append('svg:circle')
+        .attr('cx', this.data[i])
+        .attr('cy', this.data[i + 1])
+        .attr('r', this.dotsize)
+        .style('fill', this.linecolor)
+        .style('stroke', 'none');
+    }
+  },
+
+  psgrid(svg: any): void {
+    const x0 = this.x0, y0 = this.y0, x1 = this.x1, y1 = this.y1;
+    for (let x = x0; x <= x1 + 0.001; x += this.xunit) {
+      svg
+        .append('svg:line')
+        .attr('x1', x).attr('y1', y0)
+        .attr('x2', x).attr('y2', y1)
+        .style('stroke', this.linecolor)
+        .style('stroke-width', this.gridwidth)
+        .style('stroke-opacity', 1);
+    }
+    for (let y = y0; y <= y1 + 0.001; y += this.yunit) {
+      svg
+        .append('svg:line')
+        .attr('x1', x0).attr('y1', y)
+        .attr('x2', x1).attr('y2', y)
+        .style('stroke', this.linecolor)
+        .style('stroke-width', this.gridwidth)
+        .style('stroke-opacity', 1);
+    }
+  },
+
+  psellipse(svg: any): void {
+    svg
+      .append('svg:ellipse')
+      .attr('cx', this.cx)
+      .attr('cy', this.cy)
+      .attr('rx', this.rx)
+      .attr('ry', this.ry)
+      .style('stroke', this.linecolor)
+      .style('stroke-width', this.linewidth)
+      .style('stroke-opacity', 1)
+      .style('fill', this.fillstyle === 'solid' ? this.fillcolor : 'none');
+  },
+
+  psbezier(svg: any): void {
+    svg
+      .append('svg:path')
+      .attr(
+        'd',
+        'M ' + this.x1 + ' ' + this.y1 +
+        ' C ' + this.x2 + ' ' + this.y2 + ', ' + this.x3 + ' ' + this.y3 + ', ' + this.x4 + ' ' + this.y4
+      )
+      .style('stroke-width', this.linewidth)
+      .style('stroke', this.linecolor)
+      .style('stroke-opacity', 1)
+      .style('fill', 'none');
+  },
+
+  pscurve(svg: any): void {
+    const d = buildCurvePath(this.data, !!this.closed);
+    if (!d) return;
+    svg
+      .append('svg:path')
+      .attr('d', d)
+      .style('stroke-width', this.linewidth)
+      .style('stroke', this.linecolor)
+      .style('stroke-opacity', 1)
+      .style('fill', this.fillstyle === 'solid' || this.filled ? this.fillcolor : 'none');
+  },
+
+  psecurve: curveRenderer,
+  psccurve: curveRenderer,
+
+  pswedge(svg: any): void {
+    const sweep = this.angleB - this.angleA > 0 ? 1 : 0;
+    const large = Math.abs(this.angleB - this.angleA) > Math.PI ? 1 : 0;
+    svg
+      .append('svg:path')
+      .attr(
+        'd',
+        'M ' + this.cx + ' ' + this.cy +
+        ' L ' + this.A.x + ' ' + this.A.y +
+        ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
+        ' ' + this.B.x + ' ' + this.B.y + ' Z'
+      )
+      .style('stroke-width', this.linewidth)
+      .style('stroke', this.linecolor)
+      .style('stroke-opacity', 1)
+      .style('fill', this.fillstyle === 'solid' ? this.fillcolor : 'none');
+  },
+
+  pscustom(svg: any): void {
+    const filled = this.filled || this.fillstyle === 'solid';
+    let d = '';
+    let started = false;
+    (this.commands || []).forEach((cmd: any) => {
+      const data = cmd.data;
+      if (!data) return;
+      if (cmd.key === 'psline' || cmd.key === 'userline' || cmd.key === 'psbezier') {
+        if (cmd.key === 'psbezier') {
+          if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
+          d += ' C ' + data.x2 + ' ' + data.y2 + ', ' + data.x3 + ' ' + data.y3 + ', ' + data.x4 + ' ' + data.y4;
+          return;
+        }
+        if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
+        d += ' L ' + data.x2 + ' ' + data.y2;
+      } else if (cmd.key === 'psframe') {
+        if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
+        d += ' L ' + data.x2 + ' ' + data.y1 +
+          ' L ' + data.x2 + ' ' + data.y2 +
+          ' L ' + data.x1 + ' ' + data.y2 + ' Z';
+      } else if (cmd.key === 'pspolygon' || cmd.key === 'pscurve') {
+        const pts = data.data || [];
+        if (pts.length < 2) return;
+        if (!started) { d += 'M ' + pts[0] + ' ' + pts[1]; started = true; }
+        for (let i = 2; i < pts.length; i += 2) d += ' L ' + pts[i] + ' ' + pts[i + 1];
+        d += ' Z';
+      }
+    });
+    if (!started) return;
+    if (filled) d += ' Z';
+    svg
+      .append('svg:path')
+      .attr('d', d)
+      .style('stroke-width', this.linewidth)
+      .style('stroke', this.linestyle === 'none' ? 'none' : this.linecolor)
+      .style('stroke-opacity', 1)
+      .style('fill', filled ? this.fillcolor : 'none');
+  },
+
 
   processRputElements(el: any): void {
     // Validate container
