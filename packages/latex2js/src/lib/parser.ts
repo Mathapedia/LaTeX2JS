@@ -187,8 +187,8 @@ class Parser {
       this.environment.commands = [];
       env.content.forEach((c) => this.walkContent(c));
     } else {
-      // enumerate / nicebox: content is text lines (with transforms).
-      env.content.forEach((c) => this.walkContent(c));
+      // enumerate / itemize / nicebox: content is text lines (with transforms).
+      this.walkTextContent(env.content);
     }
 
     if (env.end && env.end.name !== name) {
@@ -201,6 +201,55 @@ class Parser {
       this.diagnose('warning', `unclosed environment '${name}'`, env.begin.loc);
     }
     this.newEnvironment('math');
+  }
+
+  /**
+   * Walk a text environment's content, rejoining the nodes that came from one
+   * source line.
+   *
+   * `EnvContent` matches `Command` before `Line`, and a command's tail stops at
+   * the next command, so `\item First with \textbf{bold} text` arrives as two
+   * command nodes. Walking them individually renders each as its own line,
+   * which broke every list item at its first macro. pspicture keeps the
+   * per-node walk, because it depends on receiving commands separately.
+   */
+  walkTextContent(content: any[]): void {
+    let pending: any[] = [];
+
+    const flush = (): void => {
+      if (!pending.length) return;
+      const text = pending
+        .map((n) => (n.kind === 'line' ? this.lineToString(n) : n.raw))
+        .join('');
+      pending = [];
+      this.pushMathLine(text);
+    };
+
+    content.forEach((node) => {
+      if (node.kind === 'env') {
+        flush();
+        this.walkEnv(node);
+        return;
+      }
+
+      // An empty Line is the newline itself: it closes the line being built,
+      // or is a genuine paragraph break when there is nothing to close.
+      if (node.kind === 'line' && node.parts.length === 0) {
+        if (pending.length) flush();
+        else this.pushBlankLine(false);
+        return;
+      }
+
+      const at = node.loc && node.loc.line;
+      const open = pending.length ? pending[0].loc && pending[0].loc.line : at;
+      if (pending.length && at !== open) flush();
+      pending.push(node);
+
+      // A Line node consumed its own EOL, so nothing more belongs to it.
+      if (node.kind === 'line') flush();
+    });
+
+    flush();
   }
 
   /**
