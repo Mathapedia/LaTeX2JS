@@ -392,29 +392,87 @@ const psgraph: any = {
         .style('stroke-opacity', 1);
     }
 
+    /**
+     * Tick positions, stepped outward from the origin rather than from the end
+     * of the axis. Starting at the end puts every mark at whatever offset the
+     * axis happens to begin on, so an axis spanning -3.5 to 3.5 was ticked and
+     * labelled at half-integers instead of on the whole numbers.
+     */
+    const positions = (from: number, to: number, at: number, step: number): number[] => {
+      if (!(step > 0) || !isFinite(step)) return [];
+      // Y inverts the axis, so a vertical span arrives with its ends the other
+      // way round. Walking it as given produced no y ticks at all.
+      const lo = Math.min(from, to);
+      const hi = Math.max(from, to);
+      const out: number[] = [];
+      for (let v = at; v <= hi + 1e-6; v += step) out.push(v);
+      for (let v = at - step; v >= lo - 1e-6; v -= step) out.unshift(v);
+      return out;
+    };
+
     var xticks = () => {
-      for (var x = xaxis[0]; x <= xaxis[1]; x += this.dx) {
+      positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
         line(x, origin[1] - 5, x, origin[1] + 5);
-      }
+      });
     };
 
     var yticks = () => {
-      for (var y = yaxis[0]; y <= yaxis[1]; y += this.dy) {
+      positions(yaxis[0], yaxis[1], origin[1], this.dy).forEach((y) => {
         line(origin[0] - 5, y, origin[0] + 5, y);
-      }
+      });
+    };
+
+    const env = this.global || {};
+
+    /** Draws one tick number, positioned clear of its axis. */
+    const label = (text: string, x: number, y: number, anchor: string) => {
+      svg
+        .append('svg:text')
+        .attr('x', x)
+        .attr('y', y)
+        .attr('text-anchor', anchor)
+        .attr('font-size', 13)
+        .attr('font-family', 'serif')
+        .style('fill', 'black')
+        .text(text);
+    };
+
+    /** Tick values are device coordinates; labels need the value they stand for. */
+    const value = (device: number, axis: 'x' | 'y'): number => {
+      const n = axis === 'x'
+        ? device / env.xunit - env.w + env.x1
+        : env.y1 - device / env.yunit;
+      return Math.abs(n) < 1e-9 ? 0 : Number(n.toFixed(4));
+    };
+
+    const xlabels = () => {
+      positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
+        label(String(value(x, 'x')), x, origin[1] + 20, 'middle');
+      });
+    };
+
+    const ylabels = () => {
+      positions(yaxis[0], yaxis[1], origin[1], this.dy).forEach((y) => {
+        // The origin's own number belongs to the x axis; drawing it again here
+        // would stack two glyphs in the same place.
+        if (Math.abs(y - origin[1]) < 1e-6) return;
+        label(String(value(y, 'y')), origin[0] - 10, y + 4, 'end');
+      });
     };
 
     line(xaxis[0], origin[1], xaxis[1], origin[1]);
     line(origin[0], yaxis[0], origin[0], yaxis[1]);
 
-    if (this.ticks.match(/all/)) {
-      xticks();
-      yticks();
-    } else if (this.ticks.match(/x/)) {
-      xticks();
-    } else if (this.ticks.match(/y/)) {
-      yticks();
-    }
+    const selects = (option: string, axis: 'x' | 'y'): boolean => {
+      const v = String(option ?? 'all');
+      if (v.match(/none/)) return false;
+      return !!(v.match(/all/) || v.match(axis));
+    };
+
+    if (selects(this.ticks, 'x')) xticks();
+    if (selects(this.ticks, 'y')) yticks();
+    if (env.xunit && selects(this.labels, 'x')) xlabels();
+    if (env.yunit && selects(this.labels, 'y')) ylabels();
 
     if (this.arrows[0]) {
       svg

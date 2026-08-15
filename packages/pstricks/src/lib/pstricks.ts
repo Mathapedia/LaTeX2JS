@@ -174,7 +174,8 @@ export const Functions = {
       dy: 1 * this.yunit,
       arrows: [0, 0],
       dots: [0, 0],
-      ticks: 'all'
+      ticks: 'all',
+      labels: 'all'
     };
     if (m[1]) {
       var options = parseOptions(m[1]);
@@ -184,6 +185,11 @@ export const Functions = {
       if (options.Dy) {
         obj.dy = Number(options.Dy) * this.yunit;
       }
+      // `ticks` and `labels` select which axes get marks and numbers; both
+      // accept all / x / y / none. Dropping them meant ticks=none still drew
+      // ticks and labels could never be turned on.
+      if (options.ticks) obj.ticks = options.ticks;
+      if (options.labels) obj.labels = options.labels;
     }
     // arrows?
     var l = parseArrows(m[2]);
