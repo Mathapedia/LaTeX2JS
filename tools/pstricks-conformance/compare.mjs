@@ -152,13 +152,17 @@ function describe(img) {
     }
   }
   const cells = grid.reduce((a, v) => a + v, 0) || 1
-  const total = w * h
+  const box = maxX >= minX ? { w: maxX - minX + 1, h: maxY - minY + 1 } : null
 
   return {
-    ink: inked / total,
+    // Ink is measured against the drawing's own bounding box, not the canvas.
+    // The two renderers pad very differently — Ghostscript crops to the
+    // PostScript bounding box while the browser fills a fixed viewport — so
+    // ink over the full canvas mostly reports that difference in padding.
+    ink: box ? inked / (box.w * box.h) : 0,
     hue: hue.map((v) => v / (inked || 1)),
     grid: grid.map((v) => v / cells),
-    box: maxX >= minX ? { w: maxX - minX + 1, h: maxY - minY + 1 } : null,
+    box,
   }
 }
 

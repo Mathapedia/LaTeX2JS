@@ -73,7 +73,10 @@ a pass/fail gate.** It says where to look.
 
 Three signals, each chosen to survive rasterizer differences:
 
-- **ink** — fraction of non-white pixels. Catches missing or excess drawing.
+- **ink** — non-white pixels as a fraction of the drawing's own bounding box.
+  Measured against the box rather than the canvas, because Ghostscript crops to
+  the PostScript bounding box while the browser fills a fixed viewport, and
+  scoring over the full canvas mostly reports that difference in padding.
 - **colour** — normalized hue histogram. Catches wrong, absent, or unfilled fills.
 - **layout** — 16×16 occupancy grid over the ink bounding box, so canvas size
   and crop do not dominate. Catches reordering and misplacement.
