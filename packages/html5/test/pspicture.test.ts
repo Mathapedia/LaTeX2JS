@@ -10,6 +10,18 @@ function stubViewport(width: number): void {
   Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
 }
 
+/**
+ * Drawn shapes in document order. All drawing lives in a layer group the
+ * interactive redraw replaces wholesale, so this looks at descendants rather
+ * than direct children, and skips anything inside a pattern definition.
+ */
+function shapeOrder(svg: SVGElement): string[] {
+  return Array.from(svg.querySelectorAll('circle, path, rect, ellipse, line'))
+    .filter((el) => !el.closest('defs'))
+    .map((el) => el.tagName)
+    .filter((t) => t === 'circle' || t === 'path');
+}
+
 function parsePspicture(tex: string): any {
   const latex = new LaTeX2JS();
   const parsed = latex.parse(tex);
@@ -123,12 +135,33 @@ describe('pspicture component (SVG rendering)', () => {
     // the old parser grouped by command type (circles before lines); the new
     // parser renders in document order: circle, line, circle
     const svg = div.querySelector('svg')!;
-    const tags = Array.from(svg.children).map((el) => el.tagName);
-    expect(tags.filter((t) => t === 'circle' || t === 'path')).toEqual([
-      'circle',
-      'path',
-      'circle'
-    ]);
+    expect(shapeOrder(svg)).toEqual(['circle', 'path', 'circle']);
+  });
+
+  it('keeps source order after the pointer moves over the picture', () => {
+    // The interactive redraw used to remove and re-append the interactive
+    // elements, which put them at the end of the SVG and regrouped them by
+    // command type. A correct diagram silently reordered itself on first
+    // hover, so order has to be asserted after an event, not only before one.
+    const env = parsePspicture(`
+\\begin{pspicture}(0,0)(4,4)
+\\userline[linewidth=2pt]{->}(0,0)(2,2)
+\\pscircle(2,2){1}
+\\end{pspicture}
+    `);
+
+    const div = pspicture(env);
+    document.body.appendChild(div);
+    const svg = div.querySelector('svg')!;
+
+    // The userline draws its line plus an arrowhead, so the circle authored
+    // after it must stay last however many paths precede it.
+    const before = shapeOrder(svg);
+    expect(before[before.length - 1]).toBe('circle');
+
+    svg.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+
+    expect(shapeOrder(svg)).toEqual(before);
   });
 
   it('renders psdots as small circles', () => {

@@ -774,30 +774,113 @@ const psgraph: any = {
   pspicture(svg: any): void {
     var env = this.env;
     var el = this.$el;
+    const plots = this.plot;
 
-    // Source-order initial draw: the parser records `env.elements` in
-    // document order, so layers (fills under lines, etc.) respect the author's
-    // order. Falls back to the old type-grouped iteration for legacy data.
+    // The parser records `env.elements` in document order, so fills sit under
+    // lines exactly as authored.
     const elements = env && env.elements;
-    if (elements && elements.length) {
-      elements.forEach((item: any) => {
-        if (!item || !item.name || item.name.match(/rput/)) return;
-        if (!psgraph.hasOwnProperty(item.name)) return;
-        item.data.global = env;
-        psgraph[item.name].call(item.data, svg);
-      });
-    } else {
-      Object.keys(this.plot).forEach((key) => {
-        const plot = this.plot[key];
-        if (key.match(/rput/)) return;
-        if (psgraph.hasOwnProperty(key)) {
-          plot.forEach((data: any) => {
-            data.data.global = env;
-            psgraph[key].call(data.data, svg);
-          });
+
+    /**
+     * Recomputes an interactive element against the pointer position. Static
+     * elements keep the data the parser produced.
+     */
+    function resolveData(item: any, coords: number[] | null, variables: any): any {
+      if (!coords || !item.fn) return item.data;
+
+      if (item.name === 'psplot') {
+        Object.entries(variables || {}).forEach(([name, value]: [string, any]) => {
+          env.variables[name] = value;
+        });
+        const d = item.fn.call(env, item.match);
+        d.global = Object.assign({}, env);
+        return d;
+      }
+
+      if (item.name === 'userline') {
+        const d = item.fn.call(env, item.match);
+        env.x2 = coords[0];
+        env.y2 = coords[1];
+        item.data.x2 = env.x2;
+        item.data.y2 = env.y2;
+
+        if (item.data.xExp2) {
+          item.data.x2 = d.userx2(coords);
+          item.data.x1 = d.userx(coords);
+        } else if (item.data.xExp) {
+          item.data.x2 = d.userx(coords);
         }
+
+        if (item.data.yExp2) {
+          item.data.y2 = d.usery2(coords);
+          item.data.y1 = d.usery(coords);
+        } else if (item.data.yExp) {
+          item.data.y2 = d.usery(coords);
+        }
+
+        d.global = Object.assign({}, env);
+        Object.assign(d, item.data);
+        return d;
+      }
+
+      return item.data;
+    }
+
+    /** Evaluates every \uservariable at the pointer position, in source order. */
+    function readVariables(coords: number[]): { [name: string]: any } {
+      const variables: { [name: string]: any } = {};
+      const source = elements && elements.length
+        ? elements.filter((i: any) => i && i.name === 'uservariable')
+        : ((plots && plots.uservariable) || []).map((p: any) => ({ ...p, name: 'uservariable' }));
+      source.forEach((item: any) => {
+        env.userx = coords[0];
+        env.usery = coords[1];
+        const dd = item.fn.call(env, item.match);
+        variables[item.data.name] = dd.value;
+      });
+      return variables;
+    }
+
+    /**
+     * Draws the whole picture into a fresh layer.
+     *
+     * Redrawing everything is what keeps interaction faithful to the source.
+     * Removing just the interactive elements and appending them again put them
+     * at the end of the SVG — on top of every later shape — and re-emitted
+     * them grouped by command type rather than in document order, so a correct
+     * diagram silently reordered itself the first time the pointer crossed it.
+     */
+    let layer: any = null;
+    function drawLayer(coords: number[] | null): void {
+      if (layer) layer.remove();
+      layer = svg.append('svg:g').attr('class', 'pspicture-layer');
+      const variables = coords ? readVariables(coords) : {};
+
+      if (elements && elements.length) {
+        elements.forEach((item: any) => {
+          if (!item || !item.name || item.name.match(/rput/)) return;
+          if (!psgraph.hasOwnProperty(item.name)) return;
+          const data = resolveData(item, coords, variables);
+          data.global = env;
+          psgraph[item.name].call(data, layer);
+        });
+        return;
+      }
+
+      // Legacy data without an ordered element list: fall back to the
+      // type-grouped iteration, which cannot express author order.
+      Object.keys(plots).forEach((key) => {
+        if (key.match(/rput/)) return;
+        if (!psgraph.hasOwnProperty(key)) return;
+        plots[key].forEach((entry: any) => {
+          const item = { name: key, data: entry.data, match: entry.match, fn: entry.fn };
+          const data = resolveData(item, coords, variables);
+          data.global = env;
+          psgraph[key].call(data, layer);
+        });
       });
     }
+
+    drawLayer(null);
 
     svg.on(
       'touchmove',
@@ -806,7 +889,7 @@ const psgraph: any = {
         var touch = event.touches ? event.touches[0] : null;
         var rect = event.target.getBoundingClientRect();
         var touchcoords = touch ? [touch.clientX - rect.left, touch.clientY - rect.top] : [0, 0];
-        userEvent(touchcoords);
+        drawLayer(touchcoords);
       }
     );
 
@@ -814,75 +897,12 @@ const psgraph: any = {
       'mousemove',
       function (this: any, event: any) {
         var coords = [event.offsetX || 0, event.offsetY || 0];
-        userEvent(coords);
+        drawLayer(coords);
       }
     );
 
-    const plots = this.plot;
-    function userEvent(coords: any): void {
-      svg.selectAll('.userline').remove();
-      svg.selectAll('.psplot').remove();
-      var currentEnvironment: { [key: string]: any } = {};
-
-      Object.entries(plots || {})
-        .forEach(([k, plot]: [string, any]) => {
-          if (k.match(/uservariable/)) {
-            plot.forEach((data: any) => {
-              data.env.userx = coords[0];
-              data.env.usery = coords[1];
-              var dd = data.fn.call(data.env, data.match);
-              currentEnvironment[data.data.name] = dd.value;
-            });
-          }
-        });
-
-      Object.entries(plots || {})
-        .forEach(([k, plot]: [string, any]) => {
-          if (k.match(/psplot/)) {
-            plot.forEach((data: any) => {
-              Object.entries(currentEnvironment || {})
-                .forEach(([name, variable]: [string, any]) => {
-                  data.env.variables[name] = variable;
-                });
-              var d = data.fn.call(data.env, data.match);
-              d.global = {};
-              Object.assign(d.global, env);
-              psgraph[k].call(d, svg);
-            });
-          }
-          if (k.match(/userline/)) {
-            plot.forEach((data: any) => {
-              var d = data.fn.call(data.env, data.match);
-              data.env.x2 = coords[0];
-              data.env.y2 = coords[1];
-              data.data.x2 = data.env.x2;
-              data.data.y2 = data.env.y2;
-
-              if (data.data.xExp2) {
-                data.data.x2 = d.userx2(coords);
-                data.data.x1 = d.userx(coords);
-              } else if (data.data.xExp) {
-                data.data.x2 = d.userx(coords);
-              }
-
-              if (data.data.yExp2) {
-                data.data.y2 = d.usery2(coords);
-                data.data.y1 = d.usery(coords);
-              } else if (data.data.yExp) {
-                data.data.y2 = d.usery(coords);
-              }
-
-              d.global = {};
-              Object.assign(d.global, env);
-              Object.assign(d, data.data);
-              psgraph[k].call(d, svg);
-            });
-          }
-        });
-    }
-
-  // Enhanced cleanup and RPUT processing
-  psgraph.processRputElements.call(this, el);
+    // Enhanced cleanup and RPUT processing
+    psgraph.processRputElements.call(this, el);
   },
 
   psdots(svg: any): void {
