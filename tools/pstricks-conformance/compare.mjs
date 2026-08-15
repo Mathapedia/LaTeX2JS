@@ -27,7 +27,27 @@ const flag = (n, d) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : d)
 const jsDir = resolve(flag('--js', ''))
 const refDir = resolve(flag('--ref', ''))
 const outFile = resolve(flag('--out', 'comparison.html'))
+const manifestPath = flag('--manifest', '')
 const GRID = 16
+
+/**
+ * Reasons a pair cannot be compared on equal terms. These are properties of
+ * the two media, not defects: scoring them alongside the rest just buries the
+ * real differences under noise that can never be resolved.
+ */
+function incomparable(entry) {
+  if (!entry) return null
+  if ((entry.shims ?? []).includes('slider')) {
+    return 'The browser draws slider controls that a printed page cannot have, which moves the ink bounding box.'
+  }
+  if (entry.kind === 'document') {
+    return 'A whole document, where LaTeX and the browser make different typesetting choices — numbering, run-in headings, footnote placement.'
+  }
+  if ((entry.freeVars ?? []).length) {
+    return `Plot variables left unbound in the reference: ${entry.freeVars.join(', ')}.`
+  }
+  return null
+}
 
 /**
  * Decodes an 8-bit truecolour PNG to raw samples, undoing the per-scanline
@@ -175,6 +195,10 @@ if (!pairs.length) {
   process.exit(1)
 }
 
+const manifest = manifestPath && existsSync(manifestPath)
+  ? JSON.parse(readFileSync(manifestPath, 'utf8'))
+  : {}
+
 const rows = []
 for (const name of pairs) {
   const ja = decode(join(jsDir, `${name}.png`))
@@ -183,17 +207,42 @@ for (const name of pairs) {
   const da = describe(ja), db = describe(rb)
   rows.push({
     name,
+    caveat: incomparable(manifest[name]),
     ...score(da, db),
     js: { ink: da.ink, box: da.box, b64: readFileSync(join(jsDir, `${name}.png`)).toString('base64') },
     ref: { ink: db.ink, box: db.box, b64: readFileSync(join(refDir, `${name}.png`)).toString('base64') },
   })
 }
 
-rows.sort((a, b) => (a.overall ?? 2) - (b.overall ?? 2))
+// Pairs with a structural caveat sort last: they are listed for inspection,
+// not ranked as defects.
+const ranked = rows.filter((r) => !r.caveat && !r.unscored).sort((a, b) => a.overall - b.overall)
+const caveated = rows.filter((r) => r.caveat).sort((a, b) => a.overall - b.overall)
+const unscored = rows.filter((r) => r.unscored)
 
 const pct = (v) => `${(v * 100).toFixed(0)}%`
 const band = (v) => (v < 0.55 ? 'bad' : v < 0.75 ? 'warn' : 'good')
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+
+
+/** One side-by-side pair. */
+function card(r) {
+  return `
+  <div class="pair">
+    <div class="pair__head">
+      <span class="pair__name">${esc(r.name)}</span>
+      <span class="metric">ink <b>${pct(r.ink)}</b></span>
+      <span class="metric">colour <b>${pct(r.hue)}</b></span>
+      <span class="metric">layout <b>${pct(r.layout)}</b></span>
+      <span class="verdict ${r.caveat ? 'info' : band(r.overall)}">${pct(r.overall)}</span>
+    </div>
+    ${r.caveat ? `<p class="caveat">${esc(r.caveat)}</p>` : ''}
+    <div class="cols">
+      <div class="col"><h3>LaTeX2JS</h3><div class="frame"><img src="data:image/png;base64,${r.js.b64}" alt="${esc(r.name)} rendered by LaTeX2JS" loading="lazy"></div></div>
+      <div class="col"><h3>PSTricks reference</h3><div class="frame"><img src="data:image/png;base64,${r.ref.b64}" alt="${esc(r.name)} rendered by PSTricks" loading="lazy"></div></div>
+    </div>
+  </div>`
+}
 
 const html = `<title>Renderer Comparison</title>
 <style>
@@ -228,6 +277,12 @@ const html = `<title>Renderer Comparison</title>
           color:var(--muted);margin:0 0 7px;font-weight:600}
   .frame{background:var(--plate);border:1px solid var(--plate-line);display:flex;justify-content:center}
   .frame img{display:block;width:100%;height:auto}
+  section{margin-top:44px}
+  h2{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;
+     color:var(--muted);font-weight:600;margin:0 0 8px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .note{font-size:14.5px;color:var(--muted);margin:0 0 4px;max-width:70ch}
+  .caveat{font-size:13.5px;color:var(--muted);margin:0 0 12px;padding-left:11px;border-left:2px solid var(--line)}
+  .info{color:var(--accent)}
   footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);
          font-family:var(--mono);font-size:11.5px;color:var(--muted)}
 </style>
@@ -237,29 +292,32 @@ const html = `<title>Renderer Comparison</title>
     <h1>Renderer Comparison</h1>
     <p class="lede">The same source rendered twice. Scores are a heuristic — SVG in a browser and Ghostscript output never match pixel for pixel — so treat them as an ordering that says where to look, not as a verdict.</p>
   </header>
-  ${rows.map((r) => r.unscored ? `
-  <div class="pair"><div class="pair__head"><span class="pair__name">${esc(r.name)}</span>
-  <span class="verdict warn">unscored</span></div></div>` : `
-  <div class="pair">
-    <div class="pair__head">
-      <span class="pair__name">${esc(r.name)}</span>
-      <span class="metric">ink <b>${pct(r.ink)}</b></span>
-      <span class="metric">colour <b>${pct(r.hue)}</b></span>
-      <span class="metric">layout <b>${pct(r.layout)}</b></span>
-      <span class="verdict ${band(r.overall)}">${pct(r.overall)}</span>
-    </div>
-    <div class="cols">
-      <div class="col"><h3>LaTeX2JS</h3><div class="frame"><img src="data:image/png;base64,${r.js.b64}" alt="${esc(r.name)} rendered by LaTeX2JS" loading="lazy"></div></div>
-      <div class="col"><h3>PSTricks reference</h3><div class="frame"><img src="data:image/png;base64,${r.ref.b64}" alt="${esc(r.name)} rendered by PSTricks" loading="lazy"></div></div>
-    </div>
-  </div>`).join('')}
-  <footer>${rows.length} pairs · heuristic score = 25% ink + 30% colour + 45% layout occupancy</footer>
+  <section>
+    <h2>Ranked by disagreement</h2>
+    ${ranked.map(card).join('')}
+  </section>
+
+  ${caveated.length ? `
+  <section>
+    <h2>Listed, not ranked</h2>
+    <p class="note">These differ for reasons no renderer change can close, so they are kept out of the ranking above rather than sitting at the bottom of it looking like defects.</p>
+    ${caveated.map(card).join('')}
+  </section>` : ''}
+
+  ${unscored.length ? `
+  <section>
+    <h2>Unscored</h2>
+    ${unscored.map((r) => `<div class="pair"><span class="pair__name">${esc(r.name)}</span></div>`).join('')}
+  </section>` : ''}
+
+  <footer>${ranked.length} ranked · ${caveated.length} listed · heuristic score = 25% ink + 30% colour + 45% layout occupancy</footer>
 </div>
 `
 
 writeFileSync(outFile, html)
 console.log(`compare: ${rows.length} pairs -> ${outFile} (${(Buffer.byteLength(html) / 1024 / 1024).toFixed(2)} MB)`)
-for (const r of rows.slice(0, 12)) {
-  if (r.unscored) { console.log(`  ????  ${r.name}`); continue }
+console.log(`  ${ranked.length} ranked, ${caveated.length} listed only, ${unscored.length} unscored\n`)
+for (const r of ranked.slice(0, 12)) {
   console.log(`  ${pct(r.overall).padStart(4)}  ${r.name.padEnd(34)} ink=${pct(r.ink)} colour=${pct(r.hue)} layout=${pct(r.layout)}`)
 }
+for (const r of caveated) console.log(`  ---   ${r.name.padEnd(34)} ${r.caveat.slice(0, 60)}`)

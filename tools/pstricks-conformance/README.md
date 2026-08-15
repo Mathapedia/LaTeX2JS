@@ -48,8 +48,13 @@ cd ../../playground && pnpm e2e:gallery && cd -
 node compare.mjs \
   --js ../../playground/renders \
   --ref ./examples-ref/ref \
+  --manifest ./examples-ref/manifest.json \
   --out comparison.html
 ```
+
+Passing `--manifest` lets the comparison separate pairs that cannot be judged
+on equal terms from those that can, so the ranking is not dominated by
+differences no renderer change could close.
 
 For the generated corpus:
 
@@ -91,3 +96,38 @@ The harness also normalizes several places where LaTeX2JS accepts input real
 PSTricks rejects — `pow(a,b)`, infix bodies without `algebraic=true`, variable
 plot bounds, `plotpoints=1`. Each of those is a dialect decision the project
 still owes an answer to: keep the extension, or conform.
+
+## Known divergences
+
+Differences the comparison surfaces that are **not** defects. Each is a
+deliberate choice to keep LaTeX2JS's behaviour; they are recorded so nobody
+re-discovers them as bugs.
+
+### Starred shapes honour `fillcolor`
+
+`\psframe*[fillcolor=lightblue]` fills light blue here. PSTricks fills the
+starred forms with `linecolor` and ignores `fillcolor`, so the same source
+prints black. Every use in this repo's examples passes a `fillcolor` and
+plainly means it — the bar chart wants blue bars — so the lenient reading
+matches author intent, at the cost of conformance. This accounts for the whole
+gap on `14-bar-chart` and `18-fills`.
+
+### Document typesetting
+
+LaTeX numbers sections, theorems and equations, runs `Theorem 1.` into the
+following text, and floats footnotes to the foot of the page. LaTeX2JS emits
+headings and inline superscripts, which suits a scrolling page. Numbering is
+the one worth revisiting, since it is what makes a document cross-referenceable.
+
+### Interactive chrome
+
+`\slider` draws a control in the browser and nothing on paper, which shifts
+the ink bounding box enough to dominate a layout score. Those pairs are listed
+rather than ranked.
+
+### Colour names
+
+Plain colour names resolve through CSS, so `green` is CSS green (`#008000`),
+where LaTeX's `green` is pure `#00FF00`. Only `!` mix expressions are resolved
+against LaTeX's palette. Changing this would shift colours on every existing
+page, so it stays a decision rather than a fix.
