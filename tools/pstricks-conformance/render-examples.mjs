@@ -67,12 +67,32 @@ function skipParen(src, i) {
 }
 
 /**
- * Default binding for a \uservariable, whose real value is the live cursor
- * position. Ground truth has no cursor, so every such variable is pinned and
- * the binding is recorded — a JS-side render must use the same value for the
- * comparison to mean anything.
+ * Fallback binding for a \uservariable whose initial value cannot be read.
+ * Its real value tracks the cursor, and ground truth has no cursor.
  */
 const PINNED_USERVAR = 1
+
+/**
+ * Evaluates a \uservariable's expression at its declared starting position.
+ *
+ * `\uservariable{alpha}(0.1,0){x}` states the initial cursor position in its
+ * coordinate argument, so the variable starts at 0.1 — not at some value the
+ * harness invents. Pinning it elsewhere renders a correct-looking reference of
+ * a different diagram, which reads as a renderer bug.
+ *
+ * @param expr - the variable's expression, over `x` and `y`
+ * @param x - initial x from the coordinate argument
+ * @param y - initial y from the coordinate argument
+ * @returns the value as a string, or null when the expression is not numeric
+ */
+function initialBinding(expr, x, y) {
+  const body = expr.trim()
+  if (!/^[-+*/(). \dxy]+$/.test(body)) return null
+  try {
+    const v = Function('x', 'y', `"use strict";return (${body})`)(Number(x), Number(y))
+    return Number.isFinite(v) ? String(Number(v.toFixed(6))) : null
+  } catch { return null }
+}
 
 /**
  * Rewrites LaTeX2JS-only macros into their static PSTricks equivalent.
@@ -88,10 +108,12 @@ function shim(src) {
   for (const m of src.matchAll(/\\slider\{([^{}]*)\}\{([^{}]*)\}\{([^{}]*)\}\{((?:[^{}]|\{[^{}]*\})*)\}\{([^{}]*)\}/g)) {
     bindings[m[3].trim()] = m[5].trim()
   }
-  // \uservariable{name}(x,y){expr} — cursor-driven, so pin it
-  for (const m of src.matchAll(/\\uservariable\{([^{}]*)\}/g)) {
+  // \uservariable{name}(x,y){expr} — cursor-driven, so bind it to the value it
+  // holds at the declared starting position.
+  for (const m of src.matchAll(/\\uservariable\{([^{}]*)\}\(([^()]*),([^()]*)\)\{([^{}]*)\}/g)) {
     const name = m[1].trim()
-    if (!(name in bindings)) bindings[name] = String(PINNED_USERVAR)
+    if (name in bindings) continue
+    bindings[name] = initialBinding(m[4], m[2], m[3]) ?? String(PINNED_USERVAR)
   }
 
   let out = ''
