@@ -73,6 +73,101 @@ function buildCurvePath(data: number[], closed: boolean): string {
 
 const TAU = Math.PI * 2;
 
+/** Points to device units, matching the linewidth conversion in pstricks.ts. */
+const PT_TO_PX = 1.333;
+
+/**
+ * Line directions each hatched fill style draws, as offsets from `hatchangle`.
+ * PSTricks hatches at `hatchangle` for hlines, ninety degrees off for vlines,
+ * and both for crosshatch — so the default 45 degrees makes hlines diagonal,
+ * not horizontal.
+ */
+const HATCH_DIRECTIONS: { [style: string]: number[] } = {
+  hlines: [0],
+  vlines: [90],
+  crosshatch: [0, 90],
+};
+
+/** PSTricks hatch parameter defaults, in points except the angle and colour. */
+const HATCH_DEFAULTS = { hatchwidth: 0.8, hatchsep: 4, hatchangle: 45, hatchcolor: 'black' };
+
+let patternSeq = 0;
+
+/** Reads a dimension that may carry a `pt` suffix, in device units. */
+function dimension(value: any, fallbackPt: number): number {
+  if (typeof value === 'number' && isFinite(value)) return value * PT_TO_PX;
+  const m = typeof value === 'string' ? value.trim().match(/^([\d.]+)\s*(pt)?$/) : null;
+  return (m ? Number(m[1]) : fallbackPt) * PT_TO_PX;
+}
+
+/**
+ * Whether a shape has any fill at all. Renderers that must close a path before
+ * it can be filled ask this; the paint itself comes from {@link resolveFill}.
+ *
+ * @param ctx - the shape's parsed data
+ * @returns true when the shape should be built as a closed, fillable region
+ */
+function hasFill(ctx: any): boolean {
+  return !!ctx.filled || (!!ctx.fillstyle && ctx.fillstyle !== 'none');
+}
+
+/**
+ * Resolves a shape's SVG fill value, defining a hatch pattern when the style
+ * calls for one.
+ *
+ * Every renderer previously spelled this decision itself, in three mutually
+ * inconsistent ways: `fillstyle=hlines` became a solid fill on pspolygon and
+ * psarc, and no fill at all on psellipse, pswedge and pscurve. Routing all of
+ * them through one resolver makes an unimplemented style behave the same
+ * everywhere, and gives the hatched styles a real rendering.
+ *
+ * @param ctx - the shape's parsed data, carrying fillstyle and hatch options
+ * @param svg - the container the pattern definition is attached to
+ * @returns an SVG paint value: a colour, a `url(#…)` pattern, or `none`
+ */
+function resolveFill(ctx: any, svg: any): string {
+  const style: string = ctx.fillstyle ?? 'none';
+
+  // The starred forms set `filled`; they fill flat regardless of style.
+  if (ctx.filled || style === 'solid') return ctx.fillcolor;
+  if (style === 'none' || !style) return 'none';
+
+  const starred = style.endsWith('*');
+  const directions = HATCH_DIRECTIONS[starred ? style.slice(0, -1) : style];
+  // An unrecognised style is not a fill; guessing solid is what made the same
+  // input render differently depending on the shape.
+  if (!directions) return 'none';
+
+  const sep = Math.max(1, dimension(ctx.hatchsep, HATCH_DEFAULTS.hatchsep));
+  const width = Math.max(0.2, dimension(ctx.hatchwidth, HATCH_DEFAULTS.hatchwidth));
+  const angle = Number(ctx.hatchangle ?? HATCH_DEFAULTS.hatchangle) || 0;
+  const color = ctx.hatchcolor ?? HATCH_DEFAULTS.hatchcolor;
+
+  const id = 'l2j-hatch-' + ++patternSeq;
+  const pattern = svg
+    .append('svg:defs')
+    .append('svg:pattern')
+    .attr('id', id)
+    .attr('patternUnits', 'userSpaceOnUse')
+    .attr('width', sep)
+    .attr('height', sep)
+    // SVG's y axis runs opposite to the PSTricks angle convention.
+    .attr('patternTransform', 'rotate(' + -angle + ')');
+
+  // A starred hatch lays its lines over the fill colour instead of nothing.
+  if (starred) {
+    pattern.append('svg:rect').attr('width', sep).attr('height', sep).style('fill', ctx.fillcolor);
+  }
+
+  for (const d of directions) {
+    const line = pattern.append('svg:line').style('stroke', color).style('stroke-width', width);
+    if (d === 0) line.attr('x1', 0).attr('y1', sep / 2).attr('x2', sep).attr('y2', sep / 2);
+    else line.attr('x1', sep / 2).attr('y1', 0).attr('x2', sep / 2).attr('y2', sep);
+  }
+
+  return 'url(#' + id + ')';
+}
+
 /**
  * SVG arc flags for a PSTricks arc running from `angleA` to `angleB`.
  *
@@ -119,7 +214,7 @@ function curveRenderer(this: any, svg: any): void {
     .style('stroke-width', this.linewidth)
     .style('stroke', this.linecolor)
     .style('stroke-opacity', 1)
-    .style('fill', this.fillstyle === 'solid' || this.filled ? this.fillcolor : 'none');
+    .style('fill', resolveFill(this, svg));
 }
 
 const psgraph: any = {
@@ -143,7 +238,7 @@ const psgraph: any = {
   },
 
   psframe(svg: any): void {
-    const filled = this.filled || this.fillstyle === 'solid';
+    const filled = hasFill(this);
     if (filled) {
       svg
         .append('svg:rect')
@@ -151,7 +246,7 @@ const psgraph: any = {
         .attr('y', Math.min(this.y1, this.y2))
         .attr('width', Math.abs(this.x2 - this.x1))
         .attr('height', Math.abs(this.y2 - this.y1))
-        .style('fill', this.fillcolor)
+        .style('fill', resolveFill(this, svg))
         .style('stroke', 'none');
     }
 
@@ -197,14 +292,14 @@ const psgraph: any = {
   },
 
   pscircle: function (svg: any) {
-    const filled = this.filled || this.fillstyle === 'solid';
+    const filled = hasFill(this);
     svg
       .append('svg:circle')
       .attr('cx', this.cx)
       .attr('cy', this.cy)
       .attr('r', this.r)
       .style('stroke', this.linecolor)
-      .style('fill', filled ? this.fillcolor : 'none')
+      .style('fill', resolveFill(this, svg))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1);
   },
@@ -212,7 +307,7 @@ const psgraph: any = {
   psplot(svg: any): void {
     var context = [];
     context.push('M');
-    if (this.fillstyle === 'solid') {
+    if (hasFill(this)) {
       context.push(this.data[0]);
       context.push(Y.call(this.global, 0));
     } else {
@@ -225,7 +320,7 @@ const psgraph: any = {
       context.push(data);
     });
 
-    if (this.fillstyle === 'solid') {
+    if (hasFill(this)) {
       context.push(this.data[this.data.length - 2]);
       context.push(Y.call(this.global, 0));
       context.push('Z');
@@ -237,7 +332,7 @@ const psgraph: any = {
       .attr('class', 'psplot')
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
-      .style('fill', this.fillstyle === 'none' ? 'none' : this.fillcolor)
+      .style('fill', resolveFill(this, svg))
       .style('stroke', this.linecolor);
   },
 
@@ -258,13 +353,13 @@ const psgraph: any = {
       .attr('d', context.join(' '))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
-      .style('fill', this.fillstyle === 'none' && !this.filled ? 'none' : this.fillcolor)
+      .style('fill', resolveFill(this, svg))
       .style('stroke', 'black');
   },
 
   psarc(svg: any): void {
     const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
-    const filled = this.filled || this.fillstyle === 'solid';
+    const filled = hasFill(this);
     const arc =
       ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
       ' ' + this.B.x + ' ' + this.B.y;
@@ -278,7 +373,7 @@ const psgraph: any = {
       .attr('d', d)
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
-      .style('fill', filled ? this.fillcolor : 'none')
+      .style('fill', resolveFill(this, svg))
       .style('stroke', this.linecolor);
   },
 
@@ -834,7 +929,7 @@ const psgraph: any = {
       .style('stroke', this.linecolor)
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
-      .style('fill', this.fillstyle === 'solid' ? this.fillcolor : 'none');
+      .style('fill', resolveFill(this, svg));
   },
 
   psbezier(svg: any): void {
@@ -860,7 +955,7 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke', this.linecolor)
       .style('stroke-opacity', 1)
-      .style('fill', this.fillstyle === 'solid' || this.filled ? this.fillcolor : 'none');
+      .style('fill', resolveFill(this, svg));
   },
 
   psecurve: curveRenderer,
@@ -880,11 +975,11 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke', this.linecolor)
       .style('stroke-opacity', 1)
-      .style('fill', this.fillstyle === 'solid' ? this.fillcolor : 'none');
+      .style('fill', resolveFill(this, svg));
   },
 
   pscustom(svg: any): void {
-    const filled = this.filled || this.fillstyle === 'solid';
+    const filled = hasFill(this);
     let d = '';
     let started = false;
     (this.commands || []).forEach((cmd: any) => {
@@ -919,7 +1014,7 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke', this.linestyle === 'none' ? 'none' : this.linecolor)
       .style('stroke-opacity', 1)
-      .style('fill', filled ? this.fillcolor : 'none');
+      .style('fill', resolveFill(this, svg));
   },
 
 
