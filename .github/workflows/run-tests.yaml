@@ -118,14 +118,70 @@ jobs:
             playground/renders/gallery.html
           if-no-files-found: error
 
+  changes:
+    # Decides whether the conformance job has anything to check. That job pulls
+    # a multi-gigabyte TeX image and takes minutes, which is not worth spending
+    # on a change that cannot alter what gets drawn.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      rendering: ${{ steps.filter.outputs.rendering }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Both sides of the comparison have to be present to diff them.
+          fetch-depth: 0
+
+      - name: Decide whether rendering could have changed
+        id: filter
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -u
+
+          run_it() {
+            echo "rendering=true" >> "$GITHUB_OUTPUT"
+            echo "conformance will run: $1"
+            exit 0
+          }
+
+          # Fail open. A filter that cannot see what changed must run the job:
+          # skipping a correctness check on a bad guess is the costly mistake,
+          # and a wasted run is only slow.
+          [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && run_it "manually triggered"
+          [ -z "$BASE" ] && run_it "no base commit to compare against"
+          git cat-file -e "$BASE^{commit}" 2>/dev/null || run_it "base commit $BASE is not available"
+
+          changed=$(git diff --name-only "$BASE" "$GITHUB_SHA") || run_it "could not diff against $BASE"
+          echo "changed files:"
+          echo "$changed" | sed 's/^/  /'
+
+          # Everything a rendering is built from. The package list is the
+          # dependency closure of the html5 renderer — html5 pulls in latex2js,
+          # pstricks, utils and macros; latex2js and pstricks both pull in
+          # settings; settings pulls in utils — plus the stylesheet they draw
+          # through. Also the corpus they draw, the harness that captures it,
+          # the lockfile that pins what any of it runs against, and this
+          # workflow. Widen this if a package gains an edge into that closure.
+          if echo "$changed" | grep -qE '^(packages/(pstricks|latex2js|utils|html5|css|settings|macros)/|playground/|tools/pstricks-conformance/|\.github/workflows/|pnpm-lock\.yaml$|package\.json$)'; then
+            run_it "a rendering path changed"
+          fi
+
+          echo "rendering=false" >> "$GITHUB_OUTPUT"
+          echo "conformance skipped: nothing that affects a rendering changed"
+
   conformance:
     # Compares LaTeX2JS output against genuine PSTricks. Only the "does every
     # picture still compile" half gates the build; the similarity score is a
     # heuristic between two different rasterizers and is published for review
     # rather than enforced.
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: >-
+      needs.changes.outputs.rendering == 'true'
+      && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
 
     steps:
       - name: Checkout repository
