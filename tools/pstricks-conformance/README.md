@@ -134,3 +134,33 @@ Plain colour names resolve through CSS, so `green` is CSS green (`#008000`),
 where LaTeX's `green` is pure `#00FF00`. Only `!` mix expressions are resolved
 against LaTeX's palette. Changing this would shift colours on every existing
 page, so it stays a decision rather than a fix.
+
+## In CI
+
+`.github/workflows/run-tests.yaml` runs this harness as a `conformance` job on
+pull requests, alongside the unit tests and the browser suite.
+
+**Only half of it gates the build.** A picture that stops compiling under real
+PSTricks fails the job — that is deterministic, and a regression by any
+reading. The similarity score is a heuristic between two rasterizers that can
+never agree pixel for pixel, so it is uploaded as an artifact for review and
+never enforced. A threshold there would fail on antialiasing and teach everyone
+to ignore the job.
+
+Two artifacts come out of each run:
+
+| Artifact | Contents |
+|---|---|
+| `pstricks-conformance` | the side-by-side comparison page, plus every PSTricks reference PNG |
+| `example-renderings` | every LaTeX2JS rendering, plus a self-contained `gallery.html` |
+
+The job is skipped when nothing that could affect a drawing changed. A
+preceding `changes` job diffs against the base commit and matches against the
+html5 renderer's dependency closure — `pstricks`, `latex2js`, `utils`,
+`settings`, `macros`, `css` — plus the corpus, the playground, this directory,
+the lockfile and the workflow. **Widen that list if a package gains an edge
+into the closure**, or the job will silently stop covering it.
+
+The filter fails open: an unknown base commit, a failed diff, or a manual run
+all take the job. It also logs the changed files and the reason it decided, so
+an unexpected skip can be read from the log rather than reproduced.
