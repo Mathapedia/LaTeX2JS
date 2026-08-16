@@ -27,6 +27,12 @@ p.quotation {
   font-size: 10pt;
 }
 
+/* End-of-proof tombstone, set flush right as amsthm places it. */
+span.qed {
+  display: block;
+  text-align: right;
+}
+
 .nicebox {
   margin-top: 20px;
   min-height: 20px;

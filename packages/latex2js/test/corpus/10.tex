@@ -1,0 +1,33 @@
+\psset{unit=1cm}
+\begin{pspicture}(-1,-3)(9,4)
+
+\pscustom[fillstyle=solid,fillcolor=gray!40,linestyle=none]{
+    \psline[linewidth=1 pt](0,0)(4,1.2)
+    \psline[linewidth=1 pt](4,1.2)(8.4,0)
+    \psline[linewidth=1 pt](8.4,0)(4,-1.2)
+    \psline[linewidth=1 pt](4,-1.2)(0,0)
+}
+
+\psline[linewidth=1 pt](0,0)(4,1.2)
+\psline[linewidth=1 pt](4,1.2)(8.4,0)
+\psline[linewidth=1 pt](8.4,0)(4,-1.2)
+\psline[linewidth=1 pt](4,-1.2)(0,0)
+
+\rput(0.78,0){$W$}
+
+ % new vector
+\rput(6,3.3){$x$}
+\psline[linewidth=1.5 pt,linecolor=red]{->}(2.2,0.2)(6,3)
+
+ % new vector
+\rput(6.35,1.5){$\mathcal{E}_N$}
+\psline[linewidth=1.5 pt]{->}(6,0)(6,3)
+
+ % new vector
+\rput(4,-0.3){$\hat{x}_N$}
+\psline[linewidth=1.5 pt]{->}(2.2,0.2)(6,0)
+
+ % new vector
+\psline[linewidth=1.5 pt](2.2,0.2)(6,0)
+
+\end{pspicture}

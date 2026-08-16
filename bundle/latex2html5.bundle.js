@@ -22,6 +22,51 @@ function render(that) {
 
 },{}],2:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = render;
+function itemizeLine(line) {
+    var m = line.match(/\\item (.*)/);
+    if (m)
+        return '<li>' + m[1] + '</li>';
+    return line;
+}
+function descriptionLine(line) {
+    var m = line.match(/\\item\[([^\]]*)\]\s*(.*)/);
+    if (m)
+        return '<dt>' + m[1] + '</dt><dd>' + m[2] + '</dd>';
+    return itemizeLine(line);
+}
+/**
+ * Renders enumerate / itemize / description lists from \item lines.
+ */
+function render(that) {
+    const type = that.type || 'enumerate';
+    const convert = type === 'description' ? descriptionLine : itemizeLine;
+    const lines = that.lines.map(convert).join('\n');
+    let el;
+    if (type === 'enumerate') {
+        const ol = document.createElement('ol');
+        ol.className = 'math enumerate';
+        ol.innerHTML = lines;
+        el = ol;
+    }
+    else if (type === 'description') {
+        const dl = document.createElement('dl');
+        dl.className = 'math description';
+        dl.innerHTML = lines;
+        el = dl;
+    }
+    else {
+        const ul = document.createElement('ul');
+        ul.className = 'math itemize';
+        ul.innerHTML = lines;
+        el = ul;
+    }
+    return el;
+}
+
+},{}],3:[function(require,module,exports){
+"use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -37,7 +82,7 @@ function render(_that) {
     return div;
 }
 
-},{"@latex2js/macros":14}],3:[function(require,module,exports){
+},{"@latex2js/macros":16}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = render;
@@ -48,7 +93,7 @@ function render(that) {
     return span;
 }
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = render;
@@ -59,7 +104,7 @@ function render(that) {
     return span;
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = render;
@@ -121,7 +166,7 @@ function render(that) {
     return div;
 }
 
-},{"@latex2js/pstricks":16,"@latex2js/utils":20}],6:[function(require,module,exports){
+},{"@latex2js/pstricks":18,"@latex2js/utils":23}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = render;
@@ -132,13 +177,13 @@ function render(that) {
     return pre;
 }
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = exports.macros = exports.math = exports.verbatim = exports.enumerate = exports.nicebox = exports.pspicture = void 0;
+exports.init = exports.macros = exports.math = exports.verbatim = exports.list = exports.enumerate = exports.nicebox = exports.pspicture = void 0;
 exports.default = render;
 const latex2js_1 = __importDefault(require("latex2js"));
 const mathjaxjs_1 = require("mathjaxjs");
@@ -148,13 +193,15 @@ const nicebox_js_1 = __importDefault(require("./components/nicebox.js"));
 exports.nicebox = nicebox_js_1.default;
 const enumerate_js_1 = __importDefault(require("./components/enumerate.js"));
 exports.enumerate = enumerate_js_1.default;
+const list_js_1 = __importDefault(require("./components/list.js"));
+exports.list = list_js_1.default;
 const verbatim_js_1 = __importDefault(require("./components/verbatim.js"));
 exports.verbatim = verbatim_js_1.default;
 const math_js_1 = __importDefault(require("./components/math.js"));
 exports.math = math_js_1.default;
 const macros_1 = __importDefault(require("./components/macros"));
 exports.macros = macros_1.default;
-const ELEMENTS = { pspicture: pspicture_js_1.default, nicebox: nicebox_js_1.default, enumerate: enumerate_js_1.default, verbatim: verbatim_js_1.default, math: math_js_1.default, macros: macros_1.default };
+const ELEMENTS = { pspicture: pspicture_js_1.default, nicebox: nicebox_js_1.default, enumerate: enumerate_js_1.default, itemize: list_js_1.default, description: list_js_1.default, verbatim: verbatim_js_1.default, math: math_js_1.default, macros: macros_1.default };
 function render(tex, resolve) {
     const done = () => {
         const latex = new latex2js_1.default();
@@ -188,7 +235,1455 @@ const init = () => {
 };
 exports.init = init;
 
-},{"./components/enumerate.js":1,"./components/macros":2,"./components/math.js":3,"./components/nicebox.js":4,"./components/pspicture.js":5,"./components/verbatim.js":6,"latex2js":8,"mathjaxjs":15}],8:[function(require,module,exports){
+},{"./components/enumerate.js":1,"./components/list.js":2,"./components/macros":3,"./components/math.js":4,"./components/nicebox.js":5,"./components/pspicture.js":6,"./components/verbatim.js":7,"latex2js":10,"mathjaxjs":17}],9:[function(require,module,exports){
+// @generated by Peggy 5.1.0.
+//
+// https://peggyjs.org/
+
+"use strict";
+
+class peg$SyntaxError extends SyntaxError {
+  constructor(message, expected, found, location) {
+    super(message);
+    this.expected = expected;
+    this.found = found;
+    this.location = location;
+    this.name = "SyntaxError";
+  }
+
+  format(sources) {
+    let str = "Error: " + this.message;
+    if (this.location) {
+      let src = null;
+      const st = sources.find(s => s.source === this.location.source);
+      if (st) {
+        src = st.text.split(/\r\n|\n|\r/g);
+      }
+      const s = this.location.start;
+      const offset_s = (this.location.source && (typeof this.location.source.offset === "function"))
+        ? this.location.source.offset(s)
+        : s;
+      const loc = this.location.source + ":" + offset_s.line + ":" + offset_s.column;
+      if (src) {
+        const e = this.location.end;
+        const filler = "".padEnd(offset_s.line.toString().length, " ");
+        const line = src[s.line - 1];
+        const last = s.line === e.line ? e.column : line.length + 1;
+        const hatLen = (last - s.column) || 1;
+        str += "\n --> " + loc + "\n"
+            + filler + " |\n"
+            + offset_s.line + " | " + line + "\n"
+            + filler + " | " + "".padEnd(s.column - 1, " ")
+            + "".padEnd(hatLen, "^");
+      } else {
+        str += "\n at " + loc;
+      }
+    }
+    return str;
+  }
+
+  static buildMessage(expected, found) {
+    function hex(ch) {
+      return ch.codePointAt(0).toString(16).toUpperCase();
+    }
+
+    const nonPrintable = Object.prototype.hasOwnProperty.call(RegExp.prototype, "unicode")
+      ? new RegExp("[\\p{C}\\p{Mn}\\p{Mc}]", "gu")
+      : null;
+    function unicodeEscape(s) {
+      if (nonPrintable) {
+        return s.replace(nonPrintable,  ch => "\\u{" + hex(ch) + "}");
+      }
+      return s;
+    }
+
+    function literalEscape(s) {
+      return unicodeEscape(s
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g,  "\\\"")
+        .replace(/\0/g, "\\0")
+        .replace(/\t/g, "\\t")
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "\\r")
+        .replace(/[\x00-\x0F]/g,          ch => "\\x0" + hex(ch))
+        .replace(/[\x10-\x1F\x7F-\x9F]/g, ch => "\\x"  + hex(ch)));
+    }
+
+    function classEscape(s) {
+      return unicodeEscape(s
+        .replace(/\\/g, "\\\\")
+        .replace(/\]/g, "\\]")
+        .replace(/\^/g, "\\^")
+        .replace(/-/g,  "\\-")
+        .replace(/\0/g, "\\0")
+        .replace(/\t/g, "\\t")
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "\\r")
+        .replace(/[\x00-\x0F]/g,          ch => "\\x0" + hex(ch))
+        .replace(/[\x10-\x1F\x7F-\x9F]/g, ch => "\\x"  + hex(ch)));
+    }
+
+    const DESCRIBE_EXPECTATION_FNS = {
+      literal(expectation) {
+        return "\"" + literalEscape(expectation.text) + "\"";
+      },
+
+      class(expectation) {
+        const escapedParts = expectation.parts.map(
+          part => (Array.isArray(part)
+            ? classEscape(part[0]) + "-" + classEscape(part[1])
+            : classEscape(part))
+        );
+
+        return "[" + (expectation.inverted ? "^" : "") + escapedParts.join("") + "]" + (expectation.unicode ? "u" : "");
+      },
+
+      any() {
+        return "any character";
+      },
+
+      end() {
+        return "end of input";
+      },
+
+      other(expectation) {
+        return expectation.description;
+      },
+    };
+
+    function describeExpectation(expectation) {
+      return DESCRIBE_EXPECTATION_FNS[expectation.type](expectation);
+    }
+
+    function describeExpected(expected) {
+      const descriptions = expected.map(describeExpectation);
+      descriptions.sort();
+
+      if (descriptions.length > 0) {
+        let j = 1;
+        for (let i = 1; i < descriptions.length; i++) {
+          if (descriptions[i - 1] !== descriptions[i]) {
+            descriptions[j] = descriptions[i];
+            j++;
+          }
+        }
+        descriptions.length = j;
+      }
+
+      switch (descriptions.length) {
+        case 1:
+          return descriptions[0];
+
+        case 2:
+          return descriptions[0] + " or " + descriptions[1];
+
+        default:
+          return descriptions.slice(0, -1).join(", ")
+            + ", or "
+            + descriptions[descriptions.length - 1];
+      }
+    }
+
+    function describeFound(found) {
+      return found ? "\"" + literalEscape(found) + "\"" : "end of input";
+    }
+
+    return "Expected " + describeExpected(expected) + " but " + describeFound(found) + " found.";
+  }
+}
+
+function peg$parse(input, options) {
+  options = options !== undefined ? options : {};
+
+  const peg$FAILED = {};
+  const peg$source = options.grammarSource;
+
+  const peg$startRuleFunctions = {
+    Document: peg$parseDocument,
+  };
+  let peg$startRuleFunction = peg$parseDocument;
+
+  const peg$c0 = "\\begin{";
+  const peg$c1 = "verbatim";
+  const peg$c2 = "print";
+  const peg$c3 = "}";
+  const peg$c4 = "\\end{";
+  const peg$c5 = "\\";
+  const peg$c6 = "begin{";
+  const peg$c7 = "end{";
+  const peg$c8 = "%";
+  const peg$c9 = "\r\n";
+
+  const peg$r0 = /^[a-zA-Z*]/;
+  const peg$r1 = /^[a-zA-Z@]/;
+  const peg$r2 = /^[([{]/;
+  const peg$r3 = /^[)\]}]/;
+  const peg$r4 = /^[\n\r]/;
+  const peg$r5 = /^[ \t]/;
+
+  const peg$e0 = peg$anyExpectation();
+  const peg$e1 = peg$literalExpectation("\\begin{", false);
+  const peg$e2 = peg$literalExpectation("verbatim", false);
+  const peg$e3 = peg$literalExpectation("print", false);
+  const peg$e4 = peg$literalExpectation("}", false);
+  const peg$e5 = peg$literalExpectation("\\end{", false);
+  const peg$e6 = peg$classExpectation([["a", "z"], ["A", "Z"], "*"], false, false, false);
+  const peg$e7 = peg$literalExpectation("\\", false);
+  const peg$e8 = peg$literalExpectation("begin{", false);
+  const peg$e9 = peg$literalExpectation("end{", false);
+  const peg$e10 = peg$classExpectation([["a", "z"], ["A", "Z"], "@"], false, false, false);
+  const peg$e11 = peg$literalExpectation("%", false);
+  const peg$e12 = peg$classExpectation(["(", "[", "{"], false, false, false);
+  const peg$e13 = peg$classExpectation([")", "]", "}"], false, false, false);
+  const peg$e14 = peg$literalExpectation("\r\n", false);
+  const peg$e15 = peg$classExpectation(["\n", "\r"], false, false, false);
+  const peg$e16 = peg$classExpectation([" ", "\t"], false, false, false);
+
+  function peg$f0(segs) {    return segs;  }
+  function peg$f1(e) {    return { kind: 'strayEnd', name: e.name, raw: e.raw, loc: loc() };  }
+  function peg$f2(start, content, end) {
+    return {
+      kind: 'env',
+      name: start.name,
+      verbatim: true,
+      begin: start,
+      end: { name: start.name, raw: '\\end{' + end + '}', loc: loc() },
+      content: [{
+        kind: 'verbatim',
+        text: content.map((pair) => pair[1]).join('').replace(/\n$/, '')
+      }],
+      loc: loc()
+    };
+  }
+  function peg$f3(n) {    return { name: n, raw: '\\begin{' + n + '}', loc: loc() };  }
+  function peg$f4(n) {    return n;  }
+  function peg$f5(b, content, e) {
+    return { kind: 'env', name: b.name, verbatim: false, begin: b, end: e || null, content: content, loc: loc() };
+  }
+  function peg$f6(name, tail) {
+    return { name: name, raw: '\\begin{' + name + '}' + tail, loc: loc() };
+  }
+  function peg$f7(name) {
+    return { name: name, raw: '\\end{' + name + '}', loc: loc() };
+  }
+  function peg$f8(chars) {    return chars.join('');  }
+  function peg$f9(start, tail) {
+    depth = 0;
+    return { kind: 'command', name: start.name, raw: start.raw + tail, loc: loc() };
+  }
+  function peg$f10(chars) {
+    return { name: chars.join(''), raw: '\\' + chars.join('') };
+  }
+  function peg$f11(parts) {    return parts.join('');  }
+  function peg$f12() {    depth++; return text();  }
+  function peg$f13() {    depth = Math.max(0, depth - 1); return text();  }
+  function peg$f14() {    return depth === 0;  }
+  function peg$f15(c) {    return c;  }
+  function peg$f16() {    return depth > 0;  }
+  function peg$f17(c) {    return c;  }
+  function peg$f18() {    return '';  }
+  function peg$f19(parts, eol) {    return { kind: 'line', parts: parts, hasEol: !!eol, loc: loc() };  }
+  function peg$f20(eol) {    return { kind: 'line', parts: [], hasEol: true, loc: loc() };  }
+  function peg$f21(c) {    return { kind: 'char', c: c, loc: loc() };  }
+  let peg$currPos = options.peg$currPos | 0;
+  let peg$savedPos = peg$currPos;
+  const peg$posDetailsCache = [{ line: 1, column: 1 }];
+  let peg$maxFailPos = peg$currPos;
+  let peg$maxFailExpected = options.peg$maxFailExpected || [];
+  let peg$silentFails = options.peg$silentFails | 0;
+
+  let peg$result;
+
+  if (options.startRule) {
+    if (!(options.startRule in peg$startRuleFunctions)) {
+      throw new Error("Can't start parsing from rule \"" + options.startRule + "\".");
+    }
+
+    peg$startRuleFunction = peg$startRuleFunctions[options.startRule];
+  }
+
+  function text() {
+    return input.substring(peg$savedPos, peg$currPos);
+  }
+
+  function offset() {
+    return peg$savedPos;
+  }
+
+  function range() {
+    return {
+      source: peg$source,
+      start: peg$savedPos,
+      end: peg$currPos,
+    };
+  }
+
+  function location() {
+    return peg$computeLocation(peg$savedPos, peg$currPos);
+  }
+
+  function expected(description, location) {
+    location = location !== undefined
+      ? location
+      : peg$computeLocation(peg$savedPos, peg$currPos);
+
+    throw peg$buildStructuredError(
+      [peg$otherExpectation(description)],
+      input.substring(peg$savedPos, peg$currPos),
+      location
+    );
+  }
+
+  function error(message, location) {
+    location = location !== undefined
+      ? location
+      : peg$computeLocation(peg$savedPos, peg$currPos);
+
+    throw peg$buildSimpleError(message, location);
+  }
+
+  function peg$getUnicode(pos = peg$currPos) {
+    const cp = input.codePointAt(pos);
+    if (cp === undefined) {
+      return "";
+    }
+    return String.fromCodePoint(cp);
+  }
+
+  function peg$literalExpectation(text, ignoreCase) {
+    return { type: "literal", text, ignoreCase };
+  }
+
+  function peg$classExpectation(parts, inverted, ignoreCase, unicode) {
+    return { type: "class", parts, inverted, ignoreCase, unicode };
+  }
+
+  function peg$anyExpectation() {
+    return { type: "any" };
+  }
+
+  function peg$endExpectation() {
+    return { type: "end" };
+  }
+
+  function peg$otherExpectation(description) {
+    return { type: "other", description };
+  }
+
+  function peg$computePosDetails(pos) {
+    let details = peg$posDetailsCache[pos];
+    let p;
+
+    if (details) {
+      return details;
+    } else {
+      if (pos >= peg$posDetailsCache.length) {
+        p = peg$posDetailsCache.length - 1;
+      } else {
+        p = pos;
+        while (!peg$posDetailsCache[--p]) {}
+      }
+
+      details = peg$posDetailsCache[p];
+      details = {
+        line: details.line,
+        column: details.column,
+      };
+
+      while (p < pos) {
+        if (input.charCodeAt(p) === 10) {
+          details.line++;
+          details.column = 1;
+        } else {
+          details.column++;
+        }
+
+        p++;
+      }
+
+      peg$posDetailsCache[pos] = details;
+
+      return details;
+    }
+  }
+
+  function peg$computeLocation(startPos, endPos, offset) {
+    const startPosDetails = peg$computePosDetails(startPos);
+    const endPosDetails = peg$computePosDetails(endPos);
+
+    const res = {
+      source: peg$source,
+      start: {
+        offset: startPos,
+        line: startPosDetails.line,
+        column: startPosDetails.column,
+      },
+      end: {
+        offset: endPos,
+        line: endPosDetails.line,
+        column: endPosDetails.column,
+      },
+    };
+    if (offset && peg$source && (typeof peg$source.offset === "function")) {
+      res.start = peg$source.offset(res.start);
+      res.end = peg$source.offset(res.end);
+    }
+    return res;
+  }
+
+  function peg$fail(expected) {
+    if (peg$currPos < peg$maxFailPos) { return; }
+
+    if (peg$currPos > peg$maxFailPos) {
+      peg$maxFailPos = peg$currPos;
+      peg$maxFailExpected = [];
+    }
+
+    peg$maxFailExpected.push(expected);
+  }
+
+  function peg$buildSimpleError(message, location) {
+    return new peg$SyntaxError(message, null, null, location);
+  }
+
+  function peg$buildStructuredError(expected, found, location) {
+    return new peg$SyntaxError(
+      peg$SyntaxError.buildMessage(expected, found),
+      expected,
+      found,
+      location
+    );
+  }
+
+  function peg$parseDocument() {
+    let s0, s1, s2;
+
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = peg$parseSegment();
+    while (s2 !== peg$FAILED) {
+      s1.push(s2);
+      s2 = peg$parseSegment();
+    }
+    peg$savedPos = s0;
+    s1 = peg$f0(s1);
+    s0 = s1;
+
+    return s0;
+  }
+
+  function peg$parseSegment() {
+    let s0;
+
+    s0 = peg$parseEnv();
+    if (s0 === peg$FAILED) {
+      s0 = peg$parseStrayEnd();
+      if (s0 === peg$FAILED) {
+        s0 = peg$parseLine();
+      }
+    }
+
+    return s0;
+  }
+
+  function peg$parseStrayEnd() {
+    let s0, s1;
+
+    s0 = peg$currPos;
+    s1 = peg$parseEndTag();
+    if (s1 !== peg$FAILED) {
+      peg$savedPos = s0;
+      s1 = peg$f1(s1);
+    }
+    s0 = s1;
+
+    return s0;
+  }
+
+  function peg$parseEnv() {
+    let s0;
+
+    s0 = peg$parseVerbatimEnv();
+    if (s0 === peg$FAILED) {
+      s0 = peg$parseRegularEnv();
+    }
+
+    return s0;
+  }
+
+  function peg$parseVerbatimEnv() {
+    let s0, s1, s2, s3, s4, s5;
+
+    s0 = peg$currPos;
+    s1 = peg$parseBeginVerb();
+    if (s1 !== peg$FAILED) {
+      s2 = [];
+      s3 = peg$currPos;
+      s4 = peg$currPos;
+      peg$silentFails++;
+      s5 = peg$parseEndVerb();
+      peg$silentFails--;
+      if (s5 === peg$FAILED) {
+        s4 = undefined;
+      } else {
+        peg$currPos = s4;
+        s4 = peg$FAILED;
+      }
+      if (s4 !== peg$FAILED) {
+        if (input.length > peg$currPos) {
+          s5 = input.charAt(peg$currPos);
+          peg$currPos++;
+        } else {
+          s5 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e0); }
+        }
+        if (s5 !== peg$FAILED) {
+          s4 = [s4, s5];
+          s3 = s4;
+        } else {
+          peg$currPos = s3;
+          s3 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s3;
+        s3 = peg$FAILED;
+      }
+      while (s3 !== peg$FAILED) {
+        s2.push(s3);
+        s3 = peg$currPos;
+        s4 = peg$currPos;
+        peg$silentFails++;
+        s5 = peg$parseEndVerb();
+        peg$silentFails--;
+        if (s5 === peg$FAILED) {
+          s4 = undefined;
+        } else {
+          peg$currPos = s4;
+          s4 = peg$FAILED;
+        }
+        if (s4 !== peg$FAILED) {
+          if (input.length > peg$currPos) {
+            s5 = input.charAt(peg$currPos);
+            peg$currPos++;
+          } else {
+            s5 = peg$FAILED;
+            if (peg$silentFails === 0) { peg$fail(peg$e0); }
+          }
+          if (s5 !== peg$FAILED) {
+            s4 = [s4, s5];
+            s3 = s4;
+          } else {
+            peg$currPos = s3;
+            s3 = peg$FAILED;
+          }
+        } else {
+          peg$currPos = s3;
+          s3 = peg$FAILED;
+        }
+      }
+      s3 = peg$parseEndVerb();
+      if (s3 !== peg$FAILED) {
+        peg$savedPos = s0;
+        s0 = peg$f2(s1, s2, s3);
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseBeginVerb() {
+    let s0, s1, s2, s3;
+
+    s0 = peg$currPos;
+    if (input.substr(peg$currPos, 7) === peg$c0) {
+      s1 = peg$c0;
+      peg$currPos += 7;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e1); }
+    }
+    if (s1 !== peg$FAILED) {
+      if (input.substr(peg$currPos, 8) === peg$c1) {
+        s2 = peg$c1;
+        peg$currPos += 8;
+      } else {
+        s2 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$e2); }
+      }
+      if (s2 === peg$FAILED) {
+        if (input.substr(peg$currPos, 5) === peg$c2) {
+          s2 = peg$c2;
+          peg$currPos += 5;
+        } else {
+          s2 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e3); }
+        }
+      }
+      if (s2 !== peg$FAILED) {
+        if (input.charCodeAt(peg$currPos) === 125) {
+          s3 = peg$c3;
+          peg$currPos++;
+        } else {
+          s3 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e4); }
+        }
+        if (s3 !== peg$FAILED) {
+          peg$savedPos = s0;
+          s0 = peg$f3(s2);
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseEndVerb() {
+    let s0, s1, s2, s3;
+
+    s0 = peg$currPos;
+    if (input.substr(peg$currPos, 5) === peg$c4) {
+      s1 = peg$c4;
+      peg$currPos += 5;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e5); }
+    }
+    if (s1 !== peg$FAILED) {
+      if (input.substr(peg$currPos, 8) === peg$c1) {
+        s2 = peg$c1;
+        peg$currPos += 8;
+      } else {
+        s2 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$e2); }
+      }
+      if (s2 === peg$FAILED) {
+        if (input.substr(peg$currPos, 5) === peg$c2) {
+          s2 = peg$c2;
+          peg$currPos += 5;
+        } else {
+          s2 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e3); }
+        }
+      }
+      if (s2 !== peg$FAILED) {
+        if (input.charCodeAt(peg$currPos) === 125) {
+          s3 = peg$c3;
+          peg$currPos++;
+        } else {
+          s3 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e4); }
+        }
+        if (s3 !== peg$FAILED) {
+          peg$savedPos = s0;
+          s0 = peg$f4(s2);
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseRegularEnv() {
+    let s0, s1, s2, s3, s4, s5;
+
+    s0 = peg$currPos;
+    s1 = peg$parseBeginTag();
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parse_();
+      s3 = [];
+      s4 = peg$parseEnvContent();
+      while (s4 !== peg$FAILED) {
+        s3.push(s4);
+        s4 = peg$parseEnvContent();
+      }
+      s4 = peg$parse_();
+      s5 = peg$parseEndTag();
+      if (s5 === peg$FAILED) {
+        s5 = null;
+      }
+      peg$savedPos = s0;
+      s0 = peg$f5(s1, s3, s5);
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseBeginTag() {
+    let s0, s1, s2, s3, s4;
+
+    s0 = peg$currPos;
+    if (input.substr(peg$currPos, 7) === peg$c0) {
+      s1 = peg$c0;
+      peg$currPos += 7;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e1); }
+    }
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parseEnvName();
+      if (s2 !== peg$FAILED) {
+        if (input.charCodeAt(peg$currPos) === 125) {
+          s3 = peg$c3;
+          peg$currPos++;
+        } else {
+          s3 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e4); }
+        }
+        if (s3 !== peg$FAILED) {
+          s4 = peg$parseTail();
+          peg$savedPos = s0;
+          s0 = peg$f6(s2, s4);
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseEndTag() {
+    let s0, s1, s2, s3;
+
+    s0 = peg$currPos;
+    if (input.substr(peg$currPos, 5) === peg$c4) {
+      s1 = peg$c4;
+      peg$currPos += 5;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e5); }
+    }
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parseEnvName();
+      if (s2 !== peg$FAILED) {
+        if (input.charCodeAt(peg$currPos) === 125) {
+          s3 = peg$c3;
+          peg$currPos++;
+        } else {
+          s3 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e4); }
+        }
+        if (s3 !== peg$FAILED) {
+          peg$savedPos = s0;
+          s0 = peg$f7(s2);
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseEnvName() {
+    let s0, s1, s2;
+
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = input.charAt(peg$currPos);
+    if (peg$r0.test(s2)) {
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e6); }
+    }
+    if (s2 !== peg$FAILED) {
+      while (s2 !== peg$FAILED) {
+        s1.push(s2);
+        s2 = input.charAt(peg$currPos);
+        if (peg$r0.test(s2)) {
+          peg$currPos++;
+        } else {
+          s2 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e6); }
+        }
+      }
+    } else {
+      s1 = peg$FAILED;
+    }
+    if (s1 !== peg$FAILED) {
+      peg$savedPos = s0;
+      s1 = peg$f8(s1);
+    }
+    s0 = s1;
+
+    return s0;
+  }
+
+  function peg$parseEnvContent() {
+    let s0;
+
+    s0 = peg$parseEnv();
+    if (s0 === peg$FAILED) {
+      s0 = peg$parseCommand();
+      if (s0 === peg$FAILED) {
+        s0 = peg$parseLine();
+      }
+    }
+
+    return s0;
+  }
+
+  function peg$parseCommand() {
+    let s0, s1, s2;
+
+    s0 = peg$currPos;
+    s1 = peg$parseCommandStart();
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parseTail();
+      peg$savedPos = s0;
+      s0 = peg$f9(s1, s2);
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseCommandStart() {
+    let s0, s1, s2, s3, s4, s5;
+
+    s0 = peg$currPos;
+    if (input.charCodeAt(peg$currPos) === 92) {
+      s1 = peg$c5;
+      peg$currPos++;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e7); }
+    }
+    if (s1 !== peg$FAILED) {
+      s2 = peg$currPos;
+      peg$silentFails++;
+      if (input.substr(peg$currPos, 6) === peg$c6) {
+        s3 = peg$c6;
+        peg$currPos += 6;
+      } else {
+        s3 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$e8); }
+      }
+      peg$silentFails--;
+      if (s3 === peg$FAILED) {
+        s2 = undefined;
+      } else {
+        peg$currPos = s2;
+        s2 = peg$FAILED;
+      }
+      if (s2 !== peg$FAILED) {
+        s3 = peg$currPos;
+        peg$silentFails++;
+        if (input.substr(peg$currPos, 4) === peg$c7) {
+          s4 = peg$c7;
+          peg$currPos += 4;
+        } else {
+          s4 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e9); }
+        }
+        peg$silentFails--;
+        if (s4 === peg$FAILED) {
+          s3 = undefined;
+        } else {
+          peg$currPos = s3;
+          s3 = peg$FAILED;
+        }
+        if (s3 !== peg$FAILED) {
+          s4 = [];
+          s5 = input.charAt(peg$currPos);
+          if (peg$r1.test(s5)) {
+            peg$currPos++;
+          } else {
+            s5 = peg$FAILED;
+            if (peg$silentFails === 0) { peg$fail(peg$e10); }
+          }
+          if (s5 !== peg$FAILED) {
+            while (s5 !== peg$FAILED) {
+              s4.push(s5);
+              s5 = input.charAt(peg$currPos);
+              if (peg$r1.test(s5)) {
+                peg$currPos++;
+              } else {
+                s5 = peg$FAILED;
+                if (peg$silentFails === 0) { peg$fail(peg$e10); }
+              }
+            }
+          } else {
+            s4 = peg$FAILED;
+          }
+          if (s4 !== peg$FAILED) {
+            peg$savedPos = s0;
+            s0 = peg$f10(s4);
+          } else {
+            peg$currPos = s0;
+            s0 = peg$FAILED;
+          }
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseTail() {
+    let s0, s1, s2;
+
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = peg$parseTailPart();
+    while (s2 !== peg$FAILED) {
+      s1.push(s2);
+      s2 = peg$parseTailPart();
+    }
+    peg$savedPos = s0;
+    s1 = peg$f11(s1);
+    s0 = s1;
+
+    return s0;
+  }
+
+  function peg$parseTailPart() {
+    let s0, s1, s2, s3, s4, s5, s6;
+
+    s0 = peg$parseComment();
+    if (s0 === peg$FAILED) {
+      s0 = peg$currPos;
+      s1 = peg$parseOpen();
+      if (s1 !== peg$FAILED) {
+        peg$savedPos = s0;
+        s1 = peg$f12();
+      }
+      s0 = s1;
+      if (s0 === peg$FAILED) {
+        s0 = peg$currPos;
+        s1 = peg$parseClose();
+        if (s1 !== peg$FAILED) {
+          peg$savedPos = s0;
+          s1 = peg$f13();
+        }
+        s0 = s1;
+        if (s0 === peg$FAILED) {
+          s0 = peg$currPos;
+          peg$savedPos = peg$currPos;
+          s1 = peg$f14();
+          if (s1) {
+            s1 = undefined;
+          } else {
+            s1 = peg$FAILED;
+          }
+          if (s1 !== peg$FAILED) {
+            s2 = peg$currPos;
+            peg$silentFails++;
+            s3 = peg$parseEOL();
+            peg$silentFails--;
+            if (s3 === peg$FAILED) {
+              s2 = undefined;
+            } else {
+              peg$currPos = s2;
+              s2 = peg$FAILED;
+            }
+            if (s2 !== peg$FAILED) {
+              s3 = peg$currPos;
+              peg$silentFails++;
+              s4 = peg$parseCommandStart();
+              peg$silentFails--;
+              if (s4 === peg$FAILED) {
+                s3 = undefined;
+              } else {
+                peg$currPos = s3;
+                s3 = peg$FAILED;
+              }
+              if (s3 !== peg$FAILED) {
+                s4 = peg$currPos;
+                peg$silentFails++;
+                s5 = peg$parseBeginStart();
+                peg$silentFails--;
+                if (s5 === peg$FAILED) {
+                  s4 = undefined;
+                } else {
+                  peg$currPos = s4;
+                  s4 = peg$FAILED;
+                }
+                if (s4 !== peg$FAILED) {
+                  s5 = peg$currPos;
+                  peg$silentFails++;
+                  s6 = peg$parseEndStart();
+                  peg$silentFails--;
+                  if (s6 === peg$FAILED) {
+                    s5 = undefined;
+                  } else {
+                    peg$currPos = s5;
+                    s5 = peg$FAILED;
+                  }
+                  if (s5 !== peg$FAILED) {
+                    if (input.length > peg$currPos) {
+                      s6 = input.charAt(peg$currPos);
+                      peg$currPos++;
+                    } else {
+                      s6 = peg$FAILED;
+                      if (peg$silentFails === 0) { peg$fail(peg$e0); }
+                    }
+                    if (s6 !== peg$FAILED) {
+                      peg$savedPos = s0;
+                      s0 = peg$f15(s6);
+                    } else {
+                      peg$currPos = s0;
+                      s0 = peg$FAILED;
+                    }
+                  } else {
+                    peg$currPos = s0;
+                    s0 = peg$FAILED;
+                  }
+                } else {
+                  peg$currPos = s0;
+                  s0 = peg$FAILED;
+                }
+              } else {
+                peg$currPos = s0;
+                s0 = peg$FAILED;
+              }
+            } else {
+              peg$currPos = s0;
+              s0 = peg$FAILED;
+            }
+          } else {
+            peg$currPos = s0;
+            s0 = peg$FAILED;
+          }
+          if (s0 === peg$FAILED) {
+            s0 = peg$currPos;
+            peg$savedPos = peg$currPos;
+            s1 = peg$f16();
+            if (s1) {
+              s1 = undefined;
+            } else {
+              s1 = peg$FAILED;
+            }
+            if (s1 !== peg$FAILED) {
+              if (input.length > peg$currPos) {
+                s2 = input.charAt(peg$currPos);
+                peg$currPos++;
+              } else {
+                s2 = peg$FAILED;
+                if (peg$silentFails === 0) { peg$fail(peg$e0); }
+              }
+              if (s2 !== peg$FAILED) {
+                peg$savedPos = s0;
+                s0 = peg$f17(s2);
+              } else {
+                peg$currPos = s0;
+                s0 = peg$FAILED;
+              }
+            } else {
+              peg$currPos = s0;
+              s0 = peg$FAILED;
+            }
+          }
+        }
+      }
+    }
+
+    return s0;
+  }
+
+  function peg$parseComment() {
+    let s0, s1, s2, s3, s4, s5;
+
+    s0 = peg$currPos;
+    if (input.charCodeAt(peg$currPos) === 37) {
+      s1 = peg$c8;
+      peg$currPos++;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e11); }
+    }
+    if (s1 !== peg$FAILED) {
+      s2 = [];
+      s3 = peg$currPos;
+      s4 = peg$currPos;
+      peg$silentFails++;
+      s5 = peg$parseEOL();
+      peg$silentFails--;
+      if (s5 === peg$FAILED) {
+        s4 = undefined;
+      } else {
+        peg$currPos = s4;
+        s4 = peg$FAILED;
+      }
+      if (s4 !== peg$FAILED) {
+        if (input.length > peg$currPos) {
+          s5 = input.charAt(peg$currPos);
+          peg$currPos++;
+        } else {
+          s5 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$e0); }
+        }
+        if (s5 !== peg$FAILED) {
+          s4 = [s4, s5];
+          s3 = s4;
+        } else {
+          peg$currPos = s3;
+          s3 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s3;
+        s3 = peg$FAILED;
+      }
+      while (s3 !== peg$FAILED) {
+        s2.push(s3);
+        s3 = peg$currPos;
+        s4 = peg$currPos;
+        peg$silentFails++;
+        s5 = peg$parseEOL();
+        peg$silentFails--;
+        if (s5 === peg$FAILED) {
+          s4 = undefined;
+        } else {
+          peg$currPos = s4;
+          s4 = peg$FAILED;
+        }
+        if (s4 !== peg$FAILED) {
+          if (input.length > peg$currPos) {
+            s5 = input.charAt(peg$currPos);
+            peg$currPos++;
+          } else {
+            s5 = peg$FAILED;
+            if (peg$silentFails === 0) { peg$fail(peg$e0); }
+          }
+          if (s5 !== peg$FAILED) {
+            s4 = [s4, s5];
+            s3 = s4;
+          } else {
+            peg$currPos = s3;
+            s3 = peg$FAILED;
+          }
+        } else {
+          peg$currPos = s3;
+          s3 = peg$FAILED;
+        }
+      }
+      peg$savedPos = s0;
+      s0 = peg$f18();
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseOpen() {
+    let s0;
+
+    s0 = input.charAt(peg$currPos);
+    if (peg$r2.test(s0)) {
+      peg$currPos++;
+    } else {
+      s0 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e12); }
+    }
+
+    return s0;
+  }
+
+  function peg$parseClose() {
+    let s0;
+
+    s0 = input.charAt(peg$currPos);
+    if (peg$r3.test(s0)) {
+      peg$currPos++;
+    } else {
+      s0 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e13); }
+    }
+
+    return s0;
+  }
+
+  function peg$parseBeginStart() {
+    let s0;
+
+    if (input.substr(peg$currPos, 7) === peg$c0) {
+      s0 = peg$c0;
+      peg$currPos += 7;
+    } else {
+      s0 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e1); }
+    }
+
+    return s0;
+  }
+
+  function peg$parseEndStart() {
+    let s0;
+
+    if (input.substr(peg$currPos, 5) === peg$c4) {
+      s0 = peg$c4;
+      peg$currPos += 5;
+    } else {
+      s0 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e5); }
+    }
+
+    return s0;
+  }
+
+  function peg$parseLine() {
+    let s0, s1, s2;
+
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = peg$parseLinePart();
+    if (s2 !== peg$FAILED) {
+      while (s2 !== peg$FAILED) {
+        s1.push(s2);
+        s2 = peg$parseLinePart();
+      }
+    } else {
+      s1 = peg$FAILED;
+    }
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parseEOL();
+      if (s2 === peg$FAILED) {
+        s2 = null;
+      }
+      peg$savedPos = s0;
+      s0 = peg$f19(s1, s2);
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    if (s0 === peg$FAILED) {
+      s0 = peg$currPos;
+      s1 = peg$parseEOL();
+      if (s1 !== peg$FAILED) {
+        peg$savedPos = s0;
+        s1 = peg$f20(s1);
+      }
+      s0 = s1;
+    }
+
+    return s0;
+  }
+
+  function peg$parseLinePart() {
+    let s0, s1, s2, s3, s4;
+
+    s0 = peg$parseComment();
+    if (s0 === peg$FAILED) {
+      s0 = peg$parseCommand();
+      if (s0 === peg$FAILED) {
+        s0 = peg$currPos;
+        s1 = peg$currPos;
+        peg$silentFails++;
+        s2 = peg$parseBeginStart();
+        peg$silentFails--;
+        if (s2 === peg$FAILED) {
+          s1 = undefined;
+        } else {
+          peg$currPos = s1;
+          s1 = peg$FAILED;
+        }
+        if (s1 !== peg$FAILED) {
+          s2 = peg$currPos;
+          peg$silentFails++;
+          s3 = peg$parseEndStart();
+          peg$silentFails--;
+          if (s3 === peg$FAILED) {
+            s2 = undefined;
+          } else {
+            peg$currPos = s2;
+            s2 = peg$FAILED;
+          }
+          if (s2 !== peg$FAILED) {
+            s3 = peg$currPos;
+            peg$silentFails++;
+            s4 = peg$parseEOL();
+            peg$silentFails--;
+            if (s4 === peg$FAILED) {
+              s3 = undefined;
+            } else {
+              peg$currPos = s3;
+              s3 = peg$FAILED;
+            }
+            if (s3 !== peg$FAILED) {
+              if (input.length > peg$currPos) {
+                s4 = input.charAt(peg$currPos);
+                peg$currPos++;
+              } else {
+                s4 = peg$FAILED;
+                if (peg$silentFails === 0) { peg$fail(peg$e0); }
+              }
+              if (s4 !== peg$FAILED) {
+                peg$savedPos = s0;
+                s0 = peg$f21(s4);
+              } else {
+                peg$currPos = s0;
+                s0 = peg$FAILED;
+              }
+            } else {
+              peg$currPos = s0;
+              s0 = peg$FAILED;
+            }
+          } else {
+            peg$currPos = s0;
+            s0 = peg$FAILED;
+          }
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      }
+    }
+
+    return s0;
+  }
+
+  function peg$parseEOL() {
+    let s0;
+
+    if (input.substr(peg$currPos, 2) === peg$c9) {
+      s0 = peg$c9;
+      peg$currPos += 2;
+    } else {
+      s0 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e14); }
+    }
+    if (s0 === peg$FAILED) {
+      s0 = input.charAt(peg$currPos);
+      if (peg$r4.test(s0)) {
+        peg$currPos++;
+      } else {
+        s0 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$e15); }
+      }
+    }
+
+    return s0;
+  }
+
+  function peg$parse_() {
+    let s0, s1;
+
+    s0 = [];
+    s1 = input.charAt(peg$currPos);
+    if (peg$r5.test(s1)) {
+      peg$currPos++;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) { peg$fail(peg$e16); }
+    }
+    while (s1 !== peg$FAILED) {
+      s0.push(s1);
+      s1 = input.charAt(peg$currPos);
+      if (peg$r5.test(s1)) {
+        peg$currPos++;
+      } else {
+        s1 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$e16); }
+      }
+    }
+
+    return s0;
+  }
+
+
+  let depth = 0;
+
+  function loc() {
+    const l = location();
+    return { line: l.start.line, column: l.start.column };
+  }
+
+  peg$result = peg$startRuleFunction();
+
+  const peg$success = (peg$result !== peg$FAILED && peg$currPos === input.length);
+  function peg$throw() {
+    if (peg$result !== peg$FAILED && peg$currPos < input.length) {
+      peg$fail(peg$endExpectation());
+    }
+
+    throw peg$buildStructuredError(
+      peg$maxFailExpected,
+      peg$maxFailPos < input.length ? peg$getUnicode(peg$maxFailPos) : null,
+      peg$maxFailPos < input.length
+        ? peg$computeLocation(peg$maxFailPos, peg$maxFailPos + 1)
+        : peg$computeLocation(peg$maxFailPos, peg$maxFailPos)
+    );
+  }
+  if (options.peg$library) {
+    return /** @type {any} */ ({
+      peg$result,
+      peg$currPos,
+      peg$FAILED,
+      peg$maxFailExpected,
+      peg$maxFailPos,
+      peg$success,
+      peg$throw: peg$success ? undefined : peg$throw,
+    });
+  }
+  if (peg$success) {
+    return peg$result;
+  } else {
+    peg$throw();
+  }
+}
+
+module.exports = {
+  StartRules: ["Document"],
+  SyntaxError: peg$SyntaxError,
+  parse: peg$parse,
+};
+
+},{}],10:[function(require,module,exports){
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -202,6 +1697,7 @@ const ignore_1 = __importDefault(require("./lib/ignore"));
 const parser_1 = __importDefault(require("./lib/parser"));
 class LaTeX2HTML5 {
     constructor(Text = text_1.default, Headers = headers_1.default, Environments = environments_1.default, Ignore = ignore_1.default, PSTricks = pstricks_1.pstricks, Views = {}) {
+        this.lastDiagnostics = [];
         this.Text = Text;
         this.Headers = Headers;
         this.Environments = Environments;
@@ -251,6 +1747,7 @@ class LaTeX2HTML5 {
     parse(text) {
         const parser = new parser_1.default(this);
         const parsed = parser.parse(text);
+        this.lastDiagnostics = parser.diagnostics;
         parsed.forEach((element) => {
             if (!element.hasOwnProperty('type')) {
                 throw new Error('no type!');
@@ -262,13 +1759,13 @@ class LaTeX2HTML5 {
 }
 exports.default = LaTeX2HTML5;
 
-},{"./lib/environments":9,"./lib/headers":10,"./lib/ignore":11,"./lib/parser":12,"./lib/text":13,"@latex2js/pstricks":16}],9:[function(require,module,exports){
+},{"./lib/environments":11,"./lib/headers":12,"./lib/ignore":13,"./lib/parser":14,"./lib/text":15,"@latex2js/pstricks":18}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const environments = ['pspicture', 'verbatim', 'enumerate', 'print', 'nicebox'];
+const environments = ['pspicture', 'verbatim', 'enumerate', 'print', 'nicebox', 'itemize', 'description'];
 exports.default = environments;
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Functions = exports.Expressions = void 0;
@@ -277,10 +1774,24 @@ exports.Expressions = {
     claim: /\\begin\{claim\}/,
     corollary: /\\begin\{corollary\}/,
     definition: /\\begin\{definition\}/,
+    lemma: /\\begin\{lemma\}/,
+    proposition: /\\begin\{proposition\}/,
+    axiom: /\\begin\{axiom\}/,
+    remark: /\\begin\{remark\}/,
+    note: /\\begin\{note\}/,
+    exercise: /\\begin\{exercise\}/,
+    question: /\\begin\{question\}/,
     endclaim: /\\end\{claim\}/,
-    endcorallary: /\\end\{corallary\}/,
+    endcorollary: /\\end\{corollary\}/,
     enddefinition: /\\end\{definition\}/,
     endexample: /\\end\{example\}/,
+    endlemma: /\\end\{lemma\}/,
+    endproposition: /\\end\{proposition\}/,
+    endaxiom: /\\end\{axiom\}/,
+    endremark: /\\end\{remark\}/,
+    endnote: /\\end\{note\}/,
+    endexercise: /\\end\{exercise\}/,
+    endquestion: /\\end\{question\}/,
     endproblem: /\\end\{problem\}/,
     endsolution: /\\end\{solution\}/,
     endtheorem: /\\end\{theorem\}/,
@@ -297,10 +1808,24 @@ exports.Functions = {
     claim: () => '<h4>Claim</h4>',
     corollary: () => '<h4>Corollary</h4>',
     definition: () => '<h4>Definition</h4>',
+    lemma: () => '<h4>Lemma</h4>',
+    proposition: () => '<h4>Proposition</h4>',
+    axiom: () => '<h4>Axiom</h4>',
+    remark: () => '<h4>Remark</h4>',
+    note: () => '<h4>Note</h4>',
+    exercise: () => '<h4>Exercise</h4>',
+    question: () => '<h4>Question</h4>',
     endclaim: () => '',
     endcorollary: () => '',
     enddefinition: () => '',
     endexample: () => '',
+    endlemma: () => '',
+    endproposition: () => '',
+    endaxiom: () => '',
+    endremark: () => '',
+    endnote: () => '',
+    endexercise: () => '',
+    endquestion: () => '',
     endproblem: () => '',
     endsolution: () => '',
     endtheorem: () => '',
@@ -308,7 +1833,10 @@ exports.Functions = {
     example: () => '<h4>Example</h4>',
     problem: () => '<h4>Problem</h4>',
     proof: () => '<h4>Proof</h4>',
-    qed: () => '$\\qed$',
+    // amsthm closes a proof with an open square. Emitted as a character rather
+    // than as math: MathJax defines no \qed, so the previous `$\qed$` surfaced
+    // an "Undefined control sequence" box at the end of every proof.
+    qed: () => '<span class="qed">□</span>',
     solution: () => '<h4>Solution</h4>',
     theorem: () => '<h4>Theorem</h4>'
 };
@@ -317,7 +1845,7 @@ exports.default = {
     Functions: exports.Functions
 };
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ignore = [
@@ -343,9 +1871,55 @@ const ignore = [
 ];
 exports.default = ignore;
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
+const pegParser = __importStar(require("../grammar/parser.js"));
+/**
+ * Parser: turns a LaTeX-ish document into the flat environment objects the
+ * components consume ({type, lines, env, plot}) — but driven by the Peggy
+ * grammar in src/grammar instead of per-line regular expressions.
+ *
+ * The grammar tokenizes structure (balanced environments, commands with args,
+ * comments, verbatim). This class interprets that tree using the registries
+ * (Text / Headers / Ignore / PSTricks / Delimiters), so the runtime extension
+ * API (addEnvironment / addText / addHeaders) keeps working. It also collects
+ * diagnostics (unclosed environments, unknown commands, syntax errors) that
+ * were previously silent.
+ */
 class Parser {
     constructor(LaTeX2JS) {
         this.Ignore = LaTeX2JS.Ignore;
@@ -359,30 +1933,253 @@ class Parser {
             '',
             'units=1cm,linecolor=black,linestyle=solid,fillstyle=none'
         ]);
+        this.diagnostics = [];
     }
+    // -------------------------------------------------------------------------
+    // Public API
+    // -------------------------------------------------------------------------
     parse(text) {
+        this.diagnostics = [];
         if (!text)
             return [];
-        var lines = text.split('\n');
-        this.parseEnvText(lines);
-        this.parseEnv(lines);
+        const tree = this.parseTree(text);
+        this.walk(tree);
         this.objects.forEach((obj) => {
             if (obj.type.match(/pspicture/)) {
-                obj.plot = this.parsePSTricks(obj.lines, obj.env);
+                obj.plot = this.parsePSTricks(obj.commands || [], obj.env);
+                delete obj.commands;
             }
         });
         return this.objects;
     }
-    newEnvironment(type) {
-        if (this.environment && this.environment.lines.length) {
-            this.environment.settings = { ...this.settings };
-            this.objects.push(this.environment);
+    // -------------------------------------------------------------------------
+    // Grammar integration
+    // -------------------------------------------------------------------------
+    parseTree(text) {
+        try {
+            return pegParser.parse(text);
         }
-        this.environment = {
-            type: type,
-            lines: []
-        };
+        catch (err) {
+            const loc = err.location || { start: { line: 1, column: 1 } };
+            this.diagnostics.push({
+                severity: 'error',
+                message: `parse error: ${err.message || String(err)}`,
+                line: loc.start.line,
+                column: loc.start.column
+            });
+            // Degraded fallback: treat the whole input as a math text block.
+            return [{ kind: 'raw', text: text }];
+        }
     }
+    // -------------------------------------------------------------------------
+    // Tree walk
+    // -------------------------------------------------------------------------
+    walk(segments) {
+        this.objects = [];
+        this.environment = { type: 'math', lines: [] };
+        segments.forEach((seg) => this.walkSegment(seg));
+        this.newEnvironment('math');
+    }
+    walkSegment(seg) {
+        if (seg.kind === 'raw') {
+            seg.text.split('\n').forEach((line) => this.pushMathLine(line));
+            return;
+        }
+        switch (seg.kind) {
+            case 'line':
+                this.walkContent(seg);
+                break;
+            case 'env':
+                this.walkEnv(seg);
+                break;
+            case 'strayEnd':
+                if (this.isIgnored(seg.raw))
+                    return;
+                this.diagnose('warning', `unexpected \\end{${seg.name}}`, seg.loc);
+                break;
+        }
+    }
+    walkEnv(env) {
+        const name = env.name;
+        // Ignored wrapper environments (center, document, interactive…) are
+        // dropped, but their content is still walked in the current context.
+        if (this.isIgnoredEnv(name)) {
+            env.content.forEach((c) => this.walkContent(c));
+            return;
+        }
+        const structural = env.verbatim || !!this.Delimiters[name];
+        if (!structural) {
+            // Non-structural environments (theorem, proof, quotation…) flatten into
+            // the current environment as header text (handled by the Headers pass).
+            const inPspicture = this.inPspicture();
+            if (inPspicture)
+                this.pushLine(env.begin.raw);
+            else
+                this.pushMathLine(env.begin.raw);
+            env.content.forEach((c) => this.walkContent(c));
+            if (env.end) {
+                if (inPspicture)
+                    this.pushLine(env.end.raw);
+                else
+                    this.pushMathLine(env.end.raw);
+            }
+            else {
+                this.diagnose('warning', `unclosed \\begin{${name}}`, env.begin.loc);
+            }
+            return;
+        }
+        // Structural environment: close the current one and open a new one.
+        this.newEnvironment(name);
+        if (!env.verbatim)
+            this.metaData(name, env);
+        if (env.verbatim) {
+            const v = env.content[0];
+            this.environment.lines = v && v.kind === 'verbatim' ? v.text.split('\n') : [];
+        }
+        else if (name.match(/pspicture/)) {
+            this.environment.commands = [];
+            env.content.forEach((c) => this.walkContent(c));
+        }
+        else {
+            // enumerate / itemize / nicebox: content is text lines (with transforms).
+            this.walkTextContent(env.content);
+        }
+        if (env.end && env.end.name !== name) {
+            this.diagnose('warning', `\\end{${env.end.name}} does not match \\begin{${name}}`, env.end.loc);
+        }
+        else if (!env.end) {
+            this.diagnose('warning', `unclosed environment '${name}'`, env.begin.loc);
+        }
+        this.newEnvironment('math');
+    }
+    /**
+     * Walk a text environment's content, rejoining the nodes that came from one
+     * source line.
+     *
+     * `EnvContent` matches `Command` before `Line`, and a command's tail stops at
+     * the next command, so `\item First with \textbf{bold} text` arrives as two
+     * command nodes. Walking them individually renders each as its own line,
+     * which broke every list item at its first macro. pspicture keeps the
+     * per-node walk, because it depends on receiving commands separately.
+     */
+    walkTextContent(content) {
+        let pending = [];
+        const flush = () => {
+            if (!pending.length)
+                return;
+            const text = pending
+                .map((n) => (n.kind === 'line' ? this.lineToString(n) : n.raw))
+                .join('');
+            pending = [];
+            this.pushMathLine(text);
+        };
+        content.forEach((node) => {
+            if (node.kind === 'env') {
+                flush();
+                this.walkEnv(node);
+                return;
+            }
+            // An empty Line is the newline itself: it closes the line being built,
+            // or is a genuine paragraph break when there is nothing to close.
+            if (node.kind === 'line' && node.parts.length === 0) {
+                if (pending.length)
+                    flush();
+                else
+                    this.pushBlankLine(false);
+                return;
+            }
+            const at = node.loc && node.loc.line;
+            const open = pending.length ? pending[0].loc && pending[0].loc.line : at;
+            if (pending.length && at !== open)
+                flush();
+            pending.push(node);
+            // A Line node consumed its own EOL, so nothing more belongs to it.
+            if (node.kind === 'line')
+                flush();
+        });
+        flush();
+    }
+    /**
+     * Walk one node of environment content. Behavior depends on the current
+     * environment: inside pspicture we collect commands (and raw lines) for plot
+     * extraction; elsewhere lines go through the text/header passes.
+     */
+    walkContent(node) {
+        const inPspicture = this.inPspicture();
+        switch (node.kind) {
+            case 'line': {
+                // Comment-only lines are dropped (mirrors the old /^%/ ignore rule).
+                const allComments = node.parts.length > 0 && node.parts.every((p) => p.kind === 'comment');
+                if (allComments)
+                    return;
+                if (node.parts.length === 0) {
+                    this.pushBlankLine(inPspicture);
+                    return;
+                }
+                const text = this.lineToString(node);
+                if (inPspicture)
+                    this.pushLine(text);
+                else
+                    this.pushMathLine(text);
+                break;
+            }
+            case 'command': {
+                if (node.name === 'psset') {
+                    this.parseUnits(node.raw);
+                    return;
+                }
+                if (inPspicture)
+                    this.environment.commands.push(node);
+                else
+                    this.pushMathLine(node.raw);
+                break;
+            }
+            case 'env':
+                this.walkEnv(node);
+                break;
+            default:
+                break;
+        }
+    }
+    /**
+     * Convert a Line node's parts back to a string, dropping comment fragments.
+     */
+    lineToString(line) {
+        return line.parts
+            .filter((p) => p.kind !== 'comment')
+            .map((p) => (p.kind === 'char' ? p.c : p.raw))
+            .join('');
+    }
+    // -------------------------------------------------------------------------
+    // Line handling
+    // -------------------------------------------------------------------------
+    inPspicture() {
+        return !!(this.environment && this.environment.type.match(/pspicture/));
+    }
+    pushBlankLine(inPspicture) {
+        if (inPspicture)
+            return;
+        if (this.inPspicture())
+            return;
+        this.environment.lines.push('<br>');
+    }
+    pushMathLine(text) {
+        if (this.isIgnored(text))
+            return;
+        if (!text.trim().length) {
+            this.environment.lines.push('<br>');
+            return;
+        }
+        if (this.PSTricks.Expressions.psset.test(text)) {
+            this.parseUnits(text);
+            return;
+        }
+        const processed = this.parseText(text);
+        if (processed.trim().length)
+            this.environment.lines.push(processed);
+    }
+    /** Raw line inside a pspicture: no text/header transforms (they corrupt
+     *  PSTricks content). */
     pushLine(line) {
         var add = true;
         this.Ignore.forEach((exp) => {
@@ -390,24 +2187,79 @@ class Parser {
                 add = false;
             }
         });
-        if (add) {
-            if (typeof line === 'string' && line.trim().length) {
-                if (this.PSTricks.Expressions.psset.test(line)) {
-                    this.parseUnits(line);
-                }
-                else {
-                    this.environment.lines.push(line);
-                }
+        if (add && typeof line === 'string' && line.trim().length) {
+            if (this.PSTricks.Expressions.psset.test(line)) {
+                this.parseUnits(line);
+            }
+            else {
+                this.environment.lines.push(line);
             }
         }
     }
+    isIgnored(line) {
+        return this.Ignore.some((exp) => exp.test(line));
+    }
+    isIgnoredEnv(name) {
+        return this.isIgnored('\\begin{' + name + '}');
+    }
+    /**
+     * A blank source line becomes a `<br>`, but a heading already carries its own
+     * margins, so a `<br>` next to one stacks two gaps where the author asked for
+     * one. Dropping the adjacent break leaves the heading's own spacing to do the
+     * work — and a run of breaks collapses to a single paragraph gap.
+     */
+    collapseBreaks(lines) {
+        const isBlock = (l) => /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote)\b/i.test(l);
+        const out = [];
+        for (const line of lines) {
+            if (line !== '<br>') {
+                while (isBlock(line) && out[out.length - 1] === '<br>')
+                    out.pop();
+                out.push(line);
+                continue;
+            }
+            if (!out.length)
+                continue;
+            if (isBlock(out[out.length - 1]))
+                continue;
+            if (out[out.length - 1] === '<br>')
+                continue;
+            out.push(line);
+        }
+        while (out[out.length - 1] === '<br>')
+            out.pop();
+        return out;
+    }
+    newEnvironment(type) {
+        if (this.environment &&
+            (this.environment.lines.length || this.environment.type !== 'math')) {
+            this.environment.settings = { ...this.settings };
+            if (!this.environment.type.match(/pspicture|verbatim/)) {
+                this.environment.lines = this.collapseBreaks(this.environment.lines);
+            }
+            this.objects.push(this.environment);
+        }
+        this.environment = {
+            type: type,
+            lines: []
+        };
+    }
     parseUnits(line) {
-        var m = line.match(this.PSTricks.Expressions.psset);
+        var m = line.replace(/\n/g, ' ').match(this.PSTricks.Expressions.psset);
         Object.assign(this.settings, this.PSTricks.Functions.psset.call(this, m));
     }
-    metaData(environment, line) {
+    metaData(environment, envNode) {
         if (this.PSTricks.Expressions.hasOwnProperty(environment)) {
-            this.environment.match = line.match(this.PSTricks.Expressions[environment]);
+            this.environment.match = envNode.begin.raw
+                .replace(/\n/g, ' ')
+                .match(this.PSTricks.Expressions[environment]);
+            if (!this.environment.match) {
+                this.diagnose('error', `could not parse \\begin{${environment}} arguments`, envNode.begin.loc);
+                this.environment.env = {};
+                this.environment.env.xunit = this.settings.xunit;
+                this.environment.env.yunit = this.settings.yunit;
+                return;
+            }
             this.environment.env = this.PSTricks.Functions[environment].call(this.settings, this.environment.match);
             if (environment.match(/pspicture/)) {
                 if (typeof this.environment.env.xunit === 'undefined') {
@@ -419,151 +2271,153 @@ class Parser {
             }
         }
     }
-    parseEnv(lines) {
-        this.objects = [];
-        this.environment = {
-            type: 'math',
-            lines: []
-        };
-        const Delimiters = this.Delimiters;
-        lines.forEach((line) => {
-            var isDelim = false;
-            Object.entries(Delimiters).forEach(([env, type]) => {
-                Object.entries(type).forEach(([k, delim]) => {
-                    if (line.match(delim)) {
-                        isDelim = true;
-                        if (k.match(/begin/)) {
-                            if (this.environment.type.match(/verbatim/)) {
-                                isDelim = false;
-                            }
-                            else if (this.environment.type.match(/print/)) {
-                                isDelim = false;
-                            }
-                            else {
-                                this.newEnvironment(env);
-                                this.metaData(env, line);
-                            }
-                        }
-                        else if (k.match(/end/)) {
-                            if (this.environment.type.match(/verbatim/)) {
-                                if (env.match(/verbatim/)) {
-                                    this.newEnvironment('math');
-                                }
-                                else {
-                                    isDelim = false;
-                                }
-                            }
-                            else if (this.environment.type.match(/print/)) {
-                                if (env.match(/print/)) {
-                                    this.newEnvironment('math');
-                                }
-                                else {
-                                    isDelim = false;
-                                }
-                            }
-                            else {
-                                this.newEnvironment('math');
-                            }
-                        }
-                    }
-                });
-            });
-            if (!isDelim)
-                this.pushLine(line); // }
-        });
-        // push last!
-        this.newEnvironment('math');
-    }
-    parseEnvText(lines) {
-        var _env = 'math';
-        const Delimiters = this.Delimiters;
-        lines.forEach((line, i) => {
-            var isDelim = false;
-            Object.entries(Delimiters).forEach(([env, type]) => {
-                Object.entries(type).forEach(([k, delim]) => {
-                    if (line.match(delim)) {
-                        isDelim = true;
-                        if (k.match(/begin/)) {
-                            if (!_env.match(/verbatim/)) {
-                                _env = env;
-                            }
-                            else {
-                                isDelim = false;
-                            }
-                        }
-                        else if (k.match(/end/)) {
-                            if (!_env.match(/verbatim/)) {
-                                _env = 'math';
-                            }
-                            else {
-                                if (!env.match(/verbatim/)) {
-                                    isDelim = false;
-                                }
-                                else {
-                                    _env = 'math';
-                                }
-                            }
-                        }
-                    }
-                });
-            });
-            if (!isDelim) {
-                if (!_env.match(/verbatim/)) {
-                    lines[i] = this.parseText(line);
-                }
-                if (!line.trim().length) {
-                    lines[i] = '<br>';
-                }
-            }
-        });
-    }
-    parsePSExpression(line, exp, plot, k, env) {
-        var match = line.match(exp);
-        if (match) {
-            plot[k].push({
-                data: this.PSTricks.Functions[k].call(env, match),
-                env: env,
-                match: match,
-                fn: this.PSTricks.Functions[k]
-            });
-            return true;
-        }
-        return false;
-    }
-    parsePSVariables(line, exp, _plot, k, env) {
-        var match = line.match(exp);
-        if (match) {
-            if (k.match(/uservariable/)) {
-                var dd = this.PSTricks.Functions[k].call(env, match);
-                env.variables = env.variables || {};
-                env.variables[dd.name] = dd.value;
-            }
-        }
-    }
-    parsePSTricks(lines, env) {
+    // -------------------------------------------------------------------------
+    // PSTricks command extraction (ordered)
+    // -------------------------------------------------------------------------
+    /**
+     * Extract plot data from the ordered command nodes of a pspicture.
+     * Returns the grouped `plot` map (keyed by command type, used by the
+     * interactive re-render paths) and records the ordered `elements` list on
+     * the env for source-order initial rendering.
+     */
+    parsePSTricks(commands, env) {
         var plot = {};
         const entries = Object.entries(this.PSTricks.Expressions);
         entries.forEach(([k, _exp]) => {
             plot[k] = [];
         });
-        lines.forEach((line) => {
-            entries.forEach(([k, exp]) => {
-                this.parsePSVariables(line, exp, plot, k, env);
-                const result = this.parsePSExpression(line, exp, plot, k, env);
-                if (result && k === 'psaxes' && plot[k].length > 0) {
-                    const axesData = plot[k][plot[k].length - 1].data;
-                    if (axesData && axesData.dx !== undefined) {
-                        env.dx = axesData.dx;
-                        env.dy = axesData.dy;
-                        env.origin = axesData.origin;
-                    }
-                }
-            });
-        });
+        const elements = [];
+        this.extractCommands(commands, env, plot, elements);
+        env.elements = elements;
         return plot;
     }
-    parseTextExpression(line, exp, k, contents) {
-        var match = line.match(exp);
+    /**
+     * Extract one command node into `plot` (grouped) and `elements` (ordered).
+     * Recurses into `\multido` bodies (expanded, counter substituted) and
+     * `\pscustom` bodies (the renderer re-parses those itself — the command is
+     * kept as a single element with its raw body).
+     */
+    extractCommands(commands, env, plot, elements) {
+        commands.forEach((node) => {
+            const k = node.name;
+            const exp = this.PSTricks.Expressions[k];
+            if (!exp) {
+                this.diagnose('warning', `unknown command \\${k} in pspicture`, node.loc);
+                return;
+            }
+            // The grammar captures commands across lines; the semantic regexes are
+            // single-line, so collapse internal newlines before matching.
+            const raw = node.raw.replace(/\n/g, ' ');
+            const m = raw.match(exp);
+            if (!m) {
+                this.diagnose('warning', `could not parse \\${k}: ${JSON.stringify(node.raw)}`, node.loc);
+                return;
+            }
+            const data = this.PSTricks.Functions[k].call(env, m);
+            // \multido{var=start+step}{count}{body} — expand and recurse.
+            if (k === 'multido') {
+                this.expandMultido(data, env, plot, elements, node);
+                return;
+            }
+            // \pscustom{...} — pre-extract the inner commands into pixel data so
+            // the renderer can build a single filled/stroked path.
+            if (k === 'pscustom' && data.body) {
+                data.commands = this.extractCustomBody(data.body, env);
+            }
+            plot[k].push({ data: data, env: env, match: m, fn: this.PSTricks.Functions[k] });
+            elements.push({ name: k, data: data, match: m, fn: this.PSTricks.Functions[k], loc: node.loc });
+            // side effects preserved from the old parser:
+            if (k === 'psaxes' && plot[k].length > 0) {
+                const axesData = plot[k][plot[k].length - 1].data;
+                if (axesData && axesData.dx !== undefined) {
+                    env.dx = axesData.dx;
+                    env.dy = axesData.dy;
+                    env.origin = axesData.origin;
+                }
+            }
+            if (k === 'uservariable') {
+                env.variables = env.variables || {};
+                env.variables[data.name] = data.value;
+            }
+        });
+    }
+    /** Expand a \multido loop into its constituent commands. */
+    expandMultido(data, env, plot, elements, node) {
+        if (!data.variable || !(data.count > 0) || !data.body)
+            return;
+        const re = new RegExp('\\\\' + data.variable + '\\b', 'g');
+        for (let i = 0; i < data.count; i++) {
+            const value = data.start + i * data.step;
+            const body = data.body.replace(re, String(value));
+            this.commandNodesFrom(this.parseTree(body)).forEach((cmd) => {
+                this.extractCommands([cmd], env, plot, elements);
+            });
+        }
+    }
+    /**
+     * Extract the inner commands of a \pscustom body into pixel data for the
+     * renderer. Commands that need DOM/runtime handling (rput, slider, psset,
+     * nested pscustom, multido) are skipped.
+     */
+    extractCustomBody(body, env) {
+        const out = [];
+        const skip = ['rput', 'slider', 'psset', 'pspicture', 'pscustom', 'multido', 'uservariable'];
+        this.commandNodesFrom(this.parseTree(body)).forEach((node) => {
+            const k = node.name;
+            if (skip.indexOf(k) !== -1)
+                return;
+            const exp = this.PSTricks.Expressions[k];
+            if (!exp)
+                return;
+            const m = node.raw.replace(/\n/g, ' ').match(exp);
+            if (!m)
+                return;
+            try {
+                const data = this.PSTricks.Functions[k].call(env, m);
+                if (data)
+                    out.push({ key: k, data: data });
+            }
+            catch (err) {
+                /* ignore malformed inner commands */
+            }
+        });
+        return out;
+    }
+    /**
+     * Flatten parsed segments into an ordered list of command nodes, walking
+     * into line parts and nested environments.
+     */
+    commandNodesFrom(segs) {
+        const out = [];
+        const walk = (seg) => {
+            if (seg.kind === 'command')
+                out.push(seg);
+            else if (seg.kind === 'line') {
+                (seg.parts || []).forEach((p) => {
+                    if (p.kind === 'command')
+                        out.push(p);
+                });
+            }
+            else if (seg.kind === 'env') {
+                (seg.content || []).forEach(walk);
+            }
+        };
+        segs.forEach(walk);
+        return out;
+    }
+    // -------------------------------------------------------------------------
+    // Text / header transforms (reused from the old parser, string-based)
+    // -------------------------------------------------------------------------
+    /**
+     * Text transforms run in sequence over one line, so each must match the
+     * value the previous ones produced. Matching the pristine line instead makes
+     * `matchrepl` search `contents` for a literal that an earlier transform has
+     * already rewritten, and the replacement silently does nothing — which is
+     * why `\section{Cauchy--Schwarz}` survived as source text once `--` had
+     * become an en dash.
+     */
+    parseTextExpression(_line, exp, k, contents) {
+        var match = contents.match(exp);
         if (match) {
             return this.Text.Functions[k].call(this, match, contents);
         }
@@ -588,10 +2442,21 @@ class Parser {
         });
         return contents;
     }
+    // -------------------------------------------------------------------------
+    // Diagnostics
+    // -------------------------------------------------------------------------
+    diagnose(severity, message, loc) {
+        this.diagnostics.push({
+            severity: severity,
+            message: message,
+            line: loc ? loc.line : undefined,
+            column: loc ? loc.column : undefined
+        });
+    }
 }
 exports.default = Parser;
 
-},{}],13:[function(require,module,exports){
+},{"../grammar/parser.js":9}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Functions = exports.Expressions = void 0;
@@ -616,6 +2481,24 @@ exports.Expressions = {
     set: /\\set\{[^}]*\}/g,
     youtube: /\\youtube\{[^}]*\}/g,
     euler: /Euler\^/g,
+    textbf: /\\textbf\{[^}]*\}/g,
+    textit: /\\textit\{[^}]*\}/g,
+    texttt: /\\texttt\{[^}]*\}/g,
+    textrm: /\\textrm\{[^}]*\}/g,
+    textsc: /\\textsc\{[^}]*\}/g,
+    underline: /\\underline\{[^}]*\}/g,
+    overline: /\\overline\{[^}]*\}/g,
+    section: /\\section\{[^}]*\}/,
+    subsection: /\\subsection\{[^}]*\}/,
+    subsubsection: /\\subsubsection\{[^}]*\}/,
+    paragraph: /\\paragraph\{[^}]*\}/,
+    hspace: /\\hspace\{[^}]*\}/,
+    noindent: /\\noindent/g,
+    newpage: /\\newpage/g,
+    hrule: /\\hrule/g,
+    rule: /\\rule\{[^}]*\}\{[^}]*\}/g,
+    textcolor: /\\textcolor\{[^}]*\}\{[^}]*\}/g,
+    footnote: /\\footnote\{[^}]*\}/g,
 };
 exports.Functions = {
     cite: function (m, contents) {
@@ -678,13 +2561,65 @@ exports.Functions = {
     vspace: (0, utils_1.simplerepl)(/\\vspace/g, '<br>'),
     TeX: (0, utils_1.simplerepl)(/\\TeX\\|\\TeX/g, '$\\TeX$'),
     LaTeX: (0, utils_1.simplerepl)(/\\LaTeX\\|\\LaTeX/g, '$\\LaTeX$'),
+    textbf: (0, utils_1.matchrepl)(/\\textbf\{([^}]*)\}/, function (m) {
+        return '<b>' + m[1] + '</b>';
+    }),
+    textit: (0, utils_1.matchrepl)(/\\textit\{([^}]*)\}/, function (m) {
+        return '<i>' + m[1] + '</i>';
+    }),
+    texttt: (0, utils_1.matchrepl)(/\\texttt\{([^}]*)\}/, function (m) {
+        return '<span class="tt">' + m[1] + '</span>';
+    }),
+    textrm: (0, utils_1.matchrepl)(/\\textrm\{([^}]*)\}/, function (m) {
+        return '<span class="rm">' + m[1] + '</span>';
+    }),
+    textsc: (0, utils_1.matchrepl)(/\\textsc\{([^}]*)\}/, function (m) {
+        return '<span style="font-variant: small-caps;">' + m[1] + '</span>';
+    }),
+    underline: (0, utils_1.matchrepl)(/\\underline\{([^}]*)\}/, function (m) {
+        return '<u>' + m[1] + '</u>';
+    }),
+    overline: (0, utils_1.matchrepl)(/\\overline\{([^}]*)\}/, function (m) {
+        return '<span style="text-decoration: overline;">' + m[1] + '</span>';
+    }),
+    section: (0, utils_1.matchrepl)(/\\section\{([^}]*)\}/, function (m) {
+        return '<h2>' + m[1] + '</h2>';
+    }),
+    subsection: (0, utils_1.matchrepl)(/\\subsection\{([^}]*)\}/, function (m) {
+        return '<h3>' + m[1] + '</h3>';
+    }),
+    subsubsection: (0, utils_1.matchrepl)(/\\subsubsection\{([^}]*)\}/, function (m) {
+        return '<h4>' + m[1] + '</h4>';
+    }),
+    paragraph: (0, utils_1.matchrepl)(/\\paragraph\{([^}]*)\}/, function (m) {
+        return '<h5>' + m[1] + '</h5>';
+    }),
+    hspace: (0, utils_1.matchrepl)(/\\hspace\{([^}]*)\}/, function (_m) {
+        return '&nbsp; ';
+    }),
+    noindent: (0, utils_1.simplerepl)(/\\noindent/g, ''),
+    newpage: (0, utils_1.simplerepl)(/\\newpage/g, '<br><br>'),
+    hrule: (0, utils_1.simplerepl)(/\\hrule/g, '<hr>'),
+    rule: (0, utils_1.matchrepl)(/\\rule\{([^}]*)\}\{([^}]*)\}/, function (m) {
+        return ('<span style="display:inline-block;width:' +
+            m[1] +
+            ';height:' +
+            m[2] +
+            ';background:currentColor;"></span>');
+    }),
+    textcolor: (0, utils_1.matchrepl)(/\\textcolor\{([^}]*)\}\{([^}]*)\}/, function (m) {
+        return '<span style="color:' + m[1] + ';">' + m[2] + '</span>';
+    }),
+    footnote: (0, utils_1.matchrepl)(/\\footnote\{([^}]*)\}/, function (m) {
+        return '<sup class="footnote">' + m[1] + '</sup>';
+    }),
 };
 exports.default = {
     Expressions: exports.Expressions,
     Functions: exports.Functions,
 };
 
-},{"@latex2js/utils":20}],14:[function(require,module,exports){
+},{"@latex2js/utils":23}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = String.raw `
@@ -827,7 +2762,7 @@ exports.default = String.raw `
   $$
   `;
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadMathJax = exports.getMathJax = exports.DEFAULT_CONFIG = void 0;
@@ -896,7 +2831,7 @@ const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG
 };
 exports.loadMathJax = loadMathJax;
 
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -947,7 +2882,7 @@ exports.default = {
     arrow: psgraph_1.arrow,
 };
 
-},{"./lib/psgraph":17,"./lib/pstricks":18}],17:[function(require,module,exports){
+},{"./lib/psgraph":19,"./lib/pstricks":20}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.arrow = arrow;
@@ -978,6 +2913,177 @@ function arrow(x1, y1, x2, y2) {
     context.push('Z');
     return context.join(' ');
 }
+/**
+ * Catmull-Rom → cubic Bézier path for a flat [x0,y0,x1,y1,...] point list.
+ * `closed` wraps the curve back to the start point.
+ */
+function buildCurvePath(data, closed) {
+    const pts = [];
+    for (let i = 0; i < data.length; i += 2)
+        pts.push([data[i], data[i + 1]]);
+    const n = pts.length;
+    if (n < 2)
+        return '';
+    const at = (i) => pts[((i % n) + n) % n];
+    let d = 'M ' + pts[0][0] + ' ' + pts[0][1];
+    for (let i = 0; i < n - 1; i++) {
+        const p0 = closed ? at(i - 1) : i === 0 ? pts[0] : pts[i - 1];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = closed ? at(i + 2) : i + 2 < n ? pts[i + 2] : pts[i + 1];
+        const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+        const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+        const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p2[0] + ' ' + p2[1];
+    }
+    if (closed) {
+        const pn1 = pts[n - 1];
+        const p0 = pts[0];
+        const pn2 = pts[n - 2];
+        const p1 = pts[1];
+        const c1x = pn1[0] + (p0[0] - pn2[0]) / 6;
+        const c1y = pn1[1] + (p0[1] - pn2[1]) / 6;
+        const c2x = p0[0] - (p1[0] - pn1[0]) / 6;
+        const c2y = p0[1] - (p1[1] - pn1[1]) / 6;
+        d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p0[0] + ' ' + p0[1] + ' Z';
+    }
+    return d;
+}
+const TAU = Math.PI * 2;
+/** Points to device units, matching the linewidth conversion in pstricks.ts. */
+const PT_TO_PX = 1.333;
+/**
+ * Line directions each hatched fill style draws, as offsets from `hatchangle`.
+ * PSTricks hatches at `hatchangle` for hlines, ninety degrees off for vlines,
+ * and both for crosshatch — so the default 45 degrees makes hlines diagonal,
+ * not horizontal.
+ */
+const HATCH_DIRECTIONS = {
+    hlines: [0],
+    vlines: [90],
+    crosshatch: [0, 90],
+};
+/** PSTricks hatch parameter defaults, in points except the angle and colour. */
+const HATCH_DEFAULTS = { hatchwidth: 0.8, hatchsep: 4, hatchangle: 45, hatchcolor: 'black' };
+let patternSeq = 0;
+/** Reads a dimension that may carry a `pt` suffix, in device units. */
+function dimension(value, fallbackPt) {
+    if (typeof value === 'number' && isFinite(value))
+        return value * PT_TO_PX;
+    const m = typeof value === 'string' ? value.trim().match(/^([\d.]+)\s*(pt)?$/) : null;
+    return (m ? Number(m[1]) : fallbackPt) * PT_TO_PX;
+}
+/**
+ * Whether a shape has any fill at all. Renderers that must close a path before
+ * it can be filled ask this; the paint itself comes from {@link resolveFill}.
+ *
+ * @param ctx - the shape's parsed data
+ * @returns true when the shape should be built as a closed, fillable region
+ */
+function hasFill(ctx) {
+    return !!ctx.filled || (!!ctx.fillstyle && ctx.fillstyle !== 'none');
+}
+/**
+ * Resolves a shape's SVG fill value, defining a hatch pattern when the style
+ * calls for one.
+ *
+ * Every renderer previously spelled this decision itself, in three mutually
+ * inconsistent ways: `fillstyle=hlines` became a solid fill on pspolygon and
+ * psarc, and no fill at all on psellipse, pswedge and pscurve. Routing all of
+ * them through one resolver makes an unimplemented style behave the same
+ * everywhere, and gives the hatched styles a real rendering.
+ *
+ * @param ctx - the shape's parsed data, carrying fillstyle and hatch options
+ * @param svg - the container the pattern definition is attached to
+ * @returns an SVG paint value: a colour, a `url(#…)` pattern, or `none`
+ */
+function resolveFill(ctx, svg) {
+    const style = ctx.fillstyle ?? 'none';
+    // The starred forms set `filled`; they fill flat regardless of style.
+    if (ctx.filled || style === 'solid')
+        return ctx.fillcolor;
+    if (style === 'none' || !style)
+        return 'none';
+    const starred = style.endsWith('*');
+    const directions = HATCH_DIRECTIONS[starred ? style.slice(0, -1) : style];
+    // An unrecognised style is not a fill; guessing solid is what made the same
+    // input render differently depending on the shape.
+    if (!directions)
+        return 'none';
+    const sep = Math.max(1, dimension(ctx.hatchsep, HATCH_DEFAULTS.hatchsep));
+    const width = Math.max(0.2, dimension(ctx.hatchwidth, HATCH_DEFAULTS.hatchwidth));
+    const angle = Number(ctx.hatchangle ?? HATCH_DEFAULTS.hatchangle) || 0;
+    const color = ctx.hatchcolor ?? HATCH_DEFAULTS.hatchcolor;
+    const id = 'l2j-hatch-' + ++patternSeq;
+    const pattern = svg
+        .append('svg:defs')
+        .append('svg:pattern')
+        .attr('id', id)
+        .attr('patternUnits', 'userSpaceOnUse')
+        .attr('width', sep)
+        .attr('height', sep)
+        // SVG's y axis runs opposite to the PSTricks angle convention.
+        .attr('patternTransform', 'rotate(' + -angle + ')');
+    // A starred hatch lays its lines over the fill colour instead of nothing.
+    if (starred) {
+        pattern.append('svg:rect').attr('width', sep).attr('height', sep).style('fill', ctx.fillcolor);
+    }
+    for (const d of directions) {
+        const line = pattern.append('svg:line').style('stroke', color).style('stroke-width', width);
+        if (d === 0)
+            line.attr('x1', 0).attr('y1', sep / 2).attr('x2', sep).attr('y2', sep / 2);
+        else
+            line.attr('x1', sep / 2).attr('y1', 0).attr('x2', sep / 2).attr('y2', sep);
+    }
+    return 'url(#' + id + ')';
+}
+/**
+ * SVG arc flags for a PSTricks arc running from `angleA` to `angleB`.
+ *
+ * PSTricks always sweeps counter-clockwise in its own coordinates, taking the
+ * long way round when the end angle precedes the start. `Y` inverts the axis,
+ * so that counter-clockwise sweep is drawn with SVG's sweep-flag 0 — using 1
+ * traces the complementary arc, which is what bowed every `\pswedge` inward
+ * and turned a pie chart into a star.
+ *
+ * @param angleA - start angle in radians
+ * @param angleB - end angle in radians
+ * @returns the sweep span plus SVG's large-arc and sweep flags
+ */
+function arcFlags(angleA, angleB) {
+    let delta = angleB - angleA;
+    if (!isFinite(delta))
+        delta = 0;
+    delta = ((delta % TAU) + TAU) % TAU;
+    return { delta, large: delta > Math.PI ? 1 : 0, sweep: 0 };
+}
+/**
+ * A full turn cannot be expressed as one SVG arc, because the start and end
+ * points coincide. Such a sweep is emitted as two half-turns instead.
+ *
+ * @param cx - centre x in device units
+ * @param cy - centre y in device units
+ * @param r - radius in device units
+ * @returns a closed circular path
+ */
+function fullCirclePath(cx, cy, r) {
+    return ('M ' + (cx - r) + ' ' + cy +
+        ' A ' + r + ' ' + r + ' 0 1 0 ' + (cx + r) + ' ' + cy +
+        ' A ' + r + ' ' + r + ' 0 1 0 ' + (cx - r) + ' ' + cy + ' Z');
+}
+function curveRenderer(svg) {
+    const d = buildCurvePath(this.data, !!this.closed);
+    if (!d)
+        return;
+    svg
+        .append('svg:path')
+        .attr('d', d)
+        .style('stroke-width', this.linewidth)
+        .style('stroke', this.linecolor)
+        .style('stroke-opacity', 1)
+        .style('fill', resolveFill(this, svg));
+}
 const psgraph = {
     env: null,
     getSize() {
@@ -996,6 +3102,17 @@ const psgraph = {
         };
     },
     psframe(svg) {
+        const filled = hasFill(this);
+        if (filled) {
+            svg
+                .append('svg:rect')
+                .attr('x', Math.min(this.x1, this.x2))
+                .attr('y', Math.min(this.y1, this.y2))
+                .attr('width', Math.abs(this.x2 - this.x1))
+                .attr('height', Math.abs(this.y2 - this.y1))
+                .style('fill', resolveFill(this, svg))
+                .style('stroke', 'none');
+        }
         svg
             .append('svg:line')
             .attr('x1', this.x1)
@@ -1034,20 +3151,21 @@ const psgraph = {
             .style('stroke-opacity', 1);
     },
     pscircle: function (svg) {
+        const filled = hasFill(this);
         svg
             .append('svg:circle')
             .attr('cx', this.cx)
             .attr('cy', this.cy)
             .attr('r', this.r)
-            .style('stroke', 'black')
-            .style('fill', 'none')
-            .style('stroke-width', 2)
+            .style('stroke', this.linecolor)
+            .style('fill', resolveFill(this, svg))
+            .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1);
     },
     psplot(svg) {
         var context = [];
         context.push('M');
-        if (this.fillstyle === 'solid') {
+        if (hasFill(this)) {
             context.push(this.data[0]);
             context.push(utils_1.Y.call(this.global, 0));
         }
@@ -1059,7 +3177,7 @@ const psgraph = {
         this.data.forEach((data) => {
             context.push(data);
         });
-        if (this.fillstyle === 'solid') {
+        if (hasFill(this)) {
             context.push(this.data[this.data.length - 2]);
             context.push(utils_1.Y.call(this.global, 0));
             context.push('Z');
@@ -1070,7 +3188,7 @@ const psgraph = {
             .attr('class', 'psplot')
             .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1)
-            .style('fill', this.fillstyle === 'none' ? 'none' : this.fillcolor)
+            .style('fill', resolveFill(this, svg))
             .style('stroke', this.linecolor);
     },
     pspolygon(svg) {
@@ -1088,32 +3206,26 @@ const psgraph = {
             .attr('d', context.join(' '))
             .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1)
-            .style('fill', this.fillstyle === 'none' ? 'none' : this.fillcolor)
+            .style('fill', resolveFill(this, svg))
             .style('stroke', 'black');
     },
     psarc(svg) {
-        var context = [];
-        context.push('M');
-        context.push(this.cx);
-        context.push(this.cy);
-        context.push('L');
-        context.push(this.A.x);
-        context.push(this.A.y);
-        context.push('A');
-        context.push(this.A.x);
-        context.push(this.A.y);
-        context.push(0);
-        context.push(0);
-        context.push(0);
-        context.push(this.B.x);
-        context.push(this.B.y);
+        const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
+        const filled = hasFill(this);
+        const arc = ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
+            ' ' + this.B.x + ' ' + this.B.y;
+        const d = delta === 0
+            ? fullCirclePath(this.cx, this.cy, this.r)
+            : filled
+                ? 'M ' + this.cx + ' ' + this.cy + ' L ' + this.A.x + ' ' + this.A.y + arc + ' Z'
+                : 'M ' + this.A.x + ' ' + this.A.y + arc;
         svg
             .append('svg:path')
-            .attr('d', context.join(' '))
-            .style('stroke-width', 2)
+            .attr('d', d)
+            .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1)
-            .style('fill', 'blue')
-            .style('stroke', 'black');
+            .style('fill', resolveFill(this, svg))
+            .style('stroke', this.linecolor);
     },
     psaxes(svg) {
         var xaxis = [this.bottomLeft[0], this.topRight[0]];
@@ -1127,28 +3239,106 @@ const psgraph = {
                 .style('stroke', 'rgb(0,0,0)')
                 .style('stroke-opacity', 1);
         }
+        /**
+         * Tick positions, stepped outward from the origin rather than from the end
+         * of the axis. Starting at the end puts every mark at whatever offset the
+         * axis happens to begin on, so an axis spanning -3.5 to 3.5 was ticked and
+         * labelled at half-integers instead of on the whole numbers.
+         */
+        /**
+         * An axis end that carries an arrowhead, or null. `arrows[0]` points at the
+         * low end of each axis and `arrows[1]` at the high end, matching the order
+         * the arrowheads are drawn below.
+         */
+        const arrowedEnds = (axis) => [
+            this.arrows[0] ? axis[0] : null,
+            this.arrows[1] ? axis[1] : null,
+        ];
+        const positions = (from, to, at, step) => {
+            if (!(step > 0) || !isFinite(step))
+                return [];
+            // Y inverts the axis, so a vertical span arrives with its ends the other
+            // way round. Walking it as given produced no y ticks at all.
+            const lo = Math.min(from, to);
+            const hi = Math.max(from, to);
+            const out = [];
+            for (let v = at; v <= hi + 1e-6; v += step)
+                out.push(v);
+            for (let v = at - step; v >= lo - 1e-6; v -= step)
+                out.unshift(v);
+            // PSTricks gives an arrowhead the end of the axis to itself: where one is
+            // drawn, the tick and its number are both suppressed. A tick that merely
+            // falls short of the tip keeps them, so only a coincident one is dropped.
+            const suppressed = arrowedEnds([from, to]).filter((v) => v !== null);
+            return out.filter((v) => !suppressed.some((end) => Math.abs(v - end) < 1e-6));
+        };
         var xticks = () => {
-            for (var x = xaxis[0]; x <= xaxis[1]; x += this.dx) {
+            positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
                 line(x, origin[1] - 5, x, origin[1] + 5);
-            }
+            });
         };
         var yticks = () => {
-            for (var y = yaxis[0]; y <= yaxis[1]; y += this.dy) {
+            positions(yaxis[0], yaxis[1], origin[1], this.dy).forEach((y) => {
                 line(origin[0] - 5, y, origin[0] + 5, y);
-            }
+            });
+        };
+        const env = this.global || {};
+        /** Draws one tick number, positioned clear of its axis. */
+        const label = (text, x, y, anchor) => {
+            svg
+                .append('svg:text')
+                .attr('x', x)
+                .attr('y', y)
+                .attr('text-anchor', anchor)
+                .attr('font-size', 13)
+                .attr('font-family', 'serif')
+                .style('fill', 'black')
+                .text(text);
+        };
+        /** Tick values are device coordinates; labels need the value they stand for. */
+        const value = (device, axis) => {
+            const n = axis === 'x'
+                ? device / env.xunit - env.w + env.x1
+                : env.y1 - device / env.yunit;
+            return Math.abs(n) < 1e-9 ? 0 : Number(n.toFixed(4));
+        };
+        const xlabels = () => {
+            positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
+                // The origin's number sits directly under the y axis, which would draw
+                // the axis line straight through the glyph, so it shifts clear of it
+                // and serves both axes — as it does on a hand-drawn pair of axes.
+                const atOrigin = Math.abs(x - origin[0]) < 1e-6;
+                if (atOrigin)
+                    label(String(value(x, 'x')), x - 7, origin[1] + 20, 'end');
+                else
+                    label(String(value(x, 'x')), x, origin[1] + 20, 'middle');
+            });
+        };
+        const ylabels = () => {
+            positions(yaxis[0], yaxis[1], origin[1], this.dy).forEach((y) => {
+                // The origin's own number belongs to the x axis; drawing it again here
+                // would stack two glyphs in the same place.
+                if (Math.abs(y - origin[1]) < 1e-6)
+                    return;
+                label(String(value(y, 'y')), origin[0] - 10, y + 4, 'end');
+            });
         };
         line(xaxis[0], origin[1], xaxis[1], origin[1]);
         line(origin[0], yaxis[0], origin[0], yaxis[1]);
-        if (this.ticks.match(/all/)) {
+        const selects = (option, axis) => {
+            const v = String(option ?? 'all');
+            if (v.match(/none/))
+                return false;
+            return !!(v.match(/all/) || v.match(axis));
+        };
+        if (selects(this.ticks, 'x'))
             xticks();
+        if (selects(this.ticks, 'y'))
             yticks();
-        }
-        else if (this.ticks.match(/x/)) {
-            xticks();
-        }
-        else if (this.ticks.match(/y/)) {
-            yticks();
-        }
+        if (env.xunit && selects(this.labels, 'x'))
+            xlabels();
+        if (env.yunit && selects(this.labels, 'y'))
+            ylabels();
         if (this.arrows[0]) {
             svg
                 .append('path')
@@ -1458,89 +3648,318 @@ const psgraph = {
     pspicture(svg) {
         var env = this.env;
         var el = this.$el;
-        Object.keys(this.plot).forEach((key) => {
-            const plot = this.plot[key];
-            if (key.match(/rput/))
-                return;
-            if (psgraph.hasOwnProperty(key)) {
-                plot.forEach((data) => {
-                    data.data.global = env;
-                    psgraph[key].call(data.data, svg);
+        const plots = this.plot;
+        // The parser records `env.elements` in document order, so fills sit under
+        // lines exactly as authored.
+        const elements = env && env.elements;
+        /**
+         * Recomputes an interactive element against the pointer position. Static
+         * elements keep the data the parser produced.
+         */
+        function resolveData(item, coords, variables) {
+            if (!coords || !item.fn)
+                return item.data;
+            if (item.name === 'psplot') {
+                Object.entries(variables || {}).forEach(([name, value]) => {
+                    env.variables[name] = value;
                 });
+                const d = item.fn.call(env, item.match);
+                d.global = Object.assign({}, env);
+                return d;
             }
-        });
+            if (item.name === 'userline') {
+                const d = item.fn.call(env, item.match);
+                env.x2 = coords[0];
+                env.y2 = coords[1];
+                item.data.x2 = env.x2;
+                item.data.y2 = env.y2;
+                if (item.data.xExp2) {
+                    item.data.x2 = d.userx2(coords);
+                    item.data.x1 = d.userx(coords);
+                }
+                else if (item.data.xExp) {
+                    item.data.x2 = d.userx(coords);
+                }
+                if (item.data.yExp2) {
+                    item.data.y2 = d.usery2(coords);
+                    item.data.y1 = d.usery(coords);
+                }
+                else if (item.data.yExp) {
+                    item.data.y2 = d.usery(coords);
+                }
+                d.global = Object.assign({}, env);
+                Object.assign(d, item.data);
+                return d;
+            }
+            return item.data;
+        }
+        /** Evaluates every \uservariable at the pointer position, in source order. */
+        function readVariables(coords) {
+            const variables = {};
+            const source = elements && elements.length
+                ? elements.filter((i) => i && i.name === 'uservariable')
+                : ((plots && plots.uservariable) || []).map((p) => ({ ...p, name: 'uservariable' }));
+            source.forEach((item) => {
+                env.userx = coords[0];
+                env.usery = coords[1];
+                const dd = item.fn.call(env, item.match);
+                variables[item.data.name] = dd.value;
+            });
+            return variables;
+        }
+        /**
+         * Draws the whole picture into a fresh layer.
+         *
+         * Redrawing everything is what keeps interaction faithful to the source.
+         * Removing just the interactive elements and appending them again put them
+         * at the end of the SVG — on top of every later shape — and re-emitted
+         * them grouped by command type rather than in document order, so a correct
+         * diagram silently reordered itself the first time the pointer crossed it.
+         */
+        let layer = null;
+        function drawLayer(coords) {
+            if (layer)
+                layer.remove();
+            layer = svg.append('svg:g').attr('class', 'pspicture-layer');
+            const variables = coords ? readVariables(coords) : {};
+            if (elements && elements.length) {
+                elements.forEach((item) => {
+                    if (!item || !item.name || item.name.match(/rput/))
+                        return;
+                    if (!psgraph.hasOwnProperty(item.name))
+                        return;
+                    const data = resolveData(item, coords, variables);
+                    data.global = env;
+                    psgraph[item.name].call(data, layer);
+                });
+                return;
+            }
+            // Legacy data without an ordered element list: fall back to the
+            // type-grouped iteration, which cannot express author order.
+            Object.keys(plots).forEach((key) => {
+                if (key.match(/rput/))
+                    return;
+                if (!psgraph.hasOwnProperty(key))
+                    return;
+                plots[key].forEach((entry) => {
+                    const item = { name: key, data: entry.data, match: entry.match, fn: entry.fn };
+                    const data = resolveData(item, coords, variables);
+                    data.global = env;
+                    psgraph[key].call(data, layer);
+                });
+            });
+        }
+        drawLayer(null);
         svg.on('touchmove', function (event) {
             event.preventDefault();
             var touch = event.touches ? event.touches[0] : null;
             var rect = event.target.getBoundingClientRect();
             var touchcoords = touch ? [touch.clientX - rect.left, touch.clientY - rect.top] : [0, 0];
-            userEvent(touchcoords);
+            drawLayer(touchcoords);
         });
         svg.on('mousemove', function (event) {
             var coords = [event.offsetX || 0, event.offsetY || 0];
-            userEvent(coords);
+            drawLayer(coords);
         });
-        const plots = this.plot;
-        function userEvent(coords) {
-            svg.selectAll('.userline').remove();
-            svg.selectAll('.psplot').remove();
-            var currentEnvironment = {};
-            Object.entries(plots || {})
-                .forEach(([k, plot]) => {
-                if (k.match(/uservariable/)) {
-                    plot.forEach((data) => {
-                        data.env.userx = coords[0];
-                        data.env.usery = coords[1];
-                        var dd = data.fn.call(data.env, data.match);
-                        currentEnvironment[data.data.name] = dd.value;
-                    });
-                }
-            });
-            Object.entries(plots || {})
-                .forEach(([k, plot]) => {
-                if (k.match(/psplot/)) {
-                    plot.forEach((data) => {
-                        Object.entries(currentEnvironment || {})
-                            .forEach(([name, variable]) => {
-                            data.env.variables[name] = variable;
-                        });
-                        var d = data.fn.call(data.env, data.match);
-                        d.global = {};
-                        Object.assign(d.global, env);
-                        psgraph[k].call(d, svg);
-                    });
-                }
-                if (k.match(/userline/)) {
-                    plot.forEach((data) => {
-                        var d = data.fn.call(data.env, data.match);
-                        data.env.x2 = coords[0];
-                        data.env.y2 = coords[1];
-                        data.data.x2 = data.env.x2;
-                        data.data.y2 = data.env.y2;
-                        if (data.data.xExp2) {
-                            data.data.x2 = d.userx2(coords);
-                            data.data.x1 = d.userx(coords);
-                        }
-                        else if (data.data.xExp) {
-                            data.data.x2 = d.userx(coords);
-                        }
-                        if (data.data.yExp2) {
-                            data.data.y2 = d.usery2(coords);
-                            data.data.y1 = d.usery(coords);
-                        }
-                        else if (data.data.yExp) {
-                            data.data.y2 = d.usery(coords);
-                        }
-                        d.global = {};
-                        Object.assign(d.global, env);
-                        Object.assign(d, data.data);
-                        psgraph[k].call(d, svg);
-                    });
-                }
-            });
-        }
         // Enhanced cleanup and RPUT processing
         psgraph.processRputElements.call(this, el);
+    },
+    psdots(svg) {
+        for (let i = 0; i < this.data.length; i += 2) {
+            svg
+                .append('svg:circle')
+                .attr('cx', this.data[i])
+                .attr('cy', this.data[i + 1])
+                .attr('r', this.dotsize)
+                .style('fill', this.linecolor)
+                .style('stroke', 'none');
+        }
+    },
+    /**
+     * A PSTricks grid is three things, not one: fine subdivision lines, a heavier
+     * line on each unit, and the coordinate numbered along the left and bottom
+     * edges. Only the unit lines were drawn, in `linecolor` — which `gridcolor`
+     * could not override — so a grid was a flat mesh with no reading on it.
+     */
+    psgrid(svg) {
+        const x0 = this.x0, y0 = this.y0, x1 = this.x1, y1 = this.y1;
+        const gridcolor = this.gridcolor ?? this.linecolor;
+        const gridwidth = dimension(this.gridwidth, 0.8);
+        const subdiv = Math.max(0, Math.floor(Number(this.subgriddiv ?? 5)));
+        const subcolor = this.subgridcolor ?? 'gray';
+        const subwidth = dimension(this.subgridwidth, 0.4);
+        const rule = (a, b, c, d, color, width) => {
+            svg
+                .append('svg:line')
+                .attr('x1', a).attr('y1', b).attr('x2', c).attr('y2', d)
+                .style('stroke', color)
+                .style('stroke-width', width)
+                .style('stroke-opacity', 1);
+        };
+        /** Line offsets across a span, stepping by `step` from `origin`. */
+        const rungs = (lo, hi, origin, step) => {
+            if (!(step > 0) || !isFinite(step))
+                return [];
+            const out = [];
+            for (let v = origin; v <= hi + 1e-6; v += step)
+                out.push(v);
+            for (let v = origin - step; v >= lo - 1e-6; v -= step)
+                out.unshift(v);
+            return out;
+        };
+        const ox = this.originX ?? x0;
+        const oy = this.originY ?? y0;
+        // Subdivisions first, so the unit lines and labels sit over them.
+        if (subdiv > 1) {
+            for (const x of rungs(x0, x1, ox, this.xunit / subdiv))
+                rule(x, y0, x, y1, subcolor, subwidth);
+            for (const y of rungs(y0, y1, oy, this.yunit / subdiv))
+                rule(x0, y, x1, y, subcolor, subwidth);
+        }
+        const xs = rungs(x0, x1, ox, this.xunit);
+        const ys = rungs(y0, y1, oy, this.yunit);
+        for (const x of xs)
+            rule(x, y0, x, y1, gridcolor, gridwidth);
+        for (const y of ys)
+            rule(x0, y, x1, y, gridcolor, gridwidth);
+        // Grid numbers are off unless asked for. PSTricks draws them outside the
+        // grid on an unbounded page; an SVG is sized to the picture's declared
+        // bounds, so on a grid that reaches the edge — the common case — they would
+        // land outside the viewport and be clipped away. A default nobody can see
+        // is worse than no default, so they are opt-in and clamped inside.
+        if (!this.gridlabels || this.gridlabels === 'none' || this.gridlabels === '0')
+            return;
+        const size = dimension(this.gridlabels, 10);
+        const labelcolor = this.gridlabelcolor ?? 'black';
+        const text = (s, x, y, anchor) => {
+            svg
+                .append('svg:text')
+                .attr('x', x).attr('y', y)
+                .attr('text-anchor', anchor)
+                .attr('font-size', size)
+                .attr('font-family', 'serif')
+                .style('fill', labelcolor)
+                .text(s);
+        };
+        const round = (n) => (Math.abs(n) < 1e-9 ? 0 : Number(n.toFixed(4)));
+        const env = this.global || {};
+        // Clamped inside the picture so a grid flush with the edge still shows its
+        // numbers rather than pushing them out of the viewport.
+        const belowY = Math.min(y1 + size + 4, (env.h ?? 0) * (env.yunit ?? 1) - 2);
+        const leftX = Math.max(x0 - 4, size);
+        for (const x of xs)
+            text(String(round(x / env.xunit - env.w + env.x1)), x, belowY, 'middle');
+        for (const y of ys)
+            text(String(round(env.y1 - y / env.yunit)), leftX, y + size / 3, 'end');
+    },
+    psellipse(svg) {
+        svg
+            .append('svg:ellipse')
+            .attr('cx', this.cx)
+            .attr('cy', this.cy)
+            .attr('rx', this.rx)
+            .attr('ry', this.ry)
+            .style('stroke', this.linecolor)
+            .style('stroke-width', this.linewidth)
+            .style('stroke-opacity', 1)
+            .style('fill', resolveFill(this, svg));
+    },
+    psbezier(svg) {
+        svg
+            .append('svg:path')
+            .attr('d', 'M ' + this.x1 + ' ' + this.y1 +
+            ' C ' + this.x2 + ' ' + this.y2 + ', ' + this.x3 + ' ' + this.y3 + ', ' + this.x4 + ' ' + this.y4)
+            .style('stroke-width', this.linewidth)
+            .style('stroke', this.linecolor)
+            .style('stroke-opacity', 1)
+            .style('fill', 'none');
+    },
+    pscurve(svg) {
+        const d = buildCurvePath(this.data, !!this.closed);
+        if (!d)
+            return;
+        svg
+            .append('svg:path')
+            .attr('d', d)
+            .style('stroke-width', this.linewidth)
+            .style('stroke', this.linecolor)
+            .style('stroke-opacity', 1)
+            .style('fill', resolveFill(this, svg));
+    },
+    psecurve: curveRenderer,
+    psccurve: curveRenderer,
+    pswedge(svg) {
+        const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
+        const d = delta === 0
+            ? fullCirclePath(this.cx, this.cy, this.r)
+            : 'M ' + this.cx + ' ' + this.cy +
+                ' L ' + this.A.x + ' ' + this.A.y +
+                ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
+                ' ' + this.B.x + ' ' + this.B.y + ' Z';
+        svg
+            .append('svg:path')
+            .attr('d', d)
+            .style('stroke-width', this.linewidth)
+            .style('stroke', this.linecolor)
+            .style('stroke-opacity', 1)
+            .style('fill', resolveFill(this, svg));
+    },
+    pscustom(svg) {
+        const filled = hasFill(this);
+        let d = '';
+        let started = false;
+        (this.commands || []).forEach((cmd) => {
+            const data = cmd.data;
+            if (!data)
+                return;
+            if (cmd.key === 'psline' || cmd.key === 'userline' || cmd.key === 'psbezier') {
+                if (cmd.key === 'psbezier') {
+                    if (!started) {
+                        d += 'M ' + data.x1 + ' ' + data.y1;
+                        started = true;
+                    }
+                    d += ' C ' + data.x2 + ' ' + data.y2 + ', ' + data.x3 + ' ' + data.y3 + ', ' + data.x4 + ' ' + data.y4;
+                    return;
+                }
+                if (!started) {
+                    d += 'M ' + data.x1 + ' ' + data.y1;
+                    started = true;
+                }
+                d += ' L ' + data.x2 + ' ' + data.y2;
+            }
+            else if (cmd.key === 'psframe') {
+                if (!started) {
+                    d += 'M ' + data.x1 + ' ' + data.y1;
+                    started = true;
+                }
+                d += ' L ' + data.x2 + ' ' + data.y1 +
+                    ' L ' + data.x2 + ' ' + data.y2 +
+                    ' L ' + data.x1 + ' ' + data.y2 + ' Z';
+            }
+            else if (cmd.key === 'pspolygon' || cmd.key === 'pscurve') {
+                const pts = data.data || [];
+                if (pts.length < 2)
+                    return;
+                if (!started) {
+                    d += 'M ' + pts[0] + ' ' + pts[1];
+                    started = true;
+                }
+                for (let i = 2; i < pts.length; i += 2)
+                    d += ' L ' + pts[i] + ' ' + pts[i + 1];
+                d += ' Z';
+            }
+        });
+        if (!started)
+            return;
+        if (filled)
+            d += ' Z';
+        svg
+            .append('svg:path')
+            .attr('d', d)
+            .style('stroke-width', this.linewidth)
+            .style('stroke', this.linestyle === 'none' ? 'none' : this.linecolor)
+            .style('stroke-opacity', 1)
+            .style('fill', resolveFill(this, svg));
     },
     processRputElements(el) {
         // Validate container
@@ -1632,7 +4051,7 @@ const psgraph = {
 };
 exports.default = psgraph;
 
-},{"@latex2js/utils":20}],18:[function(require,module,exports){
+},{"@latex2js/utils":23}],20:[function(require,module,exports){
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -1641,11 +4060,48 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Functions = exports.Expressions = void 0;
 const utils_1 = require("@latex2js/utils");
 const settings_1 = __importDefault(require("@latex2js/settings"));
+/**
+ * Parse a PSTricks linewidth value: a bare number is used as-is (SVG px),
+ * a `pt` value is converted to px (1pt ≈ 1.333px).
+ */
+function parseLinewidth(value) {
+    const m = value.trim().match(/^([\d.]+)\s*(pt)?$/);
+    if (!m)
+        return 2;
+    return Number(m[1]) * (m[2] ? 1.333 : 1);
+}
+/**
+ * Device-space endpoints of an arc, measured from the arc's own centre.
+ *
+ * The radius is an offset from `(cx, cy)`, not from the picture origin, so the
+ * centre has to be added before the coordinate transform. Transforming
+ * `r*cos(theta)` alone places both endpoints as though every arc were centred
+ * on the origin — correct only for one that happens to be, which is why a pie
+ * at (0,0) looked right while the same wedge anywhere else collapsed to a
+ * spike reaching back to the origin.
+ *
+ * @param cx - centre x in picture units (empty or absent means 0)
+ * @param cy - centre y in picture units
+ * @param r - radius in picture units
+ * @param angleA - start angle in radians
+ * @param angleB - end angle in radians
+ * @returns the `A` and `B` endpoints in device coordinates
+ */
+function arcEndpoints(cx, cy, r, angleA, angleB) {
+    const ox = cx === undefined || cx === '' ? 0 : Number(cx);
+    const oy = cy === undefined || cy === '' ? 0 : Number(cy);
+    const radius = Number(r);
+    const at = (angle) => ({
+        x: utils_1.X.call(this, ox + radius * Math.cos(angle)),
+        y: utils_1.Y.call(this, oy + radius * Math.sin(angle))
+    });
+    return { A: at(angleA), B: at(angleB) };
+}
 exports.Expressions = {
     pspicture: /\\begin\{pspicture\}\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
-    psframe: /\\psframe\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
-    psplot: /\\psplot(\[[^\]]*\])?\{([^\}]*)\}\{([^\}]*)\}\{([^\}]*)\}/,
-    psarc: new RegExp('\\\\psarc' +
+    psframe: /\\psframe\*?(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
+    psplot: /\\psplot\*?(\[[^\]]*\])?\{([^\}]*)\}\{([^\}]*)\}\{([^\}]*)\}/,
+    psarc: new RegExp('\\\\psarc\\*?' +
         utils_1.RE.options +
         utils_1.RE.type +
         utils_1.RE.coords +
@@ -1653,8 +4109,8 @@ exports.Expressions = {
         utils_1.RE.squiggle +
         utils_1.RE.squiggle),
     pscircle: /\\pscircle.*\(\s*(.*),(.*)\s*\)\{(.*)\}/,
-    pspolygon: new RegExp('\\\\pspolygon' + utils_1.RE.options + '(.*)'),
-    psaxes: new RegExp('\\\\psaxes' +
+    pspolygon: new RegExp('\\\\pspolygon\\*?' + utils_1.RE.options + '(.*)'),
+    psaxes: new RegExp('\\\\psaxes\\*?' +
         utils_1.RE.options +
         utils_1.RE.type +
         utils_1.RE.coords +
@@ -1667,7 +4123,7 @@ exports.Expressions = {
         utils_1.RE.squiggle +
         utils_1.RE.squiggle +
         utils_1.RE.squiggle),
-    psline: new RegExp('\\\\psline' + utils_1.RE.options + utils_1.RE.type + utils_1.RE.coords + utils_1.RE.coordsOpt),
+    psline: new RegExp('\\\\psline\\*?' + utils_1.RE.options + utils_1.RE.type + utils_1.RE.coords + utils_1.RE.coordsOpt),
     userline: new RegExp('\\\\userline' +
         utils_1.RE.options +
         utils_1.RE.type +
@@ -1679,7 +4135,17 @@ exports.Expressions = {
         utils_1.RE.squiggleOpt),
     uservariable: new RegExp('\\\\uservariable' + utils_1.RE.options + utils_1.RE.squiggle + utils_1.RE.coords + utils_1.RE.squiggle),
     rput: /\\rput\((.*),(.*)\)\{(.*)\}/,
-    psset: /\\psset\{(.*)\}/
+    psset: /\\psset\{(.*)\}/,
+    psdots: new RegExp('\\\\psdots' + utils_1.RE.options + '(.*)'),
+    psgrid: new RegExp('\\\\psgrid' + utils_1.RE.options + utils_1.RE.coordsOpt + utils_1.RE.coordsOpt + utils_1.RE.coordsOpt),
+    psellipse: /\\psellipse.*\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
+    psbezier: /\\psbezier(\[[^\]]*\])?\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)/,
+    pscurve: new RegExp('\\\\pscurve' + utils_1.RE.options + utils_1.RE.coords + '(.*)'),
+    psecurve: new RegExp('\\\\psecurve' + utils_1.RE.options + utils_1.RE.coords + '(.*)'),
+    psccurve: new RegExp('\\\\psccurve' + utils_1.RE.options + utils_1.RE.coords + '(.*)'),
+    pswedge: /\\pswedge(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\{(.*)\}\{(.*)\}\{(.*)\}/,
+    pscustom: /\\pscustom(\[[^\]]*\])?\{([\s\S]*)\}/,
+    multido: /\\multido\{([^}]*)\}\{([^}]*)\}\{([\s\S]*)\}/
 };
 exports.Functions = {
     slider(m) {
@@ -1716,19 +4182,36 @@ exports.Functions = {
     },
     psframe(m) {
         var obj = {
-            x1: utils_1.X.call(this, m[1]),
-            y1: utils_1.Y.call(this, m[2]),
-            x2: utils_1.X.call(this, m[3]),
-            y2: utils_1.Y.call(this, m[4])
+            x1: utils_1.X.call(this, m[2]),
+            y1: utils_1.Y.call(this, m[3]),
+            x2: utils_1.X.call(this, m[4]),
+            y2: utils_1.Y.call(this, m[5]),
+            linecolor: 'black',
+            linestyle: 'solid',
+            fillstyle: 'none',
+            fillcolor: 'black',
+            linewidth: 2,
+            filled: /\\psframe\*/.test(m[0])
         };
+        if (m[1])
+            Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
         return obj;
     },
     pscircle(m) {
         var obj = {
             cx: utils_1.X.call(this, m[1]),
             cy: utils_1.Y.call(this, m[2]),
-            r: this.xunit * m[3]
+            r: this.xunit * m[3],
+            linecolor: 'black',
+            linestyle: 'solid',
+            fillstyle: 'none',
+            fillcolor: 'black',
+            linewidth: 2,
+            filled: /\\pscircle\*/.test(m[0])
         };
+        var opts = m[0].match(/\[([^\]]*)\]/);
+        if (opts)
+            Object.assign(obj, (0, utils_1.parseOptions)(opts[1]));
         return obj;
     },
     psaxes(m) {
@@ -1737,7 +4220,8 @@ exports.Functions = {
             dy: 1 * this.yunit,
             arrows: [0, 0],
             dots: [0, 0],
-            ticks: 'all'
+            ticks: 'all',
+            labels: 'all'
         };
         if (m[1]) {
             var options = (0, utils_1.parseOptions)(m[1]);
@@ -1747,6 +4231,13 @@ exports.Functions = {
             if (options.Dy) {
                 obj.dy = Number(options.Dy) * this.yunit;
             }
+            // `ticks` and `labels` select which axes get marks and numbers; both
+            // accept all / x / y / none. Dropping them meant ticks=none still drew
+            // ticks and labels could never be turned on.
+            if (options.ticks)
+                obj.ticks = options.ticks;
+            if (options.labels)
+                obj.labels = options.labels;
         }
         // arrows?
         var l = (0, utils_1.parseArrows)(m[2]);
@@ -1789,29 +4280,6 @@ exports.Functions = {
         var endX = utils_1.evaluate.call(this, m[3]);
         var data = [];
         var x;
-        // get env
-        var expression = '';
-        Object.entries(this.variables || {}).forEach(([name, val]) => {
-            expression += 'var ' + name + ' = ' + val + ';';
-        });
-        const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
-        expression += mathFunctions + 'return ' + m[4] + ';';
-        for (x = startX; x <= endX; x += 0.005) {
-            data.push(utils_1.X.call(this, x));
-            try {
-                const evalFunc = new Function('x', expression);
-                const yValue = evalFunc(x);
-                if (yValue !== undefined && !isNaN(yValue)) {
-                    data.push(utils_1.Y.call(this, yValue));
-                }
-                else {
-                    data.push(utils_1.Y.call(this, 0));
-                }
-            }
-            catch (err) {
-                data.push(utils_1.Y.call(this, 0)); // fallback value
-            }
-        }
         var obj = {
             linecolor: 'black',
             linestyle: 'solid',
@@ -1821,6 +4289,36 @@ exports.Functions = {
         };
         if (m[1])
             Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
+        // Sampling: honor `plotpoints=N` (number of samples); default to a
+        // fixed 0.005 step like the original implementation.
+        var step = 0.005;
+        var plotpoints = obj.plotpoints ? Number(obj.plotpoints) : 0;
+        if (plotpoints > 1) {
+            step = (endX - startX) / (plotpoints - 1);
+        }
+        // Compile the plot expression once; evaluate per sample against a
+        // reused scope (compile-once / evaluate-many).
+        let compiled;
+        try {
+            compiled = (0, utils_1.parseExpression)(m[4]);
+        }
+        catch (err) {
+            console.warn('psplot: could not parse expression:', err.message);
+            obj.data = data;
+            return obj;
+        }
+        const scope = Object.assign({}, this.variables || {});
+        for (x = startX; x <= endX + step / 2; x += step) {
+            data.push(utils_1.X.call(this, x));
+            scope.x = x;
+            const yValue = compiled.evaluate(scope);
+            if (yValue !== undefined && !isNaN(yValue)) {
+                data.push(utils_1.Y.call(this, yValue));
+            }
+            else {
+                data.push(utils_1.Y.call(this, 0));
+            }
+        }
         obj.data = data;
         return obj;
     },
@@ -1845,6 +4343,7 @@ exports.Functions = {
             fillstyle: 'none',
             fillcolor: 'black',
             linewidth: 2,
+            filled: /\\pspolygon\*/.test(m[0]),
             data: data
         };
         if (m[1])
@@ -1858,11 +4357,15 @@ exports.Functions = {
         var obj = {
             linecolor: 'black',
             linestyle: 'solid',
-            fillstyle: 'solid',
+            // PSTricks leaves every shape unfilled unless a fillstyle is
+            // given or the starred form is used; an unstarred \psarc is an open
+            // curve, not a solid black wedge.
+            fillstyle: 'none',
             fillcolor: 'black',
             linewidth: 2,
             arrows: arrows,
             dots: dots,
+            filled: /\\psarc\*/.test(m[0]),
             cx: utils_1.X.call(this, 0),
             cy: utils_1.Y.call(this, 0)
         };
@@ -1886,14 +4389,7 @@ exports.Functions = {
         obj.r = Number(m[5]) * this.xunit;
         obj.angleA = (Number(m[6]) * Math.PI) / 180;
         obj.angleB = (Number(m[7]) * Math.PI) / 180;
-        obj.A = {
-            x: utils_1.X.call(this, Number(m[5]) * Math.cos(obj.angleA)),
-            y: utils_1.Y.call(this, Number(m[5]) * Math.sin(obj.angleA))
-        };
-        obj.B = {
-            x: utils_1.X.call(this, Number(m[5]) * Math.cos(obj.angleB)),
-            y: utils_1.Y.call(this, Number(m[5]) * Math.sin(obj.angleB))
-        };
+        Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
         return obj;
     },
     psline(m) {
@@ -1909,7 +4405,8 @@ exports.Functions = {
             fillcolor: 'black',
             linewidth: 2,
             arrows: arrows,
-            dots: dots
+            dots: dots,
+            filled: /\\psline\*/.test(m[0])
         };
         if (m[5]) {
             obj.x1 = utils_1.X.call(this, m[3]);
@@ -1928,7 +4425,7 @@ exports.Functions = {
         }
         // TODO: add regex
         if (typeof obj.linewidth === 'string') {
-            obj.linewidth = 2;
+            obj.linewidth = parseLinewidth(obj.linewidth);
         }
         return obj;
     },
@@ -1946,26 +4443,19 @@ exports.Functions = {
         }
         var nx1 = utils_1.Xinv.call(this, coords[0]);
         var ny1 = utils_1.Yinv.call(this, coords[1]);
-        var expx1 = 'var x = ' + nx1 + ';';
-        var expy1 = 'var y = ' + ny1 + ';';
-        // return X.call(this, eval(expy1 + expx1 + xExp));
         var obj = {
             name: m[2],
             x: utils_1.X.call(this, m[3]),
             y: utils_1.Y.call(this, m[4]),
             func: m[5],
-            value: (() => {
-                try {
-                    const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
-                    const evalFunc = new Function('', mathFunctions + expx1 + expy1 + 'return ' + m[5]);
-                    return evalFunc();
-                }
-                catch (err) {
-                    console.warn('Error evaluating uservariable expression:', err);
-                    return 0;
-                }
-            })()
+            value: 0
         };
+        try {
+            obj.value = (0, utils_1.parseExpression)(m[5]).evaluate(Object.assign({ x: nx1, y: ny1 }, this.variables || {}));
+        }
+        catch (err) {
+            console.warn('Error evaluating uservariable expression:', err.message);
+        }
         return obj;
     },
     userline(m) {
@@ -1975,41 +4465,40 @@ exports.Functions = {
         var l = (0, utils_1.parseArrows)(lineType);
         var arrows = l.arrows;
         var dots = l.dots;
-        var xExp = m[7];
-        var yExp = m[8];
-        const mathFunctions = 'var cos=Math.cos,sin=Math.sin,tan=Math.tan,atan=Math.atan,atan2=Math.atan2,exp=Math.exp,log=Math.log,sqrt=Math.sqrt,abs=Math.abs,floor=Math.floor,ceil=Math.ceil,round=Math.round,pow=Math.pow,PI=Math.PI,E=Math.E;';
-        if (xExp)
-            xExp = mathFunctions + xExp.replace(/^\{/, '').replace(/\}$/, '');
-        if (yExp)
-            yExp = mathFunctions + yExp.replace(/^\{/, '').replace(/\}$/, '');
-        var xExp2 = m[9];
-        var yExp2 = m[10];
-        if (xExp2)
-            xExp2 = mathFunctions + xExp2.replace(/^\{/, '').replace(/\}$/, '');
-        if (yExp2)
-            yExp2 = mathFunctions + yExp2.replace(/^\{/, '').replace(/\}$/, '');
-        var expression = '';
-        Object.entries(this.variables || {}).forEach(([name, val]) => {
-            expression += 'var ' + name + ' = ' + val + ';';
-        });
+        // Compile the interactive head/tail expressions once; each mousemove just
+        // re-evaluates them against a fresh {x, y} scope (compile-once).
+        const stripBraces = (s) => (s ? s.replace(/^\{/, '').replace(/\}$/, '').trim() : null);
+        const compileOpt = (src) => {
+            if (!src)
+                return null;
+            try {
+                return (0, utils_1.parseExpression)(src);
+            }
+            catch (err) {
+                console.warn('userline: could not parse expression:', err.message);
+                return null;
+            }
+        };
+        const xExp = compileOpt(stripBraces(m[7]));
+        const yExp = compileOpt(stripBraces(m[8]));
+        const xExp2 = compileOpt(stripBraces(m[9]));
+        const yExp2 = compileOpt(stripBraces(m[10]));
+        const variables = this.variables || {};
+        const evalAt = (compiled, x, y) => compiled.evaluate(Object.assign({ x: x, y: y }, variables));
         var obj = {
             x1: utils_1.X.call(this, m[3]),
             y1: utils_1.Y.call(this, m[4]),
             x2: utils_1.X.call(this, m[5]),
             y2: utils_1.Y.call(this, m[6]),
-            xExp: xExp,
-            yExp: yExp,
-            xExp2: xExp2,
-            yExp2: yExp2,
+            xExp: m[7],
+            yExp: m[8],
+            xExp2: m[9],
+            yExp2: m[10],
             userx: (coords) => {
                 var nx1 = utils_1.Xinv.call(this, coords[0]);
                 var ny1 = utils_1.Yinv.call(this, coords[1]);
-                var expx1 = 'var x = ' + nx1 + ';';
-                var expy1 = 'var y = ' + ny1 + ';';
                 try {
-                    const cleanExp = xExp ? xExp.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-                    const evalFunc = new Function('', mathFunctions + expression + expy1 + expx1 + 'return (' + cleanExp + ')');
-                    return utils_1.X.call(this, evalFunc());
+                    return utils_1.X.call(this, xExp ? evalAt(xExp, nx1, ny1) : 0);
                 }
                 catch (err) {
                     console.warn('Error evaluating userx expression:', err);
@@ -2019,12 +4508,8 @@ exports.Functions = {
             usery: (coords) => {
                 var nx2 = utils_1.Xinv.call(this, coords[0]);
                 var ny2 = utils_1.Yinv.call(this, coords[1]);
-                var expx2 = 'var x = ' + nx2 + ';';
-                var expy2 = 'var y = ' + ny2 + ';';
                 try {
-                    const cleanExp = yExp ? yExp.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-                    const evalFunc = new Function('', mathFunctions + expression + expy2 + expx2 + 'return (' + cleanExp + ')');
-                    return utils_1.Y.call(this, evalFunc());
+                    return utils_1.Y.call(this, yExp ? evalAt(yExp, nx2, ny2) : 0);
                 }
                 catch (err) {
                     console.warn('Error evaluating usery expression:', err);
@@ -2034,12 +4519,8 @@ exports.Functions = {
             userx2: (coords) => {
                 var nx3 = utils_1.Xinv.call(this, coords[0]);
                 var ny3 = utils_1.Yinv.call(this, coords[1]);
-                var expx3 = 'var x = ' + nx3 + ';';
-                var expy3 = 'var y = ' + ny3 + ';';
                 try {
-                    const cleanExp = xExp2 ? xExp2.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-                    const evalFunc = new Function('', mathFunctions + expression + expy3 + expx3 + 'return (' + cleanExp + ')');
-                    return utils_1.X.call(this, evalFunc());
+                    return utils_1.X.call(this, xExp2 ? evalAt(xExp2, nx3, ny3) : 0);
                 }
                 catch (err) {
                     console.warn('Error evaluating userx2 expression:', err);
@@ -2049,12 +4530,8 @@ exports.Functions = {
             usery2: (coords) => {
                 var nx4 = utils_1.Xinv.call(this, coords[0]);
                 var ny4 = utils_1.Yinv.call(this, coords[1]);
-                var expx4 = 'var x = ' + nx4 + ';';
-                var expy4 = 'var y = ' + ny4 + ';';
                 try {
-                    const cleanExp = yExp2 ? yExp2.replace(/^var cos=Math\.cos[^;]*;/, '') : '0';
-                    const evalFunc = new Function('', mathFunctions + expression + expy4 + expx4 + 'return (' + cleanExp + ')');
-                    return utils_1.Y.call(this, evalFunc());
+                    return utils_1.Y.call(this, yExp2 ? evalAt(yExp2, nx4, ny4) : 0);
                 }
                 catch (err) {
                     console.warn('Error evaluating usery2 expression:', err);
@@ -2074,7 +4551,7 @@ exports.Functions = {
         }
         // TODO: add regex
         if (typeof obj.linewidth === 'string') {
-            obj.linewidth = 2;
+            obj.linewidth = parseLinewidth(obj.linewidth);
         }
         return obj;
     },
@@ -2099,14 +4576,176 @@ exports.Functions = {
             });
         });
         return obj;
+    },
+    psdots(m) {
+        var obj = {
+            linecolor: 'black',
+            dotstyle: 'dot',
+            dotsize: 2,
+            data: parseCoordList.call(this, m[2])
+        };
+        if (m[1])
+            Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
+        return obj;
+    },
+    psgrid(m) {
+        var obj = {
+            linecolor: 'black',
+            linestyle: 'solid',
+            linewidth: 0.5,
+            // PSTricks grid defaults: a heavier line on the unit, five finer
+            // subdivisions between, and the coordinate numbered along two edges.
+            gridcolor: 'black',
+            gridwidth: '0.8pt',
+            subgriddiv: 5,
+            subgridcolor: 'gray',
+            subgridwidth: '0.4pt',
+            gridlabelcolor: 'black'
+        };
+        if (m[1])
+            Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
+        // \psgrid[opts](x0,y0)(x1,y1) — defaults to the whole pspicture bounds.
+        // coordsOpt outer groups: m[2]/m[5]/m[8] = '(x,y)' strings, m[3],m[4] etc.
+        var has0 = m[3] !== undefined;
+        var has1 = m[6] !== undefined;
+        var x0 = has0 ? utils_1.X.call(this, m[3]) : utils_1.X.call(this, this.x0);
+        var y0 = has0 ? utils_1.Y.call(this, m[4]) : utils_1.Y.call(this, this.y0);
+        var x1 = has1 ? utils_1.X.call(this, m[6]) : utils_1.X.call(this, this.x1);
+        var y1 = has1 ? utils_1.Y.call(this, m[7]) : utils_1.Y.call(this, this.y1);
+        obj.x0 = Math.min(x0, x1);
+        obj.y0 = Math.min(y0, y1);
+        obj.x1 = Math.max(x0, x1);
+        obj.y1 = Math.max(y0, y1);
+        obj.xunit = this.xunit;
+        obj.yunit = this.yunit;
+        // The renderer numbers each line, which needs the picture coordinate the
+        // device position stands for.
+        obj.originX = utils_1.X.call(this, 0);
+        obj.originY = utils_1.Y.call(this, 0);
+        return obj;
+    },
+    psellipse(m) {
+        var obj = {
+            linecolor: 'black',
+            linestyle: 'solid',
+            fillstyle: 'none',
+            fillcolor: 'black',
+            linewidth: 2
+        };
+        var opts = m[0].match(/\[([^\]]*)\]/);
+        if (opts)
+            Object.assign(obj, (0, utils_1.parseOptions)(opts[1]));
+        obj.cx = utils_1.X.call(this, m[1]);
+        obj.cy = utils_1.Y.call(this, m[2]);
+        obj.rx = Math.abs(Number(m[3])) * this.xunit;
+        obj.ry = Math.abs(Number(m[4])) * this.yunit;
+        return obj;
+    },
+    psbezier(m) {
+        var obj = {
+            linecolor: 'black',
+            linestyle: 'solid',
+            linewidth: 2
+        };
+        if (m[1])
+            Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
+        obj.x1 = utils_1.X.call(this, m[2]);
+        obj.y1 = utils_1.Y.call(this, m[3]);
+        obj.x2 = utils_1.X.call(this, m[4]);
+        obj.y2 = utils_1.Y.call(this, m[5]);
+        obj.x3 = utils_1.X.call(this, m[6]);
+        obj.y3 = utils_1.Y.call(this, m[7]);
+        obj.x4 = utils_1.X.call(this, m[8]);
+        obj.y4 = utils_1.Y.call(this, m[9]);
+        return obj;
+    },
+    pscurve(m) {
+        var obj = {
+            linecolor: 'black',
+            linestyle: 'solid',
+            fillstyle: 'none',
+            fillcolor: 'black',
+            linewidth: 2,
+            closed: /\\psecurve|\\psccurve/.test(m[0])
+        };
+        if (m[1])
+            Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
+        // first point is captured separately (m[2], m[3]); the rest follow
+        obj.data = [utils_1.X.call(this, m[2]), utils_1.Y.call(this, m[3])].concat(parseCoordList.call(this, m[4] || ''));
+        return obj;
+    },
+    psecurve(m) {
+        return exports.Functions.pscurve.call(this, m);
+    },
+    psccurve(m) {
+        return exports.Functions.pscurve.call(this, m);
+    },
+    pswedge(m) {
+        var obj = {
+            linecolor: 'black',
+            linestyle: 'solid',
+            // PSTricks leaves every shape unfilled unless a fillstyle is
+            // given or the starred form is used; an unstarred \psarc is an open
+            // curve, not a solid black wedge.
+            fillstyle: 'none',
+            fillcolor: 'black',
+            linewidth: 2
+        };
+        if (m[1])
+            Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
+        obj.cx = utils_1.X.call(this, m[2]);
+        obj.cy = utils_1.Y.call(this, m[3]);
+        obj.r = Number(m[4]) * this.xunit;
+        obj.angleA = (Number(m[5]) * Math.PI) / 180;
+        obj.angleB = (Number(m[6]) * Math.PI) / 180;
+        Object.assign(obj, arcEndpoints.call(this, m[2], m[3], m[4], obj.angleA, obj.angleB));
+        return obj;
+    },
+    pscustom(m) {
+        var obj = {
+            linecolor: 'black',
+            linestyle: 'solid',
+            fillstyle: 'none',
+            fillcolor: 'black',
+            linewidth: 2,
+            body: m[2]
+        };
+        if (m[1])
+            Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
+        return obj;
+    },
+    multido(m) {
+        var spec = m[1] || '';
+        var varMatch = spec.match(/\\([a-zA-Z@]+)\s*=\s*([\d.+-]+)\s*\+\s*([\d.+-]+)/);
+        return {
+            variable: varMatch ? varMatch[1] : null,
+            start: varMatch ? Number(varMatch[2]) : 0,
+            step: varMatch ? Number(varMatch[3]) : 1,
+            count: Number(m[2]),
+            body: m[3]
+        };
     }
 };
+/**
+ * Parse a coordinate list like `(0,0)(1,1)(2,2)` into a flat
+ * [x0,y0,x1,y1,...] pixel array.
+ */
+function parseCoordList(coords) {
+    var data = [];
+    var re = new RegExp(utils_1.RE.coords, 'g');
+    var m;
+    while ((m = re.exec(coords)) !== null) {
+        data.push(utils_1.X.call(this, m[1]));
+        data.push(utils_1.Y.call(this, m[2]));
+    }
+    return data;
+}
 exports.default = {
     Expressions: exports.Expressions,
     Functions: exports.Functions
 };
 
-},{"@latex2js/settings":19,"@latex2js/utils":20}],19:[function(require,module,exports){
+},{"@latex2js/settings":21,"@latex2js/utils":23}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Functions = exports.Expressions = void 0;
@@ -2159,10 +4798,334 @@ exports.default = {
     Functions: exports.Functions
 };
 
-},{"@latex2js/utils":20}],20:[function(require,module,exports){
+},{"@latex2js/utils":23}],22:[function(require,module,exports){
+"use strict";
+/**
+ * Algebraic expression parser + evaluator for PSTricks-style math.
+ *
+ * PSTricks `algebraic` expressions are NOT JavaScript: they use `^` for
+ * power, allow implicit multiplication (`2x`, `2(x+1)`, `2sin(x)`), and rely
+ * on bare math function names (`cos(x)`). This module parses an expression
+ * once into an AST and compiles it to a JavaScript closure that can be
+ * evaluated cheaply many times with a variable scope — exactly the
+ * compile-once / evaluate-many pattern the interactive plot and userline
+ * paths need.
+ *
+ * Supported syntax:
+ *   numbers, identifiers (variables), arithmetic + - * / ^,
+ *   unary minus/plus, implicit multiplication, parentheses,
+ *   function calls (cos, sin, tan, atan, atan2, pow, sqrt, abs, exp, ln,
+ *   log, floor, ceil, round, min, max, ...), comparisons (< > <= >= == !=),
+ *   and ternary conditionals (cond ? a : b).
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MATH_CONSTANTS = exports.MATH_FUNCTIONS = exports.ExpressionError = void 0;
+exports.parseExpression = parseExpression;
+class ExpressionError extends Error {
+    constructor(message, position) {
+        // position is a 0-based offset; compute 1-based line/column lazily
+        super(message);
+        this.name = 'ExpressionError';
+        this.position = position;
+        this.line = 0;
+        this.column = 0;
+    }
+}
+exports.ExpressionError = ExpressionError;
+const OPS = ['<=', '>=', '==', '!=', '<', '>', '?', ':', '+', '-', '*', '/', '^', ','];
+const PARENS = new Set(['(', ')']);
+function tokenize(source) {
+    const tokens = [];
+    let i = 0;
+    const n = source.length;
+    const numberRe = /^\d*\.?\d+(?:[eE][+-]?\d+)?/;
+    const identRe = /^[a-zA-Z_][a-zA-Z0-9_]*/;
+    while (i < n) {
+        const ch = source[i];
+        if (/\s/.test(ch)) {
+            i++;
+            continue;
+        }
+        // Unicode pi
+        if (ch === 'π') {
+            tokens.push({ type: 'ident', value: 'π', pos: i });
+            i++;
+            continue;
+        }
+        if (ch === '(' || ch === ')') {
+            tokens.push({ type: 'paren', value: ch, pos: i });
+            i++;
+            continue;
+        }
+        const num = source.slice(i).match(numberRe);
+        if (num) {
+            tokens.push({ type: 'number', value: num[0], pos: i });
+            i += num[0].length;
+            continue;
+        }
+        const ident = source.slice(i).match(identRe);
+        if (ident) {
+            tokens.push({ type: 'ident', value: ident[0], pos: i });
+            i += ident[0].length;
+            continue;
+        }
+        const op = OPS.find((o) => source.startsWith(o, i));
+        if (op) {
+            tokens.push({ type: op === '(' || op === ')' ? 'paren' : 'op', value: op, pos: i });
+            i += op.length;
+            continue;
+        }
+        throw new ExpressionError(`unexpected character '${ch}'`, i);
+    }
+    tokens.push({ type: 'eof', value: '', pos: n });
+    return tokens;
+}
+class Parser {
+    constructor(source) {
+        this.source = source;
+        this.index = 0;
+        this.tokens = tokenize(source);
+        if (this.tokens.length <= 1) {
+            throw new ExpressionError('empty expression', 0);
+        }
+    }
+    peek() {
+        return this.tokens[this.index];
+    }
+    next() {
+        return this.tokens[this.index++];
+    }
+    expect(value) {
+        const t = this.peek();
+        if (t.value !== value) {
+            throw new ExpressionError(`expected '${value}' but found '${t.value || 'end of input'}'`, t.pos);
+        }
+        return this.next();
+    }
+    parse() {
+        const node = this.parseTernary();
+        const t = this.peek();
+        if (t.type !== 'eof') {
+            throw new ExpressionError(`unexpected '${t.value}'`, t.pos);
+        }
+        return node;
+    }
+    parseTernary() {
+        const cond = this.parseComparison();
+        if (this.peek().value === '?') {
+            this.next();
+            const then = this.parseTernary();
+            this.expect(':');
+            const els = this.parseTernary();
+            return { type: 'ternary', cond, then, els };
+        }
+        return cond;
+    }
+    parseComparison() {
+        let left = this.parseAdditive();
+        for (;;) {
+            const op = this.peek().value;
+            if (op === '<' || op === '>' || op === '<=' || op === '>=' || op === '==' || op === '!=') {
+                this.next();
+                const right = this.parseAdditive();
+                left = { type: 'binary', op, left, right };
+            }
+            else {
+                return left;
+            }
+        }
+    }
+    parseAdditive() {
+        let left = this.parseMultiplicative();
+        for (;;) {
+            const op = this.peek().value;
+            if (op === '+' || op === '-') {
+                this.next();
+                const right = this.parseMultiplicative();
+                left = { type: 'binary', op, left, right };
+            }
+            else {
+                return left;
+            }
+        }
+    }
+    parseMultiplicative() {
+        let left = this.parseUnary();
+        for (;;) {
+            const op = this.peek().value;
+            if (op === '*' || op === '/') {
+                this.next();
+                const right = this.parseUnary();
+                left = { type: 'binary', op, left, right };
+            }
+            else if (this.isImplicitStart(this.peek())) {
+                // implicit multiplication: 2x, 2(x+1), (x+1)(x+2), 2sin(x)
+                const right = this.parseUnary();
+                left = { type: 'binary', op: '*', left, right };
+            }
+            else {
+                return left;
+            }
+        }
+    }
+    parseUnary() {
+        const op = this.peek().value;
+        if (op === '-' || op === '+') {
+            this.next();
+            return { type: 'unary', op, operand: this.parseUnary() };
+        }
+        return this.parsePower();
+    }
+    parsePower() {
+        const left = this.parsePrimary();
+        if (this.peek().value === '^') {
+            this.next();
+            const right = this.parseUnary(); // right-associative, binds tighter on the right
+            return { type: 'binary', op: '^', left, right };
+        }
+        return left;
+    }
+    parsePrimary() {
+        const t = this.peek();
+        if (t.type === 'number') {
+            this.next();
+            return { type: 'number', value: t.value };
+        }
+        if (t.type === 'ident') {
+            this.next();
+            // a known math function followed by '(' is a function call
+            if (this.peek().value === '(' && exports.MATH_FUNCTIONS.hasOwnProperty(t.value)) {
+                this.next(); // consume '('
+                const args = [];
+                if (this.peek().value !== ')') {
+                    args.push(this.parseTernary());
+                    while (this.peek().value === ',') {
+                        this.next();
+                        args.push(this.parseTernary());
+                    }
+                }
+                this.expect(')');
+                return { type: 'call', name: t.value, args };
+            }
+            return { type: 'var', name: t.value };
+        }
+        if (t.value === '(') {
+            this.next();
+            const node = this.parseTernary();
+            this.expect(')');
+            return node;
+        }
+        throw new ExpressionError(`unexpected '${t.value || 'end of input'}' in expression`, t.pos);
+    }
+    /** A token that can start an implicit multiplication operand. */
+    isImplicitStart(t) {
+        return t.type === 'number' || t.type === 'ident' || t.value === '(';
+    }
+}
+// ---------------------------------------------------------------------------
+// Compile AST → JS closure
+// ---------------------------------------------------------------------------
+exports.MATH_FUNCTIONS = {
+    cos: 'Math.cos',
+    sin: 'Math.sin',
+    tan: 'Math.tan',
+    atan: 'Math.atan',
+    atan2: 'Math.atan2',
+    asin: 'Math.asin',
+    acos: 'Math.acos',
+    exp: 'Math.exp',
+    ln: 'Math.log',
+    log: 'Math.log',
+    log10: 'Math.log10',
+    sqrt: 'Math.sqrt',
+    cbrt: 'Math.cbrt',
+    abs: 'Math.abs',
+    sign: 'Math.sign',
+    floor: 'Math.floor',
+    ceil: 'Math.ceil',
+    round: 'Math.round',
+    pow: 'Math.pow',
+    min: 'Math.min',
+    max: 'Math.max',
+    sinh: 'Math.sinh',
+    cosh: 'Math.cosh',
+    tanh: 'Math.tanh',
+};
+exports.MATH_CONSTANTS = {
+    pi: 'Math.PI',
+    π: 'Math.PI',
+    PI: 'Math.PI',
+    E: 'Math.E',
+};
+function compileNode(node, variableNames) {
+    switch (node.type) {
+        case 'number':
+            return node.value;
+        case 'var': {
+            if (exports.MATH_CONSTANTS.hasOwnProperty(node.name)) {
+                return exports.MATH_CONSTANTS[node.name];
+            }
+            variableNames.add(node.name);
+            return 'v.' + node.name;
+        }
+        case 'call': {
+            const target = exports.MATH_FUNCTIONS.hasOwnProperty(node.name)
+                ? exports.MATH_FUNCTIONS[node.name]
+                : '(v.' + node.name + ')';
+            return target + '(' + node.args.map((a) => compileNode(a, variableNames)).join(',') + ')';
+        }
+        case 'unary':
+            return '(' + node.op + compileNode(node.operand, variableNames) + ')';
+        case 'binary': {
+            const op = node.op === '^' ? '**' : node.op;
+            return '(' + compileNode(node.left, variableNames) + op + compileNode(node.right, variableNames) + ')';
+        }
+        case 'ternary':
+            return ('(' +
+                compileNode(node.cond, variableNames) +
+                '?' +
+                compileNode(node.then, variableNames) +
+                ':' +
+                compileNode(node.els, variableNames) +
+                ')');
+        default:
+            throw new Error('unknown node type ' + node.type);
+    }
+}
+/**
+ * Parse an algebraic expression and compile it to an evaluable closure.
+ * Throws ExpressionError with a character position on invalid syntax.
+ */
+function parseExpression(source) {
+    const trimmed = source.trim();
+    if (!trimmed) {
+        throw new ExpressionError('empty expression', 0);
+    }
+    const parser = new Parser(trimmed);
+    const ast = parser.parse();
+    const variableNames = new Set();
+    const js = compileNode(ast, variableNames);
+    let fn;
+    try {
+        // eslint-disable-next-line no-new-func
+        fn = new Function('v', 'return (' + js + ');');
+    }
+    catch (err) {
+        throw new ExpressionError('could not compile expression: ' + err.message, 0);
+    }
+    return {
+        source: trimmed,
+        toJS: () => js,
+        variables: () => Array.from(variableNames),
+        evaluate: (scope) => fn(scope || {}),
+    };
+}
+
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.parseArrows = exports.parseOptions = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
+exports.MATH_CONSTANTS = exports.MATH_FUNCTIONS = exports.ExpressionError = exports.parseExpression = exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.parseArrows = exports.parseOptions = exports.resolveColor = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
+const expression_1 = require("./expression");
 const simplerepl = function (regex, replace) {
     return function (_m, contents) {
         return contents.replace(regex, replace);
@@ -2209,6 +5172,58 @@ exports.RE = {
     coordsOpt: '(\\(\\s*([^\\)]*),([^\\)]*)\\s*\\))?',
     coords: '\\(\\s*([^\\)]*),([^\\)]*)\\s*\\)'
 };
+/** Option keys whose value names a colour. */
+const COLOR_KEYS = ['linecolor', 'fillcolor', 'hatchcolor', 'gridcolor', 'bordercolor', 'shadowcolor', 'labelcolor'];
+/**
+ * Base colours xcolor mixes against, as RGB triples. Only the names that can
+ * appear on the left of a `!` need resolving; every other colour is handed to
+ * the browser unchanged, so plain names keep whatever CSS already gives them.
+ */
+const BASE_COLORS = {
+    red: [255, 0, 0], green: [0, 255, 0], blue: [0, 0, 255],
+    cyan: [0, 255, 255], magenta: [255, 0, 255], yellow: [255, 255, 0],
+    black: [0, 0, 0], white: [255, 255, 255], gray: [128, 128, 128],
+    grey: [128, 128, 128], orange: [255, 165, 0], purple: [128, 0, 128],
+    brown: [165, 42, 42], pink: [255, 192, 203], olive: [128, 128, 0],
+    violet: [148, 0, 211], teal: [0, 128, 128], lime: [0, 255, 0],
+};
+/**
+ * Resolves an xcolor tint expression to a CSS colour.
+ *
+ * `gray!40` means forty percent gray against white, and `gray!40!red` mixes
+ * against red instead. A browser cannot read either, and an unparsable fill
+ * silently falls back to black — which is how a light grey plane rendered as
+ * a solid black one.
+ *
+ * @param value - a colour name, optionally with `!` mix terms
+ * @returns a CSS colour; names without a mix term are returned untouched
+ */
+const resolveColor = function (value) {
+    const parts = String(value).split('!').map((p) => p.trim());
+    if (parts.length < 2)
+        return value;
+    const rgb = (name) => BASE_COLORS[name.toLowerCase()] ?? null;
+    let current = rgb(parts[0]);
+    if (!current)
+        return value;
+    for (let i = 1; i < parts.length; i += 2) {
+        const pct = Number(parts[i]);
+        if (!isFinite(pct))
+            return value;
+        // An omitted second operand mixes against white, as xcolor does.
+        const against = parts[i + 1] ? rgb(parts[i + 1]) : [255, 255, 255];
+        if (!against)
+            return value;
+        const w = Math.max(0, Math.min(100, pct)) / 100;
+        current = [
+            Math.round(current[0] * w + against[0] * (1 - w)),
+            Math.round(current[1] * w + against[1] * (1 - w)),
+            Math.round(current[2] * w + against[2] * (1 - w)),
+        ];
+    }
+    return 'rgb(' + current[0] + ',' + current[1] + ',' + current[2] + ')';
+};
+exports.resolveColor = resolveColor;
 // OPTIONS
 // converts [showorigin=false,labels=none, Dx=3.14] to {showorigin: 'false', labels: 'none', Dx: '3.14'}
 const parseOptions = function (opts) {
@@ -2218,7 +5233,9 @@ const parseOptions = function (opts) {
     all.forEach((option) => {
         var kv = option.split('=');
         if (kv.length == 2) {
-            obj[kv[0].trim()] = kv[1].trim();
+            const key = kv[0].trim();
+            const value = kv[1].trim();
+            obj[key] = COLOR_KEYS.indexOf(key) === -1 ? value : (0, exports.resolveColor)(value);
         }
     });
     return obj;
@@ -2277,24 +5294,30 @@ const evaluate = function (exp) {
     if (!isNaN(num))
         return num;
     this.variables = this.variables || {};
-    const mathKeys = Object.keys(Math);
-    const varKeys = Object.keys(this.variables);
-    const allKeys = [...mathKeys, ...varKeys];
-    const allValues = [
-        ...mathKeys.map(k => Math[k]),
-        ...varKeys.map(k => this.variables[k])
-    ];
     try {
-        // @ts-ignore
-        const fn = new Function(...allKeys, `return (${exp});`);
-        return fn(...allValues);
+        return getCompiled(exp).evaluate(this.variables);
     }
     catch (e) {
-        console.warn('Evaluation error:', e);
+        console.warn('Evaluation error:', e.message);
         return NaN;
     }
 };
 exports.evaluate = evaluate;
+// Small bounded cache so repeated identical expressions (e.g. plot bounds,
+// slider-driven re-evaluation) skip re-parsing entirely.
+const expressionCache = new Map();
+const EXPRESSION_CACHE_MAX = 500;
+function getCompiled(exp) {
+    let compiled = expressionCache.get(exp);
+    if (!compiled) {
+        compiled = (0, expression_1.parseExpression)(exp);
+        if (expressionCache.size >= EXPRESSION_CACHE_MAX) {
+            expressionCache.clear();
+        }
+        expressionCache.set(exp, compiled);
+    }
+    return compiled;
+}
 const X = function (v) {
     // Enhanced validation for coordinate transformation
     const numV = typeof v === 'string' ? parseFloat(v) : v;
@@ -2371,8 +5394,13 @@ exports.dotType = exports.parseArrows;
 var svg_utils_1 = require("./svg-utils");
 Object.defineProperty(exports, "SVGSelection", { enumerable: true, get: function () { return svg_utils_1.SVGSelection; } });
 Object.defineProperty(exports, "select", { enumerable: true, get: function () { return svg_utils_1.select; } });
+var expression_2 = require("./expression");
+Object.defineProperty(exports, "parseExpression", { enumerable: true, get: function () { return expression_2.parseExpression; } });
+Object.defineProperty(exports, "ExpressionError", { enumerable: true, get: function () { return expression_2.ExpressionError; } });
+Object.defineProperty(exports, "MATH_FUNCTIONS", { enumerable: true, get: function () { return expression_2.MATH_FUNCTIONS; } });
+Object.defineProperty(exports, "MATH_CONSTANTS", { enumerable: true, get: function () { return expression_2.MATH_CONSTANTS; } });
 
-},{"./svg-utils":21}],21:[function(require,module,exports){
+},{"./expression":22,"./svg-utils":24}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SVGSelection = void 0;
@@ -2438,11 +5466,16 @@ class SVGSelection {
     node() {
         return this.elements[0] || null;
     }
+    /**
+     * Sets an element's text content.
+     *
+     * `textContent` is defined on every Element, so no narrowing is needed — and
+     * testing `instanceof SVGTextElement` threw a ReferenceError outright in any
+     * DOM that does not expose that constructor as a global, jsdom included.
+     */
     text(content) {
         this.elements.forEach(el => {
-            if (el instanceof SVGTextElement || el instanceof HTMLElement) {
-                el.textContent = content;
-            }
+            el.textContent = content;
         });
         return this;
     }
@@ -2456,5 +5489,5 @@ function select(selector) {
     return new SVGSelection(selector);
 }
 
-},{}]},{},[7])(7)
+},{}]},{},[8])(8)
 });

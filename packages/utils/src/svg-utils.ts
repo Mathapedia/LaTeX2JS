@@ -67,11 +67,16 @@ export class SVGSelection {
     return this.elements[0] || null;
   }
 
+  /**
+   * Sets an element's text content.
+   *
+   * `textContent` is defined on every Element, so no narrowing is needed — and
+   * testing `instanceof SVGTextElement` threw a ReferenceError outright in any
+   * DOM that does not expose that constructor as a global, jsdom included.
+   */
   text(content: string): SVGSelection {
     this.elements.forEach(el => {
-      if (el instanceof SVGTextElement || el instanceof HTMLElement) {
-        el.textContent = content;
-      }
+      el.textContent = content;
     });
     return this;
   }

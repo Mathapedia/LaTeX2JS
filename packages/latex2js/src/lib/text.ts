@@ -20,6 +20,24 @@ export const Expressions = {
   set: /\\set\{[^}]*\}/g,
   youtube: /\\youtube\{[^}]*\}/g,
   euler: /Euler\^/g,
+  textbf: /\\textbf\{[^}]*\}/g,
+  textit: /\\textit\{[^}]*\}/g,
+  texttt: /\\texttt\{[^}]*\}/g,
+  textrm: /\\textrm\{[^}]*\}/g,
+  textsc: /\\textsc\{[^}]*\}/g,
+  underline: /\\underline\{[^}]*\}/g,
+  overline: /\\overline\{[^}]*\}/g,
+  section: /\\section\{[^}]*\}/,
+  subsection: /\\subsection\{[^}]*\}/,
+  subsubsection: /\\subsubsection\{[^}]*\}/,
+  paragraph: /\\paragraph\{[^}]*\}/,
+  hspace: /\\hspace\{[^}]*\}/,
+  noindent: /\\noindent/g,
+  newpage: /\\newpage/g,
+  hrule: /\\hrule/g,
+  rule: /\\rule\{[^}]*\}\{[^}]*\}/g,
+  textcolor: /\\textcolor\{[^}]*\}\{[^}]*\}/g,
+  footnote: /\\footnote\{[^}]*\}/g,
 };
 
 export const Functions = {
@@ -90,6 +108,60 @@ export const Functions = {
   vspace: simplerepl(/\\vspace/g, '<br>'),
   TeX: simplerepl(/\\TeX\\|\\TeX/g, '$\\TeX$'),
   LaTeX: simplerepl(/\\LaTeX\\|\\LaTeX/g, '$\\LaTeX$'),
+  textbf: matchrepl(/\\textbf\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<b>' + m[1] + '</b>';
+  }),
+  textit: matchrepl(/\\textit\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<i>' + m[1] + '</i>';
+  }),
+  texttt: matchrepl(/\\texttt\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<span class="tt">' + m[1] + '</span>';
+  }),
+  textrm: matchrepl(/\\textrm\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<span class="rm">' + m[1] + '</span>';
+  }),
+  textsc: matchrepl(/\\textsc\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<span style="font-variant: small-caps;">' + m[1] + '</span>';
+  }),
+  underline: matchrepl(/\\underline\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<u>' + m[1] + '</u>';
+  }),
+  overline: matchrepl(/\\overline\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<span style="text-decoration: overline;">' + m[1] + '</span>';
+  }),
+  section: matchrepl(/\\section\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<h2>' + m[1] + '</h2>';
+  }),
+  subsection: matchrepl(/\\subsection\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<h3>' + m[1] + '</h3>';
+  }),
+  subsubsection: matchrepl(/\\subsubsection\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<h4>' + m[1] + '</h4>';
+  }),
+  paragraph: matchrepl(/\\paragraph\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<h5>' + m[1] + '</h5>';
+  }),
+  hspace: matchrepl(/\\hspace\{([^}]*)\}/, function(_m: RegExpMatchArray) {
+    return '&nbsp; ';
+  }),
+  noindent: simplerepl(/\\noindent/g, ''),
+  newpage: simplerepl(/\\newpage/g, '<br><br>'),
+  hrule: simplerepl(/\\hrule/g, '<hr>'),
+  rule: matchrepl(/\\rule\{([^}]*)\}\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return (
+      '<span style="display:inline-block;width:' +
+      m[1] +
+      ';height:' +
+      m[2] +
+      ';background:currentColor;"></span>'
+    );
+  }),
+  textcolor: matchrepl(/\\textcolor\{([^}]*)\}\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<span style="color:' + m[1] + ';">' + m[2] + '</span>';
+  }),
+  footnote: matchrepl(/\\footnote\{([^}]*)\}/, function(m: RegExpMatchArray) {
+    return '<sup class="footnote">' + m[1] + '</sup>';
+  }),
 };
 
 export default {

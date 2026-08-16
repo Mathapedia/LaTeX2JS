@@ -1,11 +1,61 @@
-name: LaTeX2JS tests
+name: LaTeX2JS CI
+
 on:
   push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
+# A branch only needs its newest commit checked; superseded runs are cancelled
+# so a series of pushes does not queue behind itself.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  container-job:
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # The pnpm version comes from `packageManager` in package.json. Naming it
+      # here as well makes the action refuse to install rather than pick one.
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Run all tests (parser, rendering, corpus, units)
+        run: pnpm test
+
+      - name: Generated grammar is up to date
+        # Fails if the committed src/grammar/parser.js no longer matches
+        # grammar.pegjs (e.g. after editing the grammar without regenerating).
+        run: |
+          pnpm --filter latex2js grammar
+          git diff --exit-code -- packages/latex2js/src/grammar/
+
+      - name: Playground production build
+        run: pnpm dev:build
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -14,20 +64,182 @@ jobs:
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: 10
           run_install: false
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: pnpm build
+      - name: Resolve the Playwright version
+        # The browser cache is keyed on the exact version, so an upgrade misses
+        # the cache instead of restoring browsers the new Playwright refuses.
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Run tests for latex2js
-        run: cd ./packages/latex2js && pnpm test
+      - name: Restore Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: playground/.browsers
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Playwright browsers (workspace-local)
+        # System dependencies are not part of the cached directory, so they are
+        # installed on every run; the browser download is what the cache saves.
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="$GITHUB_WORKSPACE/playground/.browsers"
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            pnpm --filter @latex2js/playground exec playwright install-deps chromium
+          else
+            pnpm --filter @latex2js/playground exec playwright install --with-deps chromium
+          fi
+
+      - name: Run browser tests (gallery + interactive)
+        run: pnpm e2e
+
+      - name: Build a browsable gallery of the renderings
+        # One self-contained page is easier to review than a folder of PNGs.
+        run: node tools/pstricks-conformance/gallery.mjs
+          --renders playground/renders
+          --title "LaTeX2JS renders"
+          --out playground/renders/gallery.html
+
+      - name: Upload renderings as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-renderings
+          path: |
+            playground/renders/*.png
+            playground/renders/gallery.html
+          if-no-files-found: error
+
+  changes:
+    # Decides whether the conformance job has anything to check. That job pulls
+    # a multi-gigabyte TeX image and takes minutes, which is not worth spending
+    # on a change that cannot alter what gets drawn.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      rendering: ${{ steps.filter.outputs.rendering }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Both sides of the comparison have to be present to diff them.
+          fetch-depth: 0
+
+      - name: Decide whether rendering could have changed
+        id: filter
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -u
+
+          run_it() {
+            echo "rendering=true" >> "$GITHUB_OUTPUT"
+            echo "conformance will run: $1"
+            exit 0
+          }
+
+          # Fail open. A filter that cannot see what changed must run the job:
+          # skipping a correctness check on a bad guess is the costly mistake,
+          # and a wasted run is only slow.
+          [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && run_it "manually triggered"
+          [ -z "$BASE" ] && run_it "no base commit to compare against"
+          git cat-file -e "$BASE^{commit}" 2>/dev/null || run_it "base commit $BASE is not available"
+
+          changed=$(git diff --name-only "$BASE" "$GITHUB_SHA") || run_it "could not diff against $BASE"
+          echo "changed files:"
+          echo "$changed" | sed 's/^/  /'
+
+          # Everything a rendering is built from. The package list is the
+          # dependency closure of the html5 renderer — html5 pulls in latex2js,
+          # pstricks, utils and macros; latex2js and pstricks both pull in
+          # settings; settings pulls in utils — plus the stylesheet they draw
+          # through. Also the corpus they draw, the harness that captures it,
+          # the lockfile that pins what any of it runs against, and this
+          # workflow. Widen this if a package gains an edge into that closure.
+          if echo "$changed" | grep -qE '^(packages/(pstricks|latex2js|utils|html5|css|settings|macros)/|playground/|tools/pstricks-conformance/|\.github/workflows/|pnpm-lock\.yaml$|package\.json$)'; then
+            run_it "a rendering path changed"
+          fi
+
+          echo "rendering=false" >> "$GITHUB_OUTPUT"
+          echo "conformance skipped: nothing that affects a rendering changed"
+
+  conformance:
+    # Compares LaTeX2JS output against genuine PSTricks. Only the "does every
+    # picture still compile" half gates the build; the similarity score is a
+    # heuristic between two different rasterizers and is published for review
+    # rather than enforced.
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >-
+      needs.changes.outputs.rendering == 'true'
+      && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull the PSTricks image
+        # Carries a full TeX Live with PSTricks; the runner is amd64, so it runs
+        # natively here rather than emulated as it does on Apple silicon.
+        run: docker pull --platform linux/amd64 pyramation/pstricks-latex:latest
+
+      - name: Render every example with real PSTricks
+        # Fails the job if a picture stops compiling — that is a definite
+        # regression, unlike a shifted similarity score.
+        run: node tools/pstricks-conformance/render-examples.mjs
+          --corpus packages/latex2js/test/corpus
+          --out tools/pstricks-conformance/examples-ref
+          --jobs 4
+
+      - name: Restore Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: playground/.browsers
+          key: playwright-conformance-${{ runner.os }}
+
+      - name: Install Playwright browsers (workspace-local)
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="$GITHUB_WORKSPACE/playground/.browsers"
+          pnpm --filter @latex2js/playground exec playwright install --with-deps chromium
+
+      - name: Render every example with LaTeX2JS
+        run: pnpm --filter @latex2js/playground e2e:gallery
+
+      - name: Score the two against each other
+        run: node tools/pstricks-conformance/compare.mjs
+          --js playground/renders
+          --ref tools/pstricks-conformance/examples-ref/ref
+          --manifest tools/pstricks-conformance/examples-ref/manifest.json
+          --out conformance.html
+
+      - name: Upload the comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: pstricks-conformance
+          path: |
+            conformance.html
+            tools/pstricks-conformance/examples-ref/ref/*.png
+          if-no-files-found: error

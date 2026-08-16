@@ -1,0 +1,7 @@
+\begin{pspicture}(-4,-3)(4,3)
+\uservariable{alpha}(0,0){x}
+\uservariable{beta}(0,0){y}
+\psplot[algebraic,linewidth=2pt,fillstyle=solid, fillcolor=lightblue]{alpha-3}{alpha}{beta + sin(x)}
+\psplot[algebraic,linewidth=2pt]{-4}{4}{beta + sin(x)}
+\psline{->}(-4,0)(4,0)
+\end{pspicture}

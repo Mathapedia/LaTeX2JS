@@ -1,0 +1,15 @@
+\psset{unit=0.75cm}
+\begin{pspicture}(0,0)(12,8)
+\psframe*[fillcolor=lightgray](0,0)(12,8)
+\pscircle*(1,1){0.8}
+\pspolygon*(3,1)(4,2)(3,3)(2,2)
+\psframe*[fillcolor=red](5,1)(7,2)
+\psellipse*[fillcolor=yellow](9,1.5)(2,0.8)
+\pscustom[fillstyle=solid,fillcolor=lightblue,linestyle=none]{
+  \psline(0.5,5)(3,7.5)
+  \psline(3,7.5)(5.5,5)
+  \psline(5.5,5)(3,2.5)
+  \psline(3,2.5)(0.5,5)
+}
+\psarc*[fillcolor=orange](8,5.5){1.8}{0}{180}
+\end{pspicture}

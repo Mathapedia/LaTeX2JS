@@ -1,0 +1,6 @@
+\psset{unit=0.7cm}
+\begin{pspicture}(-6,-5)(6,5)
+\psaxes[Dx=1,Dy=1]{<->}(0,0)(-5,-4)(5,4)
+\psplot[algebraic,linewidth=2pt,linecolor=red]{-4}{4}{x^2/4-2}
+\psplot[algebraic,linewidth=2pt,linecolor=blue]{-4}{4}{2*sin(x)}
+\end{pspicture}

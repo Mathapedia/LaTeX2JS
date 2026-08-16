@@ -3,13 +3,14 @@ import { getMathJax, loadMathJax } from 'mathjaxjs';
 import pspicture from './components/pspicture.js';
 import nicebox from './components/nicebox.js';
 import enumerate from './components/enumerate.js';
+import list from './components/list.js';
 import verbatim from './components/verbatim.js';
 import math from './components/math.js';
 import macros from './components/macros';
 
-const ELEMENTS = { pspicture, nicebox, enumerate, verbatim, math, macros };
+const ELEMENTS = { pspicture, nicebox, enumerate, itemize: list, description: list, verbatim, math, macros };
 
-export { pspicture, nicebox, enumerate, verbatim, math, macros };
+export { pspicture, nicebox, enumerate, list, verbatim, math, macros };
 
 export default function render(tex: string, resolve: (div: HTMLDivElement) => void): void {
   const done = () => {

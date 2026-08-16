@@ -1,0 +1,30 @@
+\begin{pspicture}(-5,-5)(5,5)
+
+% y-axis
+\rput(0.3,3.75){ $Im$ }
+\psline{->}(0,-3.75)(0,3.75)
+
+% x-axis
+\rput(3.75,0.3){ $Re$ }
+\psline{->}(-3.75,0)(3.75,0)
+
+% the circle
+\pscircle(0,0){ 3 }
+
+ % new vector
+\rput(2.3,1){$e^{i\omega}-\alpha$}
+\userline[linewidth=1.5 pt]{->}(1.500,0.000)(2.121,2.121)
+\userline[linewidth=1.5 pt,linecolor=blue]{->}(0,0.000)(2.121,2.121){(x>0) ? 3 * cos( atan(-y/x) ) : -3 * cos( atan(-y/x) ) }{ (x>0) ? -3 * sin( atan(-y/x) ) : 3 * sin( atan(-y/x) )}
+
+\userline[linewidth=1.5 pt,linestyle=dashed](-1.500,0.000)(2.121,2.121){x}{0}{x}{y}
+\userline[linewidth=1.5 pt,linestyle=dashed](-1.500,0.000)(2.121,2.121){0}{y}{x}{y}
+
+\rput(-0.75,-4.25){$1+\alpha$}
+\rput(2.25,-4.25){$1-\alpha$}
+\psline{<->}(-3,-4)(1.5,-4)
+\psline{<->}(1.5,-4)(3,-4)
+\psline[linestyle=dashed](3,-4.5)(3,0)
+\psline[linestyle=dashed](-3,-4.5)(-3,0)
+\psline[linestyle=dashed](1.5,-4.5)(1.5,0)
+
+\end{pspicture}

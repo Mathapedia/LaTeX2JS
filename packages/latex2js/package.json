@@ -30,19 +30,24 @@
   ],
   "scripts": {
     "copy": "copyfiles -f ../../LICENSE README.md package.json latex2js.css latex2js.mathapedia.css dist",
+    "copy:grammar": "mkdir -p dist/grammar dist/esm/grammar && cp src/grammar/parser.js src/grammar/parser.d.ts src/grammar/grammar.pegjs dist/grammar/ && cp src/grammar/parser.js dist/esm/grammar/",
     "clean": "rimraf dist",
-    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy && cp latex2js.css ../../bundle/latex2js.css",
-    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
+    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run copy:grammar && cp latex2js.css ../../bundle/latex2js.css",
+    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run copy:grammar",
+    "grammar": "peggy -o src/grammar/parser.js --dts src/grammar/grammar.pegjs",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand"
-  },
-  "bugs": {
-    "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   },
   "dependencies": {
     "@latex2js/pstricks": "workspace:^",
     "@latex2js/settings": "workspace:^",
     "@latex2js/utils": "workspace:^"
+  },
+  "devDependencies": {
+    "peggy": "^5.1.0"
+  },
+  "bugs": {
+    "url": "https://github.com/Mathapedia/LaTeX2JS/issues"
   }
 }

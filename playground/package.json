@@ -1,0 +1,21 @@
+{
+  "name": "@latex2js/playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Live editing playground for LaTeX2JS — dev loop and future website sandbox",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "e2e": "playwright test",
+    "e2e:gallery": "playwright test e2e/examples.spec.ts",
+    "e2e:interactive": "playwright test e2e/interactive.spec.ts",
+    "e2e:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0"
+  }
+}

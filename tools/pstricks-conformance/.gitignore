@@ -1,0 +1,5 @@
+# Generated corpora and rasterized output — reproducible from the scripts.
+corpus/
+examples-ref/
+reference/
+*.html
