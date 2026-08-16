@@ -1460,8 +1460,17 @@ const psgraph: any = {
           d += ' C ' + data.x2 + ' ' + data.y2 + ', ' + data.x3 + ' ' + data.y3 + ', ' + data.x4 + ' ' + data.y4;
           return;
         }
-        if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
-        d += ' L ' + data.x2 + ' ' + data.y2;
+        // Every point, not just the endpoint. A \psline inside a \pscustom
+        // continues the path through all of its coordinates; taking x2 alone
+        // dropped the intermediate ones — and, when the path was already open,
+        // dropped the line's own starting point as well, so a four-point
+        // zigzag came out as two segments through the wrong corners.
+        const pts = data.points && data.points.length >= 2
+          ? data.points
+          : [[data.x1, data.y1], [data.x2, data.y2]];
+        let from = 0;
+        if (!started) { d += 'M ' + pts[0][0] + ' ' + pts[0][1]; started = true; from = 1; }
+        for (let i = from; i < pts.length; i++) d += ' L ' + pts[i][0] + ' ' + pts[i][1];
       } else if (cmd.key === 'psframe') {
         if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
         d += ' L ' + data.x2 + ' ' + data.y1 +

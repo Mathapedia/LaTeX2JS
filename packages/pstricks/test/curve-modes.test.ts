@@ -130,3 +130,47 @@ describe('control points follow the PSTricks curvature algorithm', () => {
     expect(ax * bx + ay * by).toBeLessThan(0);
   });
 });
+
+describe('a shape inside pscustom contributes its whole path', () => {
+  // \pscustom composes a path out of pieces. A \psline inside one continues
+  // the path through ALL of its coordinates; this took the endpoint alone, so
+  // the intermediate points vanished — and when the path was already open, the
+  // line's own starting point went with them.
+  function customPath(raw: string): string {
+    const ctx = makeContext();
+    const m = raw.match((Expressions as any).pscustom) as RegExpMatchArray;
+    expect(m).not.toBeNull();
+    const data = (Functions as any).pscustom.call(ctx, m);
+    // The parser pre-extracts the inner commands; do the same here.
+    data.commands = [];
+    const body: string = data.body || '';
+    for (const key of ['moveto', 'lineto', 'closepath', 'psline', 'psbezier']) {
+      const exp = (Expressions as any)[key];
+      const re = new RegExp(exp.source, 'g');
+      let hit: RegExpExecArray | null;
+      while ((hit = re.exec(body)) !== null) {
+        data.commands.push({ key, data: (Functions as any)[key].call(ctx, hit), at: hit.index });
+      }
+    }
+    data.commands.sort((a: any, b: any) => a.at - b.at);
+    data.global = ctx;
+    let d = '';
+    const node = { attr(k: string, v: string) { if (k === 'd') d = v; return node; }, style() { return node; }, on() { return node; } };
+    (psgraph as any).pscustom.call(data, { append: () => node });
+    return d;
+  }
+
+  it('keeps every point of a psline written inside', () => {
+    const d = customPath('\\pscustom{\\moveto(-2.5,-1)\\psline(-1,1)(0,-1)\\lineto(2.5,1)}');
+    // moveto, then one L per psline point, then the lineto: four segments.
+    expect((d.match(/ L /g) || []).length).toBe(3);
+  });
+
+  it('does not drop the starting point of a psline that continues a path', () => {
+    const d = customPath('\\pscustom{\\moveto(-2.5,-1)\\psline(-1,1)(0,-1)}');
+    // The (-1,1) corner is a real point on the path, not merely where the
+    // psline happens to begin.
+    const y = (5 - 1) * 50;
+    expect(d).toContain(' ' + y);
+  });
+});
