@@ -14,10 +14,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # The pnpm version comes from `packageManager` in package.json. Naming it
+      # here as well makes the action refuse to install rather than pick one.
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: 11
           run_install: false
 
       - name: Install Node.js
@@ -52,10 +53,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # The pnpm version comes from `packageManager` in package.json. Naming it
+      # here as well makes the action refuse to install rather than pick one.
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: 11
           run_install: false
 
       - name: Install Node.js

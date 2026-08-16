@@ -1833,7 +1833,10 @@ exports.Functions = {
     example: () => '<h4>Example</h4>',
     problem: () => '<h4>Problem</h4>',
     proof: () => '<h4>Proof</h4>',
-    qed: () => '$\\qed$',
+    // amsthm closes a proof with an open square. Emitted as a character rather
+    // than as math: MathJax defines no \qed, so the previous `$\qed$` surfaced
+    // an "Undefined control sequence" box at the end of every proof.
+    qed: () => '<span class="qed">□</span>',
     solution: () => '<h4>Solution</h4>',
     theorem: () => '<h4>Theorem</h4>'
 };
@@ -2038,8 +2041,8 @@ class Parser {
             env.content.forEach((c) => this.walkContent(c));
         }
         else {
-            // enumerate / nicebox: content is text lines (with transforms).
-            env.content.forEach((c) => this.walkContent(c));
+            // enumerate / itemize / nicebox: content is text lines (with transforms).
+            this.walkTextContent(env.content);
         }
         if (env.end && env.end.name !== name) {
             this.diagnose('warning', `\\end{${env.end.name}} does not match \\begin{${name}}`, env.end.loc);
@@ -2048,6 +2051,53 @@ class Parser {
             this.diagnose('warning', `unclosed environment '${name}'`, env.begin.loc);
         }
         this.newEnvironment('math');
+    }
+    /**
+     * Walk a text environment's content, rejoining the nodes that came from one
+     * source line.
+     *
+     * `EnvContent` matches `Command` before `Line`, and a command's tail stops at
+     * the next command, so `\item First with \textbf{bold} text` arrives as two
+     * command nodes. Walking them individually renders each as its own line,
+     * which broke every list item at its first macro. pspicture keeps the
+     * per-node walk, because it depends on receiving commands separately.
+     */
+    walkTextContent(content) {
+        let pending = [];
+        const flush = () => {
+            if (!pending.length)
+                return;
+            const text = pending
+                .map((n) => (n.kind === 'line' ? this.lineToString(n) : n.raw))
+                .join('');
+            pending = [];
+            this.pushMathLine(text);
+        };
+        content.forEach((node) => {
+            if (node.kind === 'env') {
+                flush();
+                this.walkEnv(node);
+                return;
+            }
+            // An empty Line is the newline itself: it closes the line being built,
+            // or is a genuine paragraph break when there is nothing to close.
+            if (node.kind === 'line' && node.parts.length === 0) {
+                if (pending.length)
+                    flush();
+                else
+                    this.pushBlankLine(false);
+                return;
+            }
+            const at = node.loc && node.loc.line;
+            const open = pending.length ? pending[0].loc && pending[0].loc.line : at;
+            if (pending.length && at !== open)
+                flush();
+            pending.push(node);
+            // A Line node consumed its own EOL, so nothing more belongs to it.
+            if (node.kind === 'line')
+                flush();
+        });
+        flush();
     }
     /**
      * Walk one node of environment content. Behavior depends on the current
@@ -2152,10 +2202,41 @@ class Parser {
     isIgnoredEnv(name) {
         return this.isIgnored('\\begin{' + name + '}');
     }
+    /**
+     * A blank source line becomes a `<br>`, but a heading already carries its own
+     * margins, so a `<br>` next to one stacks two gaps where the author asked for
+     * one. Dropping the adjacent break leaves the heading's own spacing to do the
+     * work — and a run of breaks collapses to a single paragraph gap.
+     */
+    collapseBreaks(lines) {
+        const isBlock = (l) => /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote)\b/i.test(l);
+        const out = [];
+        for (const line of lines) {
+            if (line !== '<br>') {
+                while (isBlock(line) && out[out.length - 1] === '<br>')
+                    out.pop();
+                out.push(line);
+                continue;
+            }
+            if (!out.length)
+                continue;
+            if (isBlock(out[out.length - 1]))
+                continue;
+            if (out[out.length - 1] === '<br>')
+                continue;
+            out.push(line);
+        }
+        while (out[out.length - 1] === '<br>')
+            out.pop();
+        return out;
+    }
     newEnvironment(type) {
         if (this.environment &&
             (this.environment.lines.length || this.environment.type !== 'math')) {
             this.environment.settings = { ...this.settings };
+            if (!this.environment.type.match(/pspicture|verbatim/)) {
+                this.environment.lines = this.collapseBreaks(this.environment.lines);
+            }
             this.objects.push(this.environment);
         }
         this.environment = {
@@ -2327,8 +2408,16 @@ class Parser {
     // -------------------------------------------------------------------------
     // Text / header transforms (reused from the old parser, string-based)
     // -------------------------------------------------------------------------
-    parseTextExpression(line, exp, k, contents) {
-        var match = line.match(exp);
+    /**
+     * Text transforms run in sequence over one line, so each must match the
+     * value the previous ones produced. Matching the pristine line instead makes
+     * `matchrepl` search `contents` for a literal that an earlier transform has
+     * already rewritten, and the replacement silently does nothing — which is
+     * why `\section{Cauchy--Schwarz}` survived as source text once `--` had
+     * become an en dash.
+     */
+    parseTextExpression(_line, exp, k, contents) {
+        var match = contents.match(exp);
         if (match) {
             return this.Text.Functions[k].call(this, match, contents);
         }
@@ -2861,6 +2950,128 @@ function buildCurvePath(data, closed) {
     }
     return d;
 }
+const TAU = Math.PI * 2;
+/** Points to device units, matching the linewidth conversion in pstricks.ts. */
+const PT_TO_PX = 1.333;
+/**
+ * Line directions each hatched fill style draws, as offsets from `hatchangle`.
+ * PSTricks hatches at `hatchangle` for hlines, ninety degrees off for vlines,
+ * and both for crosshatch — so the default 45 degrees makes hlines diagonal,
+ * not horizontal.
+ */
+const HATCH_DIRECTIONS = {
+    hlines: [0],
+    vlines: [90],
+    crosshatch: [0, 90],
+};
+/** PSTricks hatch parameter defaults, in points except the angle and colour. */
+const HATCH_DEFAULTS = { hatchwidth: 0.8, hatchsep: 4, hatchangle: 45, hatchcolor: 'black' };
+let patternSeq = 0;
+/** Reads a dimension that may carry a `pt` suffix, in device units. */
+function dimension(value, fallbackPt) {
+    if (typeof value === 'number' && isFinite(value))
+        return value * PT_TO_PX;
+    const m = typeof value === 'string' ? value.trim().match(/^([\d.]+)\s*(pt)?$/) : null;
+    return (m ? Number(m[1]) : fallbackPt) * PT_TO_PX;
+}
+/**
+ * Whether a shape has any fill at all. Renderers that must close a path before
+ * it can be filled ask this; the paint itself comes from {@link resolveFill}.
+ *
+ * @param ctx - the shape's parsed data
+ * @returns true when the shape should be built as a closed, fillable region
+ */
+function hasFill(ctx) {
+    return !!ctx.filled || (!!ctx.fillstyle && ctx.fillstyle !== 'none');
+}
+/**
+ * Resolves a shape's SVG fill value, defining a hatch pattern when the style
+ * calls for one.
+ *
+ * Every renderer previously spelled this decision itself, in three mutually
+ * inconsistent ways: `fillstyle=hlines` became a solid fill on pspolygon and
+ * psarc, and no fill at all on psellipse, pswedge and pscurve. Routing all of
+ * them through one resolver makes an unimplemented style behave the same
+ * everywhere, and gives the hatched styles a real rendering.
+ *
+ * @param ctx - the shape's parsed data, carrying fillstyle and hatch options
+ * @param svg - the container the pattern definition is attached to
+ * @returns an SVG paint value: a colour, a `url(#…)` pattern, or `none`
+ */
+function resolveFill(ctx, svg) {
+    const style = ctx.fillstyle ?? 'none';
+    // The starred forms set `filled`; they fill flat regardless of style.
+    if (ctx.filled || style === 'solid')
+        return ctx.fillcolor;
+    if (style === 'none' || !style)
+        return 'none';
+    const starred = style.endsWith('*');
+    const directions = HATCH_DIRECTIONS[starred ? style.slice(0, -1) : style];
+    // An unrecognised style is not a fill; guessing solid is what made the same
+    // input render differently depending on the shape.
+    if (!directions)
+        return 'none';
+    const sep = Math.max(1, dimension(ctx.hatchsep, HATCH_DEFAULTS.hatchsep));
+    const width = Math.max(0.2, dimension(ctx.hatchwidth, HATCH_DEFAULTS.hatchwidth));
+    const angle = Number(ctx.hatchangle ?? HATCH_DEFAULTS.hatchangle) || 0;
+    const color = ctx.hatchcolor ?? HATCH_DEFAULTS.hatchcolor;
+    const id = 'l2j-hatch-' + ++patternSeq;
+    const pattern = svg
+        .append('svg:defs')
+        .append('svg:pattern')
+        .attr('id', id)
+        .attr('patternUnits', 'userSpaceOnUse')
+        .attr('width', sep)
+        .attr('height', sep)
+        // SVG's y axis runs opposite to the PSTricks angle convention.
+        .attr('patternTransform', 'rotate(' + -angle + ')');
+    // A starred hatch lays its lines over the fill colour instead of nothing.
+    if (starred) {
+        pattern.append('svg:rect').attr('width', sep).attr('height', sep).style('fill', ctx.fillcolor);
+    }
+    for (const d of directions) {
+        const line = pattern.append('svg:line').style('stroke', color).style('stroke-width', width);
+        if (d === 0)
+            line.attr('x1', 0).attr('y1', sep / 2).attr('x2', sep).attr('y2', sep / 2);
+        else
+            line.attr('x1', sep / 2).attr('y1', 0).attr('x2', sep / 2).attr('y2', sep);
+    }
+    return 'url(#' + id + ')';
+}
+/**
+ * SVG arc flags for a PSTricks arc running from `angleA` to `angleB`.
+ *
+ * PSTricks always sweeps counter-clockwise in its own coordinates, taking the
+ * long way round when the end angle precedes the start. `Y` inverts the axis,
+ * so that counter-clockwise sweep is drawn with SVG's sweep-flag 0 — using 1
+ * traces the complementary arc, which is what bowed every `\pswedge` inward
+ * and turned a pie chart into a star.
+ *
+ * @param angleA - start angle in radians
+ * @param angleB - end angle in radians
+ * @returns the sweep span plus SVG's large-arc and sweep flags
+ */
+function arcFlags(angleA, angleB) {
+    let delta = angleB - angleA;
+    if (!isFinite(delta))
+        delta = 0;
+    delta = ((delta % TAU) + TAU) % TAU;
+    return { delta, large: delta > Math.PI ? 1 : 0, sweep: 0 };
+}
+/**
+ * A full turn cannot be expressed as one SVG arc, because the start and end
+ * points coincide. Such a sweep is emitted as two half-turns instead.
+ *
+ * @param cx - centre x in device units
+ * @param cy - centre y in device units
+ * @param r - radius in device units
+ * @returns a closed circular path
+ */
+function fullCirclePath(cx, cy, r) {
+    return ('M ' + (cx - r) + ' ' + cy +
+        ' A ' + r + ' ' + r + ' 0 1 0 ' + (cx + r) + ' ' + cy +
+        ' A ' + r + ' ' + r + ' 0 1 0 ' + (cx - r) + ' ' + cy + ' Z');
+}
 function curveRenderer(svg) {
     const d = buildCurvePath(this.data, !!this.closed);
     if (!d)
@@ -2871,7 +3082,7 @@ function curveRenderer(svg) {
         .style('stroke-width', this.linewidth)
         .style('stroke', this.linecolor)
         .style('stroke-opacity', 1)
-        .style('fill', this.fillstyle === 'solid' || this.filled ? this.fillcolor : 'none');
+        .style('fill', resolveFill(this, svg));
 }
 const psgraph = {
     env: null,
@@ -2891,7 +3102,7 @@ const psgraph = {
         };
     },
     psframe(svg) {
-        const filled = this.filled || this.fillstyle === 'solid';
+        const filled = hasFill(this);
         if (filled) {
             svg
                 .append('svg:rect')
@@ -2899,7 +3110,7 @@ const psgraph = {
                 .attr('y', Math.min(this.y1, this.y2))
                 .attr('width', Math.abs(this.x2 - this.x1))
                 .attr('height', Math.abs(this.y2 - this.y1))
-                .style('fill', this.fillcolor)
+                .style('fill', resolveFill(this, svg))
                 .style('stroke', 'none');
         }
         svg
@@ -2940,21 +3151,21 @@ const psgraph = {
             .style('stroke-opacity', 1);
     },
     pscircle: function (svg) {
-        const filled = this.filled || this.fillstyle === 'solid';
+        const filled = hasFill(this);
         svg
             .append('svg:circle')
             .attr('cx', this.cx)
             .attr('cy', this.cy)
             .attr('r', this.r)
             .style('stroke', this.linecolor)
-            .style('fill', filled ? this.fillcolor : 'none')
+            .style('fill', resolveFill(this, svg))
             .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1);
     },
     psplot(svg) {
         var context = [];
         context.push('M');
-        if (this.fillstyle === 'solid') {
+        if (hasFill(this)) {
             context.push(this.data[0]);
             context.push(utils_1.Y.call(this.global, 0));
         }
@@ -2966,7 +3177,7 @@ const psgraph = {
         this.data.forEach((data) => {
             context.push(data);
         });
-        if (this.fillstyle === 'solid') {
+        if (hasFill(this)) {
             context.push(this.data[this.data.length - 2]);
             context.push(utils_1.Y.call(this.global, 0));
             context.push('Z');
@@ -2977,7 +3188,7 @@ const psgraph = {
             .attr('class', 'psplot')
             .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1)
-            .style('fill', this.fillstyle === 'none' ? 'none' : this.fillcolor)
+            .style('fill', resolveFill(this, svg))
             .style('stroke', this.linecolor);
     },
     pspolygon(svg) {
@@ -2995,27 +3206,25 @@ const psgraph = {
             .attr('d', context.join(' '))
             .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1)
-            .style('fill', this.fillstyle === 'none' && !this.filled ? 'none' : this.fillcolor)
+            .style('fill', resolveFill(this, svg))
             .style('stroke', 'black');
     },
     psarc(svg) {
-        const sweep = this.angleB - this.angleA > 0 ? 1 : 0;
-        const large = Math.abs(this.angleB - this.angleA) > Math.PI ? 1 : 0;
-        const filled = this.filled || this.fillstyle === 'solid';
-        const d = filled
-            ? 'M ' + this.cx + ' ' + this.cy +
-                ' L ' + this.A.x + ' ' + this.A.y +
-                ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
-                ' ' + this.B.x + ' ' + this.B.y + ' Z'
-            : 'M ' + this.A.x + ' ' + this.A.y +
-                ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
-                ' ' + this.B.x + ' ' + this.B.y;
+        const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
+        const filled = hasFill(this);
+        const arc = ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
+            ' ' + this.B.x + ' ' + this.B.y;
+        const d = delta === 0
+            ? fullCirclePath(this.cx, this.cy, this.r)
+            : filled
+                ? 'M ' + this.cx + ' ' + this.cy + ' L ' + this.A.x + ' ' + this.A.y + arc + ' Z'
+                : 'M ' + this.A.x + ' ' + this.A.y + arc;
         svg
             .append('svg:path')
             .attr('d', d)
             .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1)
-            .style('fill', filled ? this.fillcolor : 'none')
+            .style('fill', resolveFill(this, svg))
             .style('stroke', this.linecolor);
     },
     psaxes(svg) {
@@ -3030,28 +3239,106 @@ const psgraph = {
                 .style('stroke', 'rgb(0,0,0)')
                 .style('stroke-opacity', 1);
         }
+        /**
+         * Tick positions, stepped outward from the origin rather than from the end
+         * of the axis. Starting at the end puts every mark at whatever offset the
+         * axis happens to begin on, so an axis spanning -3.5 to 3.5 was ticked and
+         * labelled at half-integers instead of on the whole numbers.
+         */
+        /**
+         * An axis end that carries an arrowhead, or null. `arrows[0]` points at the
+         * low end of each axis and `arrows[1]` at the high end, matching the order
+         * the arrowheads are drawn below.
+         */
+        const arrowedEnds = (axis) => [
+            this.arrows[0] ? axis[0] : null,
+            this.arrows[1] ? axis[1] : null,
+        ];
+        const positions = (from, to, at, step) => {
+            if (!(step > 0) || !isFinite(step))
+                return [];
+            // Y inverts the axis, so a vertical span arrives with its ends the other
+            // way round. Walking it as given produced no y ticks at all.
+            const lo = Math.min(from, to);
+            const hi = Math.max(from, to);
+            const out = [];
+            for (let v = at; v <= hi + 1e-6; v += step)
+                out.push(v);
+            for (let v = at - step; v >= lo - 1e-6; v -= step)
+                out.unshift(v);
+            // PSTricks gives an arrowhead the end of the axis to itself: where one is
+            // drawn, the tick and its number are both suppressed. A tick that merely
+            // falls short of the tip keeps them, so only a coincident one is dropped.
+            const suppressed = arrowedEnds([from, to]).filter((v) => v !== null);
+            return out.filter((v) => !suppressed.some((end) => Math.abs(v - end) < 1e-6));
+        };
         var xticks = () => {
-            for (var x = xaxis[0]; x <= xaxis[1]; x += this.dx) {
+            positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
                 line(x, origin[1] - 5, x, origin[1] + 5);
-            }
+            });
         };
         var yticks = () => {
-            for (var y = yaxis[0]; y <= yaxis[1]; y += this.dy) {
+            positions(yaxis[0], yaxis[1], origin[1], this.dy).forEach((y) => {
                 line(origin[0] - 5, y, origin[0] + 5, y);
-            }
+            });
+        };
+        const env = this.global || {};
+        /** Draws one tick number, positioned clear of its axis. */
+        const label = (text, x, y, anchor) => {
+            svg
+                .append('svg:text')
+                .attr('x', x)
+                .attr('y', y)
+                .attr('text-anchor', anchor)
+                .attr('font-size', 13)
+                .attr('font-family', 'serif')
+                .style('fill', 'black')
+                .text(text);
+        };
+        /** Tick values are device coordinates; labels need the value they stand for. */
+        const value = (device, axis) => {
+            const n = axis === 'x'
+                ? device / env.xunit - env.w + env.x1
+                : env.y1 - device / env.yunit;
+            return Math.abs(n) < 1e-9 ? 0 : Number(n.toFixed(4));
+        };
+        const xlabels = () => {
+            positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
+                // The origin's number sits directly under the y axis, which would draw
+                // the axis line straight through the glyph, so it shifts clear of it
+                // and serves both axes — as it does on a hand-drawn pair of axes.
+                const atOrigin = Math.abs(x - origin[0]) < 1e-6;
+                if (atOrigin)
+                    label(String(value(x, 'x')), x - 7, origin[1] + 20, 'end');
+                else
+                    label(String(value(x, 'x')), x, origin[1] + 20, 'middle');
+            });
+        };
+        const ylabels = () => {
+            positions(yaxis[0], yaxis[1], origin[1], this.dy).forEach((y) => {
+                // The origin's own number belongs to the x axis; drawing it again here
+                // would stack two glyphs in the same place.
+                if (Math.abs(y - origin[1]) < 1e-6)
+                    return;
+                label(String(value(y, 'y')), origin[0] - 10, y + 4, 'end');
+            });
         };
         line(xaxis[0], origin[1], xaxis[1], origin[1]);
         line(origin[0], yaxis[0], origin[0], yaxis[1]);
-        if (this.ticks.match(/all/)) {
+        const selects = (option, axis) => {
+            const v = String(option ?? 'all');
+            if (v.match(/none/))
+                return false;
+            return !!(v.match(/all/) || v.match(axis));
+        };
+        if (selects(this.ticks, 'x'))
             xticks();
+        if (selects(this.ticks, 'y'))
             yticks();
-        }
-        else if (this.ticks.match(/x/)) {
-            xticks();
-        }
-        else if (this.ticks.match(/y/)) {
-            yticks();
-        }
+        if (env.xunit && selects(this.labels, 'x'))
+            xlabels();
+        if (env.yunit && selects(this.labels, 'y'))
+            ylabels();
         if (this.arrows[0]) {
             svg
                 .append('path')
@@ -3361,103 +3648,119 @@ const psgraph = {
     pspicture(svg) {
         var env = this.env;
         var el = this.$el;
-        // Source-order initial draw: the parser records `env.elements` in
-        // document order, so layers (fills under lines, etc.) respect the author's
-        // order. Falls back to the old type-grouped iteration for legacy data.
+        const plots = this.plot;
+        // The parser records `env.elements` in document order, so fills sit under
+        // lines exactly as authored.
         const elements = env && env.elements;
-        if (elements && elements.length) {
-            elements.forEach((item) => {
-                if (!item || !item.name || item.name.match(/rput/))
-                    return;
-                if (!psgraph.hasOwnProperty(item.name))
-                    return;
-                item.data.global = env;
-                psgraph[item.name].call(item.data, svg);
-            });
+        /**
+         * Recomputes an interactive element against the pointer position. Static
+         * elements keep the data the parser produced.
+         */
+        function resolveData(item, coords, variables) {
+            if (!coords || !item.fn)
+                return item.data;
+            if (item.name === 'psplot') {
+                Object.entries(variables || {}).forEach(([name, value]) => {
+                    env.variables[name] = value;
+                });
+                const d = item.fn.call(env, item.match);
+                d.global = Object.assign({}, env);
+                return d;
+            }
+            if (item.name === 'userline') {
+                const d = item.fn.call(env, item.match);
+                env.x2 = coords[0];
+                env.y2 = coords[1];
+                item.data.x2 = env.x2;
+                item.data.y2 = env.y2;
+                if (item.data.xExp2) {
+                    item.data.x2 = d.userx2(coords);
+                    item.data.x1 = d.userx(coords);
+                }
+                else if (item.data.xExp) {
+                    item.data.x2 = d.userx(coords);
+                }
+                if (item.data.yExp2) {
+                    item.data.y2 = d.usery2(coords);
+                    item.data.y1 = d.usery(coords);
+                }
+                else if (item.data.yExp) {
+                    item.data.y2 = d.usery(coords);
+                }
+                d.global = Object.assign({}, env);
+                Object.assign(d, item.data);
+                return d;
+            }
+            return item.data;
         }
-        else {
-            Object.keys(this.plot).forEach((key) => {
-                const plot = this.plot[key];
+        /** Evaluates every \uservariable at the pointer position, in source order. */
+        function readVariables(coords) {
+            const variables = {};
+            const source = elements && elements.length
+                ? elements.filter((i) => i && i.name === 'uservariable')
+                : ((plots && plots.uservariable) || []).map((p) => ({ ...p, name: 'uservariable' }));
+            source.forEach((item) => {
+                env.userx = coords[0];
+                env.usery = coords[1];
+                const dd = item.fn.call(env, item.match);
+                variables[item.data.name] = dd.value;
+            });
+            return variables;
+        }
+        /**
+         * Draws the whole picture into a fresh layer.
+         *
+         * Redrawing everything is what keeps interaction faithful to the source.
+         * Removing just the interactive elements and appending them again put them
+         * at the end of the SVG — on top of every later shape — and re-emitted
+         * them grouped by command type rather than in document order, so a correct
+         * diagram silently reordered itself the first time the pointer crossed it.
+         */
+        let layer = null;
+        function drawLayer(coords) {
+            if (layer)
+                layer.remove();
+            layer = svg.append('svg:g').attr('class', 'pspicture-layer');
+            const variables = coords ? readVariables(coords) : {};
+            if (elements && elements.length) {
+                elements.forEach((item) => {
+                    if (!item || !item.name || item.name.match(/rput/))
+                        return;
+                    if (!psgraph.hasOwnProperty(item.name))
+                        return;
+                    const data = resolveData(item, coords, variables);
+                    data.global = env;
+                    psgraph[item.name].call(data, layer);
+                });
+                return;
+            }
+            // Legacy data without an ordered element list: fall back to the
+            // type-grouped iteration, which cannot express author order.
+            Object.keys(plots).forEach((key) => {
                 if (key.match(/rput/))
                     return;
-                if (psgraph.hasOwnProperty(key)) {
-                    plot.forEach((data) => {
-                        data.data.global = env;
-                        psgraph[key].call(data.data, svg);
-                    });
-                }
+                if (!psgraph.hasOwnProperty(key))
+                    return;
+                plots[key].forEach((entry) => {
+                    const item = { name: key, data: entry.data, match: entry.match, fn: entry.fn };
+                    const data = resolveData(item, coords, variables);
+                    data.global = env;
+                    psgraph[key].call(data, layer);
+                });
             });
         }
+        drawLayer(null);
         svg.on('touchmove', function (event) {
             event.preventDefault();
             var touch = event.touches ? event.touches[0] : null;
             var rect = event.target.getBoundingClientRect();
             var touchcoords = touch ? [touch.clientX - rect.left, touch.clientY - rect.top] : [0, 0];
-            userEvent(touchcoords);
+            drawLayer(touchcoords);
         });
         svg.on('mousemove', function (event) {
             var coords = [event.offsetX || 0, event.offsetY || 0];
-            userEvent(coords);
+            drawLayer(coords);
         });
-        const plots = this.plot;
-        function userEvent(coords) {
-            svg.selectAll('.userline').remove();
-            svg.selectAll('.psplot').remove();
-            var currentEnvironment = {};
-            Object.entries(plots || {})
-                .forEach(([k, plot]) => {
-                if (k.match(/uservariable/)) {
-                    plot.forEach((data) => {
-                        data.env.userx = coords[0];
-                        data.env.usery = coords[1];
-                        var dd = data.fn.call(data.env, data.match);
-                        currentEnvironment[data.data.name] = dd.value;
-                    });
-                }
-            });
-            Object.entries(plots || {})
-                .forEach(([k, plot]) => {
-                if (k.match(/psplot/)) {
-                    plot.forEach((data) => {
-                        Object.entries(currentEnvironment || {})
-                            .forEach(([name, variable]) => {
-                            data.env.variables[name] = variable;
-                        });
-                        var d = data.fn.call(data.env, data.match);
-                        d.global = {};
-                        Object.assign(d.global, env);
-                        psgraph[k].call(d, svg);
-                    });
-                }
-                if (k.match(/userline/)) {
-                    plot.forEach((data) => {
-                        var d = data.fn.call(data.env, data.match);
-                        data.env.x2 = coords[0];
-                        data.env.y2 = coords[1];
-                        data.data.x2 = data.env.x2;
-                        data.data.y2 = data.env.y2;
-                        if (data.data.xExp2) {
-                            data.data.x2 = d.userx2(coords);
-                            data.data.x1 = d.userx(coords);
-                        }
-                        else if (data.data.xExp) {
-                            data.data.x2 = d.userx(coords);
-                        }
-                        if (data.data.yExp2) {
-                            data.data.y2 = d.usery2(coords);
-                            data.data.y1 = d.usery(coords);
-                        }
-                        else if (data.data.yExp) {
-                            data.data.y2 = d.usery(coords);
-                        }
-                        d.global = {};
-                        Object.assign(d.global, env);
-                        Object.assign(d, data.data);
-                        psgraph[k].call(d, svg);
-                    });
-                }
-            });
-        }
         // Enhanced cleanup and RPUT processing
         psgraph.processRputElements.call(this, el);
     },
@@ -3472,26 +3775,82 @@ const psgraph = {
                 .style('stroke', 'none');
         }
     },
+    /**
+     * A PSTricks grid is three things, not one: fine subdivision lines, a heavier
+     * line on each unit, and the coordinate numbered along the left and bottom
+     * edges. Only the unit lines were drawn, in `linecolor` — which `gridcolor`
+     * could not override — so a grid was a flat mesh with no reading on it.
+     */
     psgrid(svg) {
         const x0 = this.x0, y0 = this.y0, x1 = this.x1, y1 = this.y1;
-        for (let x = x0; x <= x1 + 0.001; x += this.xunit) {
+        const gridcolor = this.gridcolor ?? this.linecolor;
+        const gridwidth = dimension(this.gridwidth, 0.8);
+        const subdiv = Math.max(0, Math.floor(Number(this.subgriddiv ?? 5)));
+        const subcolor = this.subgridcolor ?? 'gray';
+        const subwidth = dimension(this.subgridwidth, 0.4);
+        const rule = (a, b, c, d, color, width) => {
             svg
                 .append('svg:line')
-                .attr('x1', x).attr('y1', y0)
-                .attr('x2', x).attr('y2', y1)
-                .style('stroke', this.linecolor)
-                .style('stroke-width', this.gridwidth)
+                .attr('x1', a).attr('y1', b).attr('x2', c).attr('y2', d)
+                .style('stroke', color)
+                .style('stroke-width', width)
                 .style('stroke-opacity', 1);
+        };
+        /** Line offsets across a span, stepping by `step` from `origin`. */
+        const rungs = (lo, hi, origin, step) => {
+            if (!(step > 0) || !isFinite(step))
+                return [];
+            const out = [];
+            for (let v = origin; v <= hi + 1e-6; v += step)
+                out.push(v);
+            for (let v = origin - step; v >= lo - 1e-6; v -= step)
+                out.unshift(v);
+            return out;
+        };
+        const ox = this.originX ?? x0;
+        const oy = this.originY ?? y0;
+        // Subdivisions first, so the unit lines and labels sit over them.
+        if (subdiv > 1) {
+            for (const x of rungs(x0, x1, ox, this.xunit / subdiv))
+                rule(x, y0, x, y1, subcolor, subwidth);
+            for (const y of rungs(y0, y1, oy, this.yunit / subdiv))
+                rule(x0, y, x1, y, subcolor, subwidth);
         }
-        for (let y = y0; y <= y1 + 0.001; y += this.yunit) {
+        const xs = rungs(x0, x1, ox, this.xunit);
+        const ys = rungs(y0, y1, oy, this.yunit);
+        for (const x of xs)
+            rule(x, y0, x, y1, gridcolor, gridwidth);
+        for (const y of ys)
+            rule(x0, y, x1, y, gridcolor, gridwidth);
+        // Grid numbers are off unless asked for. PSTricks draws them outside the
+        // grid on an unbounded page; an SVG is sized to the picture's declared
+        // bounds, so on a grid that reaches the edge — the common case — they would
+        // land outside the viewport and be clipped away. A default nobody can see
+        // is worse than no default, so they are opt-in and clamped inside.
+        if (!this.gridlabels || this.gridlabels === 'none' || this.gridlabels === '0')
+            return;
+        const size = dimension(this.gridlabels, 10);
+        const labelcolor = this.gridlabelcolor ?? 'black';
+        const text = (s, x, y, anchor) => {
             svg
-                .append('svg:line')
-                .attr('x1', x0).attr('y1', y)
-                .attr('x2', x1).attr('y2', y)
-                .style('stroke', this.linecolor)
-                .style('stroke-width', this.gridwidth)
-                .style('stroke-opacity', 1);
-        }
+                .append('svg:text')
+                .attr('x', x).attr('y', y)
+                .attr('text-anchor', anchor)
+                .attr('font-size', size)
+                .attr('font-family', 'serif')
+                .style('fill', labelcolor)
+                .text(s);
+        };
+        const round = (n) => (Math.abs(n) < 1e-9 ? 0 : Number(n.toFixed(4)));
+        const env = this.global || {};
+        // Clamped inside the picture so a grid flush with the edge still shows its
+        // numbers rather than pushing them out of the viewport.
+        const belowY = Math.min(y1 + size + 4, (env.h ?? 0) * (env.yunit ?? 1) - 2);
+        const leftX = Math.max(x0 - 4, size);
+        for (const x of xs)
+            text(String(round(x / env.xunit - env.w + env.x1)), x, belowY, 'middle');
+        for (const y of ys)
+            text(String(round(env.y1 - y / env.yunit)), leftX, y + size / 3, 'end');
     },
     psellipse(svg) {
         svg
@@ -3503,7 +3862,7 @@ const psgraph = {
             .style('stroke', this.linecolor)
             .style('stroke-width', this.linewidth)
             .style('stroke-opacity', 1)
-            .style('fill', this.fillstyle === 'solid' ? this.fillcolor : 'none');
+            .style('fill', resolveFill(this, svg));
     },
     psbezier(svg) {
         svg
@@ -3525,26 +3884,28 @@ const psgraph = {
             .style('stroke-width', this.linewidth)
             .style('stroke', this.linecolor)
             .style('stroke-opacity', 1)
-            .style('fill', this.fillstyle === 'solid' || this.filled ? this.fillcolor : 'none');
+            .style('fill', resolveFill(this, svg));
     },
     psecurve: curveRenderer,
     psccurve: curveRenderer,
     pswedge(svg) {
-        const sweep = this.angleB - this.angleA > 0 ? 1 : 0;
-        const large = Math.abs(this.angleB - this.angleA) > Math.PI ? 1 : 0;
+        const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
+        const d = delta === 0
+            ? fullCirclePath(this.cx, this.cy, this.r)
+            : 'M ' + this.cx + ' ' + this.cy +
+                ' L ' + this.A.x + ' ' + this.A.y +
+                ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
+                ' ' + this.B.x + ' ' + this.B.y + ' Z';
         svg
             .append('svg:path')
-            .attr('d', 'M ' + this.cx + ' ' + this.cy +
-            ' L ' + this.A.x + ' ' + this.A.y +
-            ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
-            ' ' + this.B.x + ' ' + this.B.y + ' Z')
+            .attr('d', d)
             .style('stroke-width', this.linewidth)
             .style('stroke', this.linecolor)
             .style('stroke-opacity', 1)
-            .style('fill', this.fillstyle === 'solid' ? this.fillcolor : 'none');
+            .style('fill', resolveFill(this, svg));
     },
     pscustom(svg) {
-        const filled = this.filled || this.fillstyle === 'solid';
+        const filled = hasFill(this);
         let d = '';
         let started = false;
         (this.commands || []).forEach((cmd) => {
@@ -3598,7 +3959,7 @@ const psgraph = {
             .style('stroke-width', this.linewidth)
             .style('stroke', this.linestyle === 'none' ? 'none' : this.linecolor)
             .style('stroke-opacity', 1)
-            .style('fill', filled ? this.fillcolor : 'none');
+            .style('fill', resolveFill(this, svg));
     },
     processRputElements(el) {
         // Validate container
@@ -3708,6 +4069,33 @@ function parseLinewidth(value) {
     if (!m)
         return 2;
     return Number(m[1]) * (m[2] ? 1.333 : 1);
+}
+/**
+ * Device-space endpoints of an arc, measured from the arc's own centre.
+ *
+ * The radius is an offset from `(cx, cy)`, not from the picture origin, so the
+ * centre has to be added before the coordinate transform. Transforming
+ * `r*cos(theta)` alone places both endpoints as though every arc were centred
+ * on the origin — correct only for one that happens to be, which is why a pie
+ * at (0,0) looked right while the same wedge anywhere else collapsed to a
+ * spike reaching back to the origin.
+ *
+ * @param cx - centre x in picture units (empty or absent means 0)
+ * @param cy - centre y in picture units
+ * @param r - radius in picture units
+ * @param angleA - start angle in radians
+ * @param angleB - end angle in radians
+ * @returns the `A` and `B` endpoints in device coordinates
+ */
+function arcEndpoints(cx, cy, r, angleA, angleB) {
+    const ox = cx === undefined || cx === '' ? 0 : Number(cx);
+    const oy = cy === undefined || cy === '' ? 0 : Number(cy);
+    const radius = Number(r);
+    const at = (angle) => ({
+        x: utils_1.X.call(this, ox + radius * Math.cos(angle)),
+        y: utils_1.Y.call(this, oy + radius * Math.sin(angle))
+    });
+    return { A: at(angleA), B: at(angleB) };
 }
 exports.Expressions = {
     pspicture: /\\begin\{pspicture\}\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
@@ -3832,7 +4220,8 @@ exports.Functions = {
             dy: 1 * this.yunit,
             arrows: [0, 0],
             dots: [0, 0],
-            ticks: 'all'
+            ticks: 'all',
+            labels: 'all'
         };
         if (m[1]) {
             var options = (0, utils_1.parseOptions)(m[1]);
@@ -3842,6 +4231,13 @@ exports.Functions = {
             if (options.Dy) {
                 obj.dy = Number(options.Dy) * this.yunit;
             }
+            // `ticks` and `labels` select which axes get marks and numbers; both
+            // accept all / x / y / none. Dropping them meant ticks=none still drew
+            // ticks and labels could never be turned on.
+            if (options.ticks)
+                obj.ticks = options.ticks;
+            if (options.labels)
+                obj.labels = options.labels;
         }
         // arrows?
         var l = (0, utils_1.parseArrows)(m[2]);
@@ -3961,7 +4357,10 @@ exports.Functions = {
         var obj = {
             linecolor: 'black',
             linestyle: 'solid',
-            fillstyle: 'solid',
+            // PSTricks leaves every shape unfilled unless a fillstyle is
+            // given or the starred form is used; an unstarred \psarc is an open
+            // curve, not a solid black wedge.
+            fillstyle: 'none',
             fillcolor: 'black',
             linewidth: 2,
             arrows: arrows,
@@ -3990,14 +4389,7 @@ exports.Functions = {
         obj.r = Number(m[5]) * this.xunit;
         obj.angleA = (Number(m[6]) * Math.PI) / 180;
         obj.angleB = (Number(m[7]) * Math.PI) / 180;
-        obj.A = {
-            x: utils_1.X.call(this, Number(m[5]) * Math.cos(obj.angleA)),
-            y: utils_1.Y.call(this, Number(m[5]) * Math.sin(obj.angleA))
-        };
-        obj.B = {
-            x: utils_1.X.call(this, Number(m[5]) * Math.cos(obj.angleB)),
-            y: utils_1.Y.call(this, Number(m[5]) * Math.sin(obj.angleB))
-        };
+        Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
         return obj;
     },
     psline(m) {
@@ -4201,7 +4593,14 @@ exports.Functions = {
             linecolor: 'black',
             linestyle: 'solid',
             linewidth: 0.5,
-            gridwidth: 0.5
+            // PSTricks grid defaults: a heavier line on the unit, five finer
+            // subdivisions between, and the coordinate numbered along two edges.
+            gridcolor: 'black',
+            gridwidth: '0.8pt',
+            subgriddiv: 5,
+            subgridcolor: 'gray',
+            subgridwidth: '0.4pt',
+            gridlabelcolor: 'black'
         };
         if (m[1])
             Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
@@ -4219,6 +4618,10 @@ exports.Functions = {
         obj.y1 = Math.max(y0, y1);
         obj.xunit = this.xunit;
         obj.yunit = this.yunit;
+        // The renderer numbers each line, which needs the picture coordinate the
+        // device position stands for.
+        obj.originX = utils_1.X.call(this, 0);
+        obj.originY = utils_1.Y.call(this, 0);
         return obj;
     },
     psellipse(m) {
@@ -4281,7 +4684,10 @@ exports.Functions = {
         var obj = {
             linecolor: 'black',
             linestyle: 'solid',
-            fillstyle: 'solid',
+            // PSTricks leaves every shape unfilled unless a fillstyle is
+            // given or the starred form is used; an unstarred \psarc is an open
+            // curve, not a solid black wedge.
+            fillstyle: 'none',
             fillcolor: 'black',
             linewidth: 2
         };
@@ -4292,14 +4698,7 @@ exports.Functions = {
         obj.r = Number(m[4]) * this.xunit;
         obj.angleA = (Number(m[5]) * Math.PI) / 180;
         obj.angleB = (Number(m[6]) * Math.PI) / 180;
-        obj.A = {
-            x: utils_1.X.call(this, Number(m[4]) * Math.cos(obj.angleA)),
-            y: utils_1.Y.call(this, Number(m[4]) * Math.sin(obj.angleA))
-        };
-        obj.B = {
-            x: utils_1.X.call(this, Number(m[4]) * Math.cos(obj.angleB)),
-            y: utils_1.Y.call(this, Number(m[4]) * Math.sin(obj.angleB))
-        };
+        Object.assign(obj, arcEndpoints.call(this, m[2], m[3], m[4], obj.angleA, obj.angleB));
         return obj;
     },
     pscustom(m) {
@@ -4725,7 +5124,7 @@ function parseExpression(source) {
 },{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MATH_CONSTANTS = exports.MATH_FUNCTIONS = exports.ExpressionError = exports.parseExpression = exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.parseArrows = exports.parseOptions = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
+exports.MATH_CONSTANTS = exports.MATH_FUNCTIONS = exports.ExpressionError = exports.parseExpression = exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.parseArrows = exports.parseOptions = exports.resolveColor = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
 const expression_1 = require("./expression");
 const simplerepl = function (regex, replace) {
     return function (_m, contents) {
@@ -4773,6 +5172,58 @@ exports.RE = {
     coordsOpt: '(\\(\\s*([^\\)]*),([^\\)]*)\\s*\\))?',
     coords: '\\(\\s*([^\\)]*),([^\\)]*)\\s*\\)'
 };
+/** Option keys whose value names a colour. */
+const COLOR_KEYS = ['linecolor', 'fillcolor', 'hatchcolor', 'gridcolor', 'bordercolor', 'shadowcolor', 'labelcolor'];
+/**
+ * Base colours xcolor mixes against, as RGB triples. Only the names that can
+ * appear on the left of a `!` need resolving; every other colour is handed to
+ * the browser unchanged, so plain names keep whatever CSS already gives them.
+ */
+const BASE_COLORS = {
+    red: [255, 0, 0], green: [0, 255, 0], blue: [0, 0, 255],
+    cyan: [0, 255, 255], magenta: [255, 0, 255], yellow: [255, 255, 0],
+    black: [0, 0, 0], white: [255, 255, 255], gray: [128, 128, 128],
+    grey: [128, 128, 128], orange: [255, 165, 0], purple: [128, 0, 128],
+    brown: [165, 42, 42], pink: [255, 192, 203], olive: [128, 128, 0],
+    violet: [148, 0, 211], teal: [0, 128, 128], lime: [0, 255, 0],
+};
+/**
+ * Resolves an xcolor tint expression to a CSS colour.
+ *
+ * `gray!40` means forty percent gray against white, and `gray!40!red` mixes
+ * against red instead. A browser cannot read either, and an unparsable fill
+ * silently falls back to black — which is how a light grey plane rendered as
+ * a solid black one.
+ *
+ * @param value - a colour name, optionally with `!` mix terms
+ * @returns a CSS colour; names without a mix term are returned untouched
+ */
+const resolveColor = function (value) {
+    const parts = String(value).split('!').map((p) => p.trim());
+    if (parts.length < 2)
+        return value;
+    const rgb = (name) => BASE_COLORS[name.toLowerCase()] ?? null;
+    let current = rgb(parts[0]);
+    if (!current)
+        return value;
+    for (let i = 1; i < parts.length; i += 2) {
+        const pct = Number(parts[i]);
+        if (!isFinite(pct))
+            return value;
+        // An omitted second operand mixes against white, as xcolor does.
+        const against = parts[i + 1] ? rgb(parts[i + 1]) : [255, 255, 255];
+        if (!against)
+            return value;
+        const w = Math.max(0, Math.min(100, pct)) / 100;
+        current = [
+            Math.round(current[0] * w + against[0] * (1 - w)),
+            Math.round(current[1] * w + against[1] * (1 - w)),
+            Math.round(current[2] * w + against[2] * (1 - w)),
+        ];
+    }
+    return 'rgb(' + current[0] + ',' + current[1] + ',' + current[2] + ')';
+};
+exports.resolveColor = resolveColor;
 // OPTIONS
 // converts [showorigin=false,labels=none, Dx=3.14] to {showorigin: 'false', labels: 'none', Dx: '3.14'}
 const parseOptions = function (opts) {
@@ -4782,7 +5233,9 @@ const parseOptions = function (opts) {
     all.forEach((option) => {
         var kv = option.split('=');
         if (kv.length == 2) {
-            obj[kv[0].trim()] = kv[1].trim();
+            const key = kv[0].trim();
+            const value = kv[1].trim();
+            obj[key] = COLOR_KEYS.indexOf(key) === -1 ? value : (0, exports.resolveColor)(value);
         }
     });
     return obj;
@@ -5013,11 +5466,16 @@ class SVGSelection {
     node() {
         return this.elements[0] || null;
     }
+    /**
+     * Sets an element's text content.
+     *
+     * `textContent` is defined on every Element, so no narrowing is needed — and
+     * testing `instanceof SVGTextElement` threw a ReferenceError outright in any
+     * DOM that does not expose that constructor as a global, jsdom included.
+     */
     text(content) {
         this.elements.forEach(el => {
-            if (el instanceof SVGTextElement || el instanceof HTMLElement) {
-                el.textContent = content;
-            }
+            el.textContent = content;
         });
         return this;
     }
