@@ -1,6 +1,7 @@
 import * as pegParser from '../grammar/parser.js';
 import { dialectUses } from './dialect';
 import { normalizeDialect } from '@latex2js/settings';
+import { Counters, SectionLevel } from './counters';
 
 export interface Diagnostic {
   severity: 'error' | 'warning';
@@ -94,6 +95,7 @@ class Parser {
   settings: any;
   diagnostics: Diagnostic[];
   dialect: 'pstricks' | 'latex2js';
+  counters: Counters;
 
   constructor(LaTeX2JS: any) {
     this.Ignore = LaTeX2JS.Ignore;
@@ -111,6 +113,35 @@ class Parser {
     // The embedding application can declare the dialect once for every document
     // it renders; a document's own \psset overrides it.
     this.dialect = normalizeDialect(LaTeX2JS.dialect) ?? 'pstricks';
+    this.counters = new Counters();
+  }
+
+  /**
+   * The number a sectioning command should carry, or null when it is starred.
+   *
+   * Text transforms call this through their receiver, so the registry stays
+   * free of parser internals and a third-party transform that does not care
+   * about numbering keeps working.
+   *
+   * @param level - which sectioning level is starting
+   * @param raw - the command's source, so a starred form can opt out
+   * @returns the dotted number, or null for an unnumbered heading
+   */
+  sectionNumber(level: SectionLevel, raw: string): string | null {
+    if (/\\[a-z]+\*/.test(raw)) return null;
+    return this.counters.section(level);
+  }
+
+  /**
+   * The number a theorem-like environment should carry, or null when starred.
+   *
+   * @param name - the environment name, such as `theorem`
+   * @param raw - the `\begin` source, so a starred form can opt out
+   * @returns the next number for that kind, or null when unnumbered
+   */
+  environmentNumber(name: string, raw: string): number | null {
+    if (/\{[a-z]+\*\}/.test(raw)) return null;
+    return this.counters.environment(name);
   }
 
   // -------------------------------------------------------------------------
@@ -119,6 +150,9 @@ class Parser {
 
   parse(text: string): any[] {
     this.diagnostics = [];
+    // A parser instance is reused across documents; without this the second
+    // would continue the first one's numbering.
+    this.counters.reset();
     if (!text) return [];
     const tree = this.parseTree(text);
     this.walk(tree);
@@ -677,7 +711,9 @@ class Parser {
   parseHeadersExpression(line: string, exp: RegExp, k: string, contents: string): string {
     var match = line.match(exp);
     if (match) {
-      return this.Headers.Functions[k].call(this);
+      // The match is passed so a numbered environment can see whether its
+      // \begin was starred, which is how LaTeX spells "do not number this one".
+      return this.Headers.Functions[k].call(this, match);
     }
     return contents;
   }

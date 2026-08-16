@@ -13,7 +13,7 @@ const render = (tex: string): string => {
 describe('text macros whose arguments are themselves transformed', () => {
   it('converts \\section even when the title contains an en dash', () => {
     const out = render('\\section{The Cauchy--Schwarz Inequality}\n');
-    expect(out).toContain('<h2>The Cauchy&ndash;Schwarz Inequality</h2>');
+    expect(out).toContain('<h2><span class="section-number">1</span> The Cauchy&ndash;Schwarz Inequality</h2>');
     expect(out).not.toContain('\\section');
   });
 
@@ -29,7 +29,7 @@ describe('text macros whose arguments are themselves transformed', () => {
   });
 
   it('leaves a title alone when nothing else rewrites it', () => {
-    expect(render('\\section{Plain Title}\n')).toContain('<h2>Plain Title</h2>');
+    expect(render('\\section{Plain Title}\n')).toContain('<h2><span class="section-number">1</span> Plain Title</h2>');
   });
 });
 

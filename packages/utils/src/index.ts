@@ -7,12 +7,22 @@ export const simplerepl = function (regex: RegExp, replace: string) {
   };
 };
 
-export const matchrepl = function (regex: RegExp, callback: (match: RegExpMatchArray) => string) {
-  return function (m: any, contents: string) {
+/**
+ * Builds a text transform that rewrites each match through `callback`.
+ *
+ * The callback is invoked with the same receiver the transform was called with,
+ * so a transform that needs document state — section numbering, say — can reach
+ * it. Callbacks that do not care simply ignore `this`.
+ */
+export const matchrepl = function (
+  regex: RegExp,
+  callback: (this: any, match: RegExpMatchArray) => string
+) {
+  return function (this: any, m: any, contents: string) {
     if (Array.isArray(m)) {
       m.forEach((match: any) => {
         var m2 = match.match(regex);
-        contents = contents.replace(m2.input, callback(m2));
+        contents = contents.replace(m2.input, callback.call(this, m2));
       });
     }
     return contents;
