@@ -100,6 +100,52 @@ PSTricks rejects — `pow(a,b)`, infix bodies without `algebraic=true`, variable
 plot bounds, `plotpoints=1`. Each of those is a dialect decision the project
 still owes an answer to: keep the extension, or conform.
 
+## Dialects
+
+LaTeX2JS accepts a superset of PSTricks. A document declares which language it
+is written in:
+
+```latex
+\psset{dialect=latex2js}    % alias: mathapedia
+```
+
+or the embedding application declares it once for everything it renders:
+
+```js
+const latex = new LaTeX2JS();
+latex.dialect = 'latex2js';
+```
+
+The default is `pstricks`, so an undeclared extension is named against its
+source line. A document's own declaration overrides the application's, and an
+unrecognised name is ignored rather than trusted — a typo must not silently
+disable the reports.
+
+**The declaration reports; it never switches the renderer.** An earlier draft
+made `log` and starred fills follow it, and that was wrong twice over: a
+`dialect=pstricks` reading still cannot read RPN plot bodies, so it produced
+output conformant to nothing; and rendering that depends on a flag means an
+undeclared document silently draws differently from a declared one.
+
+So the semantics below are fixed, and the flag decides only whether you are
+told that a construct will not travel.
+
+### What the flag covers
+
+| Construct | Why it is not PSTricks |
+|---|---|
+| `\userline`, `\uservariable`, `\slider` | interactive graphics; PSTricks has no equivalent |
+| infix plot bodies | PSTricks reads RPN PostScript unless `algebraic=true` |
+| `pow(a,b)` | PSTricks has only the `^` operator |
+| `log(x)` | natural log here, base 10 in PSTricks |
+| variable plot bounds | PSTricks needs literal numbers |
+| bare option flags (`[algebraic]`) | PSTricks requires `key=value` |
+| CSS colour names | xcolor does not define them |
+| `plotpoints=1` | PSTricks requires at least 2 |
+
+18 of the 34 corpus files declare the dialect; the other 16 are plain PSTricks
+and must stay that way, or the flag stops meaning anything.
+
 ## Known divergences
 
 Differences the comparison surfaces that are **not** defects. Each is a
@@ -114,6 +160,33 @@ prints black. Every use in this repo's examples passes a `fillcolor` and
 plainly means it — the bar chart wants blue bars — so the lenient reading
 matches author intent, at the cost of conformance. This accounts for the whole
 gap on `14-bar-chart` and `18-fills`.
+
+### RPN plot bodies are out of scope
+
+PSTricks reads a plot body as RPN PostScript; LaTeX2JS always reads infix.
+Closing that would mean writing a PostScript interpreter, and no use case has
+been identified for rendering third-party PSTricks documents. The mismatch is
+reported instead. This is a decision, not deferred work — say so if that
+changes.
+
+The example corpus has never been PSTricks-compatible in any case: compiling a
+picture exactly as authored produces a blank image, because `\uservariable` and
+the bare `algebraic` key are undefined control sequences and `plotpoints=1` is
+rejected.
+
+### psaxes numbers its ticks by default
+
+Before this work `psaxes` drew no numbers at all, and the reference numbers
+every tick, so the default was changed to match. It alters five existing
+diagrams. `labels=none` turns them off per axis.
+
+### Grid numbers are opt-in
+
+`psgrid` can number its lines, but not by default. PSTricks draws those numbers
+outside the grid on an unbounded page; an SVG is sized to the picture's declared
+bounds, so on a grid reaching the edge — the common case — they would land
+outside the viewport and be clipped. A default nobody can see is worse than no
+default. When asked for, they are clamped inside.
 
 ### Document typesetting
 
