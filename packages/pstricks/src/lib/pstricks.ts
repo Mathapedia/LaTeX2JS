@@ -573,7 +573,14 @@ export const Functions = {
       linecolor: 'black',
       linestyle: 'solid',
       linewidth: 0.5,
-      gridwidth: 0.5
+      // PSTricks grid defaults: a heavier line on the unit, five finer
+      // subdivisions between, and the coordinate numbered along two edges.
+      gridcolor: 'black',
+      gridwidth: '0.8pt',
+      subgriddiv: 5,
+      subgridcolor: 'gray',
+      subgridwidth: '0.4pt',
+      gridlabelcolor: 'black'
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     // \psgrid[opts](x0,y0)(x1,y1) — defaults to the whole pspicture bounds.
@@ -590,6 +597,10 @@ export const Functions = {
     obj.y1 = Math.max(y0, y1);
     obj.xunit = this.xunit;
     obj.yunit = this.yunit;
+    // The renderer numbers each line, which needs the picture coordinate the
+    // device position stands for.
+    obj.originX = X.call(this, 0);
+    obj.originY = Y.call(this, 0);
     return obj;
   },
   psellipse(this: PSTricksContext, m: any) {

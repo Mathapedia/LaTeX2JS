@@ -53,7 +53,7 @@ function render(raw: string) {
 
 describe('psaxes labels', () => {
   it('numbers ticks on whole units, stepping from the origin', () => {
-    const { labels } = render('\\psaxes{->}(0,0)(-3,-3)(3,3)');
+    const { labels } = render('\\psaxes(0,0)(-3,-3)(3,3)');
     expect(labels).toContain('0');
     expect(labels).toContain('3');
     expect(labels).toContain('-3');
@@ -68,8 +68,8 @@ describe('psaxes labels', () => {
 
   it.each([
     ['labels=none', 0],
-    ['labels=x', 5],
-    ['labels=y', 4],
+    ['labels=x', 4],
+    ['labels=y', 3],
   ])('honours %s', (opt, count) => {
     expect(render(`\\psaxes[${opt}]{->}(0,0)(-2,-2)(2,2)`).labels).toHaveLength(count);
   });
@@ -81,6 +81,30 @@ describe('psaxes labels', () => {
 
   it('respects a Dx step', () => {
     const { labels } = render('\\psaxes[Dx=2,labels=x]{->}(0,0)(-4,-4)(4,4)');
-    expect(labels).toEqual(['-4', '-2', '0', '2', '4']);
+    // 4 is the arrowed end, so it carries the arrowhead instead of a number.
+    expect(labels).toEqual(['-4', '-2', '0', '2']);
+  });
+});
+
+describe('an arrowhead takes the end of its axis', () => {
+  // Verified against PSTricks: with {->} the tick and the number at the
+  // positive end are both suppressed, while the un-arrowed end keeps both.
+  it('suppresses the tick and the number where an arrow is drawn', () => {
+    const arrowed = render('\\psaxes[labels=x]{->}(0,0)(-3,-3)(3,3)');
+    const plain = render('\\psaxes[labels=x](0,0)(-3,-3)(3,3)');
+    expect(plain.labels).toContain('3');
+    expect(arrowed.labels).not.toContain('3');
+    expect(arrowed.tickCount).toBe(plain.tickCount - 2); // one per axis
+  });
+
+  it('leaves the un-arrowed end alone', () => {
+    expect(render('\\psaxes[labels=x]{->}(0,0)(-3,-3)(3,3)').labels).toContain('-3');
+  });
+
+  it('suppresses both ends when both carry an arrow', () => {
+    const { labels } = render('\\psaxes[labels=x]{<->}(0,0)(-3,-3)(3,3)');
+    expect(labels).not.toContain('3');
+    expect(labels).not.toContain('-3');
+    expect(labels).toContain('2');
   });
 });

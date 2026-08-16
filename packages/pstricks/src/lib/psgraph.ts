@@ -398,6 +398,16 @@ const psgraph: any = {
      * axis happens to begin on, so an axis spanning -3.5 to 3.5 was ticked and
      * labelled at half-integers instead of on the whole numbers.
      */
+    /**
+     * An axis end that carries an arrowhead, or null. `arrows[0]` points at the
+     * low end of each axis and `arrows[1]` at the high end, matching the order
+     * the arrowheads are drawn below.
+     */
+    const arrowedEnds = (axis: number[]): Array<number | null> => [
+      this.arrows[0] ? axis[0] : null,
+      this.arrows[1] ? axis[1] : null,
+    ];
+
     const positions = (from: number, to: number, at: number, step: number): number[] => {
       if (!(step > 0) || !isFinite(step)) return [];
       // Y inverts the axis, so a vertical span arrives with its ends the other
@@ -407,7 +417,12 @@ const psgraph: any = {
       const out: number[] = [];
       for (let v = at; v <= hi + 1e-6; v += step) out.push(v);
       for (let v = at - step; v >= lo - 1e-6; v -= step) out.unshift(v);
-      return out;
+
+      // PSTricks gives an arrowhead the end of the axis to itself: where one is
+      // drawn, the tick and its number are both suppressed. A tick that merely
+      // falls short of the tip keeps them, so only a coincident one is dropped.
+      const suppressed = arrowedEnds([from, to]).filter((v): v is number => v !== null);
+      return out.filter((v) => !suppressed.some((end) => Math.abs(v - end) < 1e-6));
     };
 
     var xticks = () => {
@@ -980,26 +995,79 @@ const psgraph: any = {
     }
   },
 
+  /**
+   * A PSTricks grid is three things, not one: fine subdivision lines, a heavier
+   * line on each unit, and the coordinate numbered along the left and bottom
+   * edges. Only the unit lines were drawn, in `linecolor` — which `gridcolor`
+   * could not override — so a grid was a flat mesh with no reading on it.
+   */
   psgrid(svg: any): void {
     const x0 = this.x0, y0 = this.y0, x1 = this.x1, y1 = this.y1;
-    for (let x = x0; x <= x1 + 0.001; x += this.xunit) {
+    const gridcolor = this.gridcolor ?? this.linecolor;
+    const gridwidth = dimension(this.gridwidth, 0.8);
+    const subdiv = Math.max(0, Math.floor(Number(this.subgriddiv ?? 5)));
+    const subcolor = this.subgridcolor ?? 'gray';
+    const subwidth = dimension(this.subgridwidth, 0.4);
+
+    const rule = (a: number, b: number, c: number, d: number, color: string, width: number) => {
       svg
         .append('svg:line')
-        .attr('x1', x).attr('y1', y0)
-        .attr('x2', x).attr('y2', y1)
-        .style('stroke', this.linecolor)
-        .style('stroke-width', this.gridwidth)
+        .attr('x1', a).attr('y1', b).attr('x2', c).attr('y2', d)
+        .style('stroke', color)
+        .style('stroke-width', width)
         .style('stroke-opacity', 1);
+    };
+
+    /** Line offsets across a span, stepping by `step` from `origin`. */
+    const rungs = (lo: number, hi: number, origin: number, step: number): number[] => {
+      if (!(step > 0) || !isFinite(step)) return [];
+      const out: number[] = [];
+      for (let v = origin; v <= hi + 1e-6; v += step) out.push(v);
+      for (let v = origin - step; v >= lo - 1e-6; v -= step) out.unshift(v);
+      return out;
+    };
+
+    const ox = this.originX ?? x0;
+    const oy = this.originY ?? y0;
+
+    // Subdivisions first, so the unit lines and labels sit over them.
+    if (subdiv > 1) {
+      for (const x of rungs(x0, x1, ox, this.xunit / subdiv)) rule(x, y0, x, y1, subcolor, subwidth);
+      for (const y of rungs(y0, y1, oy, this.yunit / subdiv)) rule(x0, y, x1, y, subcolor, subwidth);
     }
-    for (let y = y0; y <= y1 + 0.001; y += this.yunit) {
+
+    const xs = rungs(x0, x1, ox, this.xunit);
+    const ys = rungs(y0, y1, oy, this.yunit);
+    for (const x of xs) rule(x, y0, x, y1, gridcolor, gridwidth);
+    for (const y of ys) rule(x0, y, x1, y, gridcolor, gridwidth);
+
+    // Grid numbers are off unless asked for. PSTricks draws them outside the
+    // grid on an unbounded page; an SVG is sized to the picture's declared
+    // bounds, so on a grid that reaches the edge — the common case — they would
+    // land outside the viewport and be clipped away. A default nobody can see
+    // is worse than no default, so they are opt-in and clamped inside.
+    if (!this.gridlabels || this.gridlabels === 'none' || this.gridlabels === '0') return;
+    const size = dimension(this.gridlabels, 10);
+    const labelcolor = this.gridlabelcolor ?? 'black';
+    const text = (s: string, x: number, y: number, anchor: string) => {
       svg
-        .append('svg:line')
-        .attr('x1', x0).attr('y1', y)
-        .attr('x2', x1).attr('y2', y)
-        .style('stroke', this.linecolor)
-        .style('stroke-width', this.gridwidth)
-        .style('stroke-opacity', 1);
-    }
+        .append('svg:text')
+        .attr('x', x).attr('y', y)
+        .attr('text-anchor', anchor)
+        .attr('font-size', size)
+        .attr('font-family', 'serif')
+        .style('fill', labelcolor)
+        .text(s);
+    };
+
+    const round = (n: number) => (Math.abs(n) < 1e-9 ? 0 : Number(n.toFixed(4)));
+    const env = this.global || {};
+    // Clamped inside the picture so a grid flush with the edge still shows its
+    // numbers rather than pushing them out of the viewport.
+    const belowY = Math.min(y1 + size + 4, (env.h ?? 0) * (env.yunit ?? 1) - 2);
+    const leftX = Math.max(x0 - 4, size);
+    for (const x of xs) text(String(round(x / env.xunit - env.w + env.x1)), x, belowY, 'middle');
+    for (const y of ys) text(String(round(env.y1 - y / env.yunit)), leftX, y + size / 3, 'end');
   },
 
   psellipse(svg: any): void {
