@@ -251,8 +251,33 @@ describe('pspicture component (SVG rendering)', () => {
     expect(d.endsWith('Z')).toBe(true);
   });
 
+  // Which colour a starred shape takes is a dialect difference, verified
+  // against real PSTricks: it fills with `linecolor` and ignores `fillcolor`,
+  // while LaTeX2JS honours the fillcolor the author wrote.
+  const starredFill = (dialect?: 'pstricks' | 'latex2js') => {
+    const latex = new LaTeX2JS();
+    if (dialect) (latex as any).dialect = dialect;
+    const parsed = latex.parse(`
+\\begin{pspicture}(0,0)(4,4)
+\\psframe*[linecolor=blue,fillcolor=red](1,1)(2,2)
+\\end{pspicture}
+    `);
+    const div = pspicture(parsed.find((e: any) => e.type === 'pspicture'));
+    document.body.appendChild(div);
+    return (div.querySelector('svg rect')! as HTMLElement).style.fill;
+  };
+
+  it('fills a starred shape with linecolor under the PSTricks reading', () => {
+    expect(starredFill('pstricks')).toBe('blue');
+  });
+
+  it('fills a starred shape with fillcolor under the LaTeX2JS reading', () => {
+    expect(starredFill('latex2js')).toBe('red');
+  });
+
   it('fills star-variant primitives', () => {
     const env = parsePspicture(`
+\\psset{dialect=latex2js}
 \\begin{pspicture}(0,0)(4,4)
 \\pscircle*(0,0){1}
 \\psframe*[fillcolor=red](1,1)(2,2)

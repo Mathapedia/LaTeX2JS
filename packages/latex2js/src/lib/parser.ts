@@ -1,4 +1,6 @@
 import * as pegParser from '../grammar/parser.js';
+import { dialectUses } from './dialect';
+import { normalizeDialect } from '@latex2js/settings';
 
 export interface Diagnostic {
   severity: 'error' | 'warning';
@@ -91,6 +93,7 @@ class Parser {
   environment: any;
   settings: any;
   diagnostics: Diagnostic[];
+  dialect: 'pstricks' | 'latex2js';
 
   constructor(LaTeX2JS: any) {
     this.Ignore = LaTeX2JS.Ignore;
@@ -105,6 +108,9 @@ class Parser {
       'units=1cm,linecolor=black,linestyle=solid,fillstyle=none'
     ]);
     this.diagnostics = [];
+    // The embedding application can declare the dialect once for every document
+    // it renders; a document's own \psset overrides it.
+    this.dialect = normalizeDialect(LaTeX2JS.dialect) ?? 'pstricks';
   }
 
   // -------------------------------------------------------------------------
@@ -425,7 +431,9 @@ class Parser {
 
   parseUnits(line: string): void {
     var m = line.replace(/\n/g, ' ').match(this.PSTricks.Expressions.psset);
-    Object.assign(this.settings, this.PSTricks.Functions.psset.call(this, m));
+    const declared = this.PSTricks.Functions.psset.call(this, m);
+    if (declared.dialect) this.dialect = declared.dialect;
+    Object.assign(this.settings, declared);
   }
 
   metaData(environment: string, envNode: EnvNode): void {
@@ -455,6 +463,8 @@ class Parser {
         if (typeof this.environment.env.yunit === 'undefined') {
           this.environment.env.yunit = this.settings.yunit;
         }
+        // Renderers read the dialect for the handful of semantics it changes.
+        this.environment.env.dialect = this.dialect;
       }
     }
   }
@@ -528,6 +538,22 @@ class Parser {
       }
 
       plot[k].push({ data: data, env: env, match: m, fn: this.PSTricks.Functions[k] });
+      // Under the PSTricks reading, anything this project added is worth
+      // naming. A document that declares the LaTeX2JS dialect has said it means
+      // to use them, so it is not told again.
+      if (this.dialect === 'pstricks') {
+        // `data` carries the command's parsed options, which is what the
+        // detector inspects alongside the raw source.
+        for (const use of dialectUses(k, node.raw ?? '', data)) {
+          this.diagnose(
+            'warning',
+            `${use.construct} is a LaTeX2JS extension: ${use.detail}. ` +
+              'Declare \\psset{dialect=latex2js} if that is intended.',
+            node.loc
+          );
+        }
+      }
+
       const bad = nonFiniteFields(data);
       if (bad.length) {
         this.diagnose(

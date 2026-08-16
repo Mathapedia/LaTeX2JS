@@ -159,8 +159,14 @@ function hasFill(ctx: any): boolean {
 function resolveFill(ctx: any, svg: any): string {
   const style: string = ctx.fillstyle ?? 'none';
 
-  // The starred forms set `filled`; they fill flat regardless of style.
-  if (ctx.filled || style === 'solid') return ctx.fillcolor;
+  // The starred forms set `filled`; they fill flat regardless of style. Which
+  // colour is a dialect difference: PSTricks fills a starred shape with
+  // `linecolor` and ignores `fillcolor`, while LaTeX2JS honours the fillcolor
+  // the author wrote — every use in this repo passes one and means it.
+  if (ctx.filled) {
+    return ctx.global?.dialect === 'pstricks' ? ctx.linecolor : ctx.fillcolor ?? ctx.linecolor;
+  }
+  if (style === 'solid') return ctx.fillcolor;
   if (style === 'none' || !style) return 'none';
 
   const starred = style.endsWith('*');

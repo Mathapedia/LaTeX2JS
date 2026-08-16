@@ -310,7 +310,21 @@ export const MATH_CONSTANTS: Record<string, string> = {
   E: 'Math.E',
 };
 
-function compileNode(node: Node, variableNames: Set<string>): string {
+/** Options that change how an expression is compiled. */
+export interface CompileOptions {
+  /**
+   * Read `log` as base 10 rather than natural log.
+   *
+   * The dialects disagree: pst-plot's `log` is base 10 — verified by rendering
+   * `log(100)` in real PSTricks, which plots at 2 — while LaTeX2JS has always
+   * read it as `Math.log`. The corpus relies on the natural reading (`log(2)`
+   * appears in derivatives of `2^x`, where ln is what the author meant), so
+   * neither is simply wrong and the document says which it wants.
+   */
+  logBase10?: boolean;
+}
+
+function compileNode(node: Node, variableNames: Set<string>, options: CompileOptions = {}): string {
   switch (node.type) {
     case 'number':
       return node.value;
@@ -322,25 +336,26 @@ function compileNode(node: Node, variableNames: Set<string>): string {
       return 'v.' + node.name;
     }
     case 'call': {
-      const target = MATH_FUNCTIONS.hasOwnProperty(node.name)
-        ? MATH_FUNCTIONS[node.name]
+      const name = options.logBase10 && node.name === 'log' ? 'log10' : node.name;
+      const target = MATH_FUNCTIONS.hasOwnProperty(name)
+        ? MATH_FUNCTIONS[name]
         : '(v.' + node.name + ')';
-      return target + '(' + node.args.map((a: Node) => compileNode(a, variableNames)).join(',') + ')';
+      return target + '(' + node.args.map((a: Node) => compileNode(a, variableNames, options)).join(',') + ')';
     }
     case 'unary':
-      return '(' + node.op + compileNode(node.operand, variableNames) + ')';
+      return '(' + node.op + compileNode(node.operand, variableNames, options) + ')';
     case 'binary': {
       const op = node.op === '^' ? '**' : node.op;
-      return '(' + compileNode(node.left, variableNames) + op + compileNode(node.right, variableNames) + ')';
+      return '(' + compileNode(node.left, variableNames, options) + op + compileNode(node.right, variableNames, options) + ')';
     }
     case 'ternary':
       return (
         '(' +
-        compileNode(node.cond, variableNames) +
+        compileNode(node.cond, variableNames, options) +
         '?' +
-        compileNode(node.then, variableNames) +
+        compileNode(node.then, variableNames, options) +
         ':' +
-        compileNode(node.els, variableNames) +
+        compileNode(node.els, variableNames, options) +
         ')'
       );
     default:
@@ -352,7 +367,7 @@ function compileNode(node: Node, variableNames: Set<string>): string {
  * Parse an algebraic expression and compile it to an evaluable closure.
  * Throws ExpressionError with a character position on invalid syntax.
  */
-export function parseExpression(source: string): CompiledExpression {
+export function parseExpression(source: string, options: CompileOptions = {}): CompiledExpression {
   const trimmed = source.trim();
   if (!trimmed) {
     throw new ExpressionError('empty expression', 0);
@@ -360,7 +375,7 @@ export function parseExpression(source: string): CompiledExpression {
   const parser = new Parser(trimmed);
   const ast = parser.parse();
   const variableNames = new Set<string>();
-  const js = compileNode(ast, variableNames);
+  const js = compileNode(ast, variableNames, options);
 
   let fn: (v: any) => number;
   try {

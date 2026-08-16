@@ -19,6 +19,7 @@ exports[`Parser parse 1`] = `
   },
   {
     "env": {
+      "dialect": "pstricks",
       "elements": [
         {
           "data": {
@@ -159,6 +160,7 @@ exports[`Parser parse 1`] = `
             "r": 150,
           },
           "env": {
+            "dialect": "pstricks",
             "elements": [
               {
                 "data": {
@@ -310,6 +312,7 @@ exports[`Parser parse 1`] = `
             "y2": 62.5,
           },
           "env": {
+            "dialect": "pstricks",
             "elements": [
               {
                 "data": {
@@ -456,6 +459,7 @@ exports[`Parser parse 1`] = `
             "y2": 250,
           },
           "env": {
+            "dialect": "pstricks",
             "elements": [
               {
                 "data": {
@@ -698,6 +702,7 @@ exports[`Parser parser 1`] = `
   },
   {
     "env": {
+      "dialect": "pstricks",
       "elements": [
         {
           "data": {
@@ -838,6 +843,7 @@ exports[`Parser parser 1`] = `
             "r": 150,
           },
           "env": {
+            "dialect": "pstricks",
             "elements": [
               {
                 "data": {
@@ -989,6 +995,7 @@ exports[`Parser parser 1`] = `
             "y2": 62.5,
           },
           "env": {
+            "dialect": "pstricks",
             "elements": [
               {
                 "data": {
@@ -1135,6 +1142,7 @@ exports[`Parser parser 1`] = `
             "y2": 250,
           },
           "env": {
+            "dialect": "pstricks",
             "elements": [
               {
                 "data": {

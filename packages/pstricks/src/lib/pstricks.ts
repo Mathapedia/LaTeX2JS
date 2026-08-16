@@ -298,7 +298,9 @@ export const Functions = {
     // reused scope (compile-once / evaluate-many).
     let compiled;
     try {
-      compiled = parseExpression(m[4]);
+      // The dialects read `log` differently; the picture's declared dialect
+      // decides which base this document meant.
+      compiled = parseExpression(m[4], { logBase10: (this as any).dialect === 'pstricks' });
     } catch (err) {
       console.warn('psplot: could not parse expression:', (err as Error).message);
       obj.data = data;
