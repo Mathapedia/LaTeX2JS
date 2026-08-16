@@ -2214,6 +2214,31 @@ function applyPsset(data, style, raw) {
     }
 }
 /**
+ * The brace group of an `\rput`, matched by depth rather than by regex.
+ *
+ * The rput expression ends in `\{(.*)\}`, which is greedy and brace-blind: on
+ * `\rput(0,0){\pscircle(0,0){0.8}}` it captures through the inner group and
+ * leaves the tail behind, which is how `0.8}` ended up rendered as a label.
+ *
+ * @param raw - the command's source
+ * @returns the contents of the outermost brace group, empty when unbalanced
+ */
+function braceGroup(raw) {
+    if (typeof raw !== 'string')
+        return '';
+    const start = raw.indexOf('{');
+    if (start === -1)
+        return '';
+    let depth = 0;
+    for (let i = start; i < raw.length; i++) {
+        if (raw[i] === '{')
+            depth++;
+        else if (raw[i] === '}' && --depth === 0)
+            return raw.slice(start + 1, i);
+    }
+    return '';
+}
+/**
  * Names the numeric fields of a parsed command that came out non-finite.
  *
  * `X` and `Y` return NaN for a coordinate they cannot compute rather than
@@ -2703,6 +2728,29 @@ class Parser {
             // the renderer can build a single filled/stroked path.
             if (k === 'pscustom' && data.body) {
                 data.commands = this.extractCustomBody(data.body, env);
+            }
+            // \rput(x,y){...} places its contents at (x,y). The contents are usually
+            // a label, and were assumed to be one — so a graphics command inside an
+            // rput drew nothing at all, and the tail the greedy regex left over was
+            // set as text. Graphics are placed by translating a group, which keeps
+            // them in document order among the other shapes rather than in the
+            // separate DOM pass the labels go through.
+            if (k === 'rput') {
+                const children = this.extractCustomBody(braceGroup(node.raw), env);
+                if (children.length) {
+                    // The contents' own origin lands on (x,y), so the offset is the
+                    // command's position measured from where (0,0) falls.
+                    const originX = (env.w - env.x1) * env.xunit;
+                    const originY = env.y1 * env.yunit;
+                    elements.push({
+                        name: 'rputgroup',
+                        data: { dx: data.x - originX, dy: data.y - originY, children },
+                        match: m,
+                        fn: this.PSTricks.Functions[k],
+                        loc: node.loc
+                    });
+                    return;
+                }
             }
             plot[k].push({ data: data, env: env, match: m, fn: this.PSTricks.Functions[k] });
             // Under the PSTricks reading, anything this project added is worth
@@ -4188,6 +4236,28 @@ const psgraph = {
                 .style('stroke', resolveStroke(this));
         }
     },
+    /**
+     * Graphics placed by an `\rput`, drawn into a translated group.
+     *
+     * The label form of rput is handled separately, in the DOM pass below. This
+     * is the case where the contents are shapes: they are drawn here so they
+     * keep their place in document order, which the DOM pass cannot express
+     * because it appends after the SVG is finished.
+     */
+    rputgroup(svg) {
+        const g = svg
+            .append('svg:g')
+            .attr('class', 'rput-group')
+            .attr('transform', 'translate(' + this.dx + ',' + this.dy + ')');
+        (this.children || []).forEach((child) => {
+            if (!child || !psgraph.hasOwnProperty(child.key))
+                return;
+            if (!drawable(child.data))
+                return;
+            child.data.global = this.global;
+            psgraph[child.key].call(child.data, g);
+        });
+    },
     rput(el) {
         // Import debug utilities
         const startTime = Date.now();
@@ -4391,7 +4461,9 @@ const psgraph = {
             const variables = coords ? readVariables(coords) : {};
             if (elements && elements.length) {
                 elements.forEach((item) => {
-                    if (!item || !item.name || item.name.match(/rput/))
+                    // Exact, not a pattern: `rputgroup` is the graphics form of rput and
+                    // must be drawn here. Only the label form goes through the DOM pass.
+                    if (!item || !item.name || item.name === 'rput')
                         return;
                     if (!psgraph.hasOwnProperty(item.name))
                         return;
@@ -4410,7 +4482,7 @@ const psgraph = {
             // Legacy data without an ordered element list: fall back to the
             // type-grouped iteration, which cannot express author order.
             Object.keys(plots).forEach((key) => {
-                if (key.match(/rput/))
+                if (key === 'rput')
                     return;
                 if (!psgraph.hasOwnProperty(key))
                     return;
@@ -4857,7 +4929,11 @@ exports.Expressions = {
         utils_1.RE.squiggleOpt +
         utils_1.RE.squiggleOpt),
     uservariable: new RegExp('\\\\uservariable' + utils_1.RE.options + utils_1.RE.squiggle + utils_1.RE.coords + utils_1.RE.squiggle),
-    rput: /\\rput\((.*),(.*)\)\{(.*)\}/,
+    // The coordinates cannot contain a paren or the separating comma. They were
+    // `(.*),(.*)`, which is greedy: on `\rput(1,-2){\pscircle(0,0){0.5}}` the x
+    // capture ran to the comma inside the nested shape, so the placement read
+    // its coordinates out of the contents.
+    rput: /\\rput\(\s*([^,()]*),([^()]*?)\s*\)\s*\{([\s\S]*)\}/,
     psset: /\\psset\{(.*)\}/,
     psdots: new RegExp('\\\\psdots' + utils_1.RE.options + '(.*)'),
     psgrid: new RegExp('\\\\psgrid' + utils_1.RE.options + utils_1.RE.coordsOpt + utils_1.RE.coordsOpt + utils_1.RE.coordsOpt),

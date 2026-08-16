@@ -109,6 +109,28 @@ function applyPsset(data: any, style: any, raw: string): void {
 }
 
 /**
+ * The brace group of an `\rput`, matched by depth rather than by regex.
+ *
+ * The rput expression ends in `\{(.*)\}`, which is greedy and brace-blind: on
+ * `\rput(0,0){\pscircle(0,0){0.8}}` it captures through the inner group and
+ * leaves the tail behind, which is how `0.8}` ended up rendered as a label.
+ *
+ * @param raw - the command's source
+ * @returns the contents of the outermost brace group, empty when unbalanced
+ */
+function braceGroup(raw: string): string {
+  if (typeof raw !== 'string') return '';
+  const start = raw.indexOf('{');
+  if (start === -1) return '';
+  let depth = 0;
+  for (let i = start; i < raw.length; i++) {
+    if (raw[i] === '{') depth++;
+    else if (raw[i] === '}' && --depth === 0) return raw.slice(start + 1, i);
+  }
+  return '';
+}
+
+/**
  * Names the numeric fields of a parsed command that came out non-finite.
  *
  * `X` and `Y` return NaN for a coordinate they cannot compute rather than
@@ -643,6 +665,30 @@ class Parser {
       // the renderer can build a single filled/stroked path.
       if (k === 'pscustom' && data.body) {
         data.commands = this.extractCustomBody(data.body, env);
+      }
+
+      // \rput(x,y){...} places its contents at (x,y). The contents are usually
+      // a label, and were assumed to be one — so a graphics command inside an
+      // rput drew nothing at all, and the tail the greedy regex left over was
+      // set as text. Graphics are placed by translating a group, which keeps
+      // them in document order among the other shapes rather than in the
+      // separate DOM pass the labels go through.
+      if (k === 'rput') {
+        const children = this.extractCustomBody(braceGroup(node.raw), env);
+        if (children.length) {
+          // The contents' own origin lands on (x,y), so the offset is the
+          // command's position measured from where (0,0) falls.
+          const originX = (env.w - env.x1) * env.xunit;
+          const originY = env.y1 * env.yunit;
+          elements.push({
+            name: 'rputgroup',
+            data: { dx: data.x - originX, dy: data.y - originY, children },
+            match: m,
+            fn: this.PSTricks.Functions[k],
+            loc: node.loc
+          });
+          return;
+        }
       }
 
       plot[k].push({ data: data, env: env, match: m, fn: this.PSTricks.Functions[k] });

@@ -106,7 +106,11 @@ export const Expressions = {
   uservariable: new RegExp(
     '\\\\uservariable' + RE.options + RE.squiggle + RE.coords + RE.squiggle
   ),
-  rput: /\\rput\((.*),(.*)\)\{(.*)\}/,
+  // The coordinates cannot contain a paren or the separating comma. They were
+  // `(.*),(.*)`, which is greedy: on `\rput(1,-2){\pscircle(0,0){0.5}}` the x
+  // capture ran to the comma inside the nested shape, so the placement read
+  // its coordinates out of the contents.
+  rput: /\\rput\(\s*([^,()]*),([^()]*?)\s*\)\s*\{([\s\S]*)\}/,
   psset: /\\psset\{(.*)\}/,
   psdots: new RegExp('\\\\psdots' + RE.options + '(.*)'),
   psgrid: new RegExp(

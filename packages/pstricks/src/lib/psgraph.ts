@@ -958,6 +958,27 @@ const psgraph: any = {
     }
   },
 
+  /**
+   * Graphics placed by an `\rput`, drawn into a translated group.
+   *
+   * The label form of rput is handled separately, in the DOM pass below. This
+   * is the case where the contents are shapes: they are drawn here so they
+   * keep their place in document order, which the DOM pass cannot express
+   * because it appends after the SVG is finished.
+   */
+  rputgroup(svg: any): void {
+    const g = svg
+      .append('svg:g')
+      .attr('class', 'rput-group')
+      .attr('transform', 'translate(' + this.dx + ',' + this.dy + ')');
+    (this.children || []).forEach((child: any) => {
+      if (!child || !psgraph.hasOwnProperty(child.key)) return;
+      if (!drawable(child.data)) return;
+      child.data.global = this.global;
+      (psgraph as any)[child.key].call(child.data, g);
+    });
+  },
+
   rput(el: any): void {
     // Import debug utilities
     const startTime = Date.now();
@@ -1189,7 +1210,9 @@ const psgraph: any = {
 
       if (elements && elements.length) {
         elements.forEach((item: any) => {
-          if (!item || !item.name || item.name.match(/rput/)) return;
+          // Exact, not a pattern: `rputgroup` is the graphics form of rput and
+          // must be drawn here. Only the label form goes through the DOM pass.
+          if (!item || !item.name || item.name === 'rput') return;
           if (!psgraph.hasOwnProperty(item.name)) return;
           const data = resolveData(item, coords, variables);
           // A coordinate that could not be computed arrives as NaN. Drawing it
@@ -1206,7 +1229,7 @@ const psgraph: any = {
       // Legacy data without an ordered element list: fall back to the
       // type-grouped iteration, which cannot express author order.
       Object.keys(plots).forEach((key) => {
-        if (key.match(/rput/)) return;
+        if (key === 'rput') return;
         if (!psgraph.hasOwnProperty(key)) return;
         plots[key].forEach((entry: any) => {
           const item = { name: key, data: entry.data, match: entry.match, fn: entry.fn };

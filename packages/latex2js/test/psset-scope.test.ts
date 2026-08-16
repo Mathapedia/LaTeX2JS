@@ -139,3 +139,66 @@ describe('psset does not corrupt what it is not', () => {
     expect(c.dialect).toBeUndefined();
   });
 });
+
+/**
+ * \rput places its contents at a coordinate. The contents are usually a label,
+ * and were assumed to be one: a graphics command inside an rput drew nothing,
+ * and the tail left over by the command's greedy brace-blind regex was set as
+ * text — which is how `0.8}` appeared as a caption next to nothing at all.
+ */
+function elementsOf(tex: string): any[] {
+  const l = new LaTeX2JS();
+  const parsed: any = l.parse(`\\begin{pspicture}(-3,-2.5)(3,2.5)\n${tex}\n\\end{pspicture}`);
+  const env = parsed.find((e: any) => e.type === 'pspicture');
+  expect(env).toBeDefined();
+  return env.env.elements || [];
+}
+
+describe('rput places graphics, not only labels', () => {
+  it('turns an rput holding a shape into a translated group', () => {
+    const els = elementsOf('\\rput(1,1){\\pscircle(0,0){0.5}}');
+    const group = els.find((e: any) => e.name === 'rputgroup');
+    expect(group).toBeDefined();
+    expect(group.data.children).toHaveLength(1);
+    expect(group.data.children[0].key).toBe('pscircle');
+  });
+
+  it('offsets the group by where the contents origin lands', () => {
+    // xunit and yunit are 50, and SVG y runs opposite to the picture's.
+    const [g] = elementsOf('\\rput(1,-2){\\pscircle(0,0){0.5}}').filter((e: any) => e.name === 'rputgroup');
+    expect(g.data.dx).toBeCloseTo(1 * 50, 3);
+    expect(g.data.dy).toBeCloseTo(2 * 50, 3);
+  });
+
+  it('keeps the group in document order among the other shapes', () => {
+    // The label pass appends after the SVG is finished, so it cannot express
+    // an rput that belongs underneath a later shape.
+    const names = elementsOf(
+      '\\psframe(-2,-1)(2,1)\n\\rput(0,0){\\pscircle(0,0){0.5}}\n\\psline(-2,-1)(2,1)'
+    ).map((e: any) => e.name);
+    expect(names).toEqual(['psframe', 'rputgroup', 'psline']);
+  });
+
+  it('reads the whole body, not up to the first inner brace', () => {
+    // \pscircle's radius argument is itself a brace group; a greedy or
+    // brace-blind match cuts the body in the middle of it.
+    const [g] = elementsOf('\\rput(0,0){\\pscircle[linewidth=2pt](0,0){0.8}}').filter(
+      (e: any) => e.name === 'rputgroup'
+    );
+    expect(g.data.children[0].data.r).toBeCloseTo(0.8 * 50, 3);
+  });
+
+  it('carries several shapes from one rput', () => {
+    const [g] = elementsOf('\\rput(0,0){\\pscircle(0,0){0.5}\\psline(-1,0)(1,0)}').filter(
+      (e: any) => e.name === 'rputgroup'
+    );
+    expect(g.data.children.map((c: any) => c.key)).toEqual(['pscircle', 'psline']);
+  });
+
+  it('leaves a label rput alone', () => {
+    // The text form still goes through the DOM pass; only graphics move.
+    const els = elementsOf('\\rput(0,0){$x^2$}');
+    expect(els.find((e: any) => e.name === 'rputgroup')).toBeUndefined();
+    expect(els.find((e: any) => e.name === 'rput')).toBeDefined();
+  });
+});
