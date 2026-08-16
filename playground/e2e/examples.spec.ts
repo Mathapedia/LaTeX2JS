@@ -13,8 +13,16 @@ import { fileURLToPath } from 'node:url';
  */
 
 const here = fileURLToPath(new URL('.', import.meta.url));
-const corpusDir = path.join(here, '../../packages/latex2js/test/corpus');
-const outDir = path.join(here, '../renders');
+
+// Overridable so the same spec can render a generated corpus — the systematic
+// one under tools/pstricks-conformance covers combinations the examples never
+// reach, and comparing it needs these rendered the same way.
+const corpusDir = process.env.L2J_CORPUS
+  ? path.resolve(process.env.L2J_CORPUS)
+  : path.join(here, '../../packages/latex2js/test/corpus');
+const outDir = process.env.L2J_RENDERS
+  ? path.resolve(process.env.L2J_RENDERS)
+  : path.join(here, '../renders');
 
 const files = fs.readdirSync(corpusDir).filter((f) => f.endsWith('.tex'));
 

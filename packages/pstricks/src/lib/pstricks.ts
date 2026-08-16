@@ -113,12 +113,18 @@ export const Expressions = {
     '\\\\psgrid' + RE.options + RE.coordsOpt + RE.coordsOpt + RE.coordsOpt
   ),
   psellipse: /\\psellipse.*\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
-  psbezier: /\\psbezier(\[[^\]]*\])?\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)/,
-  pscurve: new RegExp('\\\\pscurve' + RE.options + RE.coords + '(.*)'),
-  psecurve: new RegExp('\\\\psecurve' + RE.options + RE.coords + '(.*)'),
-  psccurve: new RegExp('\\\\psccurve' + RE.options + RE.coords + '(.*)'),
-  pswedge: /\\pswedge(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\{(.*)\}\{(.*)\}\{(.*)\}/,
-  pscustom: /\\pscustom(\[[^\]]*\])?\{([\s\S]*)\}/,
+  psbezier: /\\psbezier\*?(\[[^\]]*\])?\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)/,
+  pscurve: new RegExp('\\\\pscurve\\*?' + RE.options + RE.coords + '(.*)'),
+  psecurve: new RegExp('\\\\psecurve\\*?' + RE.options + RE.coords + '(.*)'),
+  psccurve: new RegExp('\\\\psccurve\\*?' + RE.options + RE.coords + '(.*)'),
+  pswedge: /\\pswedge\*?(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\{(.*)\}\{(.*)\}\{(.*)\}/,
+  pscustom: /\\pscustom\*?(\[[^\]]*\])?\{([\s\S]*)\}/,
+  // The canonical \pscustom path vocabulary. Only meaningful inside one, and
+  // inert elsewhere because psgraph has no renderer under these names.
+  moveto: /\\moveto\(\s*([^,)]*),([^)]*)\s*\)/,
+  lineto: /\\lineto\(\s*([^,)]*),([^)]*)\s*\)/,
+  closepath: /\\closepath/,
+  curveto: /\\curveto\(\s*([^,)]*),([^)]*)\s*\)\(\s*([^,)]*),([^)]*)\s*\)\(\s*([^,)]*),([^)]*)\s*\)/,
   multido: /\\multido\{([^}]*)\}\{([^}]*)\}\{([\s\S]*)\}/
 };
 
@@ -191,7 +197,9 @@ export const Functions = {
     var obj: any = {
       cx: X.call(this, m[1]),
       cy: Y.call(this, m[2]),
-      r: this.xunit * m[3],
+      // A radius is a magnitude. PSTricks draws the same circle for a negative
+      // one; SVG rejects it outright, so the shape vanished with a console error.
+      r: Math.abs(this.xunit * Number(m[3])),
       linecolor: 'black',
       linestyle: 'solid',
       fillstyle: 'none',
@@ -386,7 +394,7 @@ export const Functions = {
       obj.cy = Y.call(this, m[4]);
     }
     // choose x units over y, no reason...
-    obj.r = Number(m[5]) * this.xunit;
+    obj.r = Math.abs(Number(m[5]) * this.xunit);
     obj.angleA = (Number(m[6]) * Math.PI) / 180;
     obj.angleB = (Number(m[7]) * Math.PI) / 180;
     Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
@@ -639,7 +647,8 @@ export const Functions = {
     var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
-      linewidth: 2
+      linewidth: 2,
+      filled: /\\psbezier\*/.test(m[0])
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     obj.x1 = X.call(this, m[2]);
@@ -659,6 +668,7 @@ export const Functions = {
       fillstyle: 'none',
       fillcolor: 'black',
       linewidth: 2,
+      filled: /\\ps[ce]?curve\*/.test(m[0]),
       // Only psccurve wraps. psecurve is an open curve whose first and last
       // points are tangent controls rather than points it passes through.
       closed: /\\psccurve/.test(m[0]),
@@ -686,12 +696,13 @@ export const Functions = {
       // curve, not a solid black wedge.
       fillstyle: 'none',
       fillcolor: 'black',
-      linewidth: 2
+      linewidth: 2,
+      filled: /\\pswedge\*/.test(m[0])
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     obj.cx = X.call(this, m[2]);
     obj.cy = Y.call(this, m[3]);
-    obj.r = Number(m[4]) * this.xunit;
+    obj.r = Math.abs(Number(m[4]) * this.xunit);
     obj.angleA = (Number(m[5]) * Math.PI) / 180;
     obj.angleB = (Number(m[6]) * Math.PI) / 180;
     Object.assign(obj, arcEndpoints.call(this, m[2], m[3], m[4], obj.angleA, obj.angleB));
@@ -704,10 +715,31 @@ export const Functions = {
       fillstyle: 'none',
       fillcolor: 'black',
       linewidth: 2,
+      filled: /\\pscustom\*/.test(m[0]),
       body: m[2]
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     return obj;
+  },
+  /** `\moveto(x,y)` — starts a new subpath inside \pscustom. */
+  moveto(this: PSTricksContext, m: any) {
+    return { x: X.call(this, m[1]), y: Y.call(this, m[2]) };
+  },
+  /** `\lineto(x,y)` — a straight segment inside \pscustom. */
+  lineto(this: PSTricksContext, m: any) {
+    return { x: X.call(this, m[1]), y: Y.call(this, m[2]) };
+  },
+  /** `\closepath` — closes the current subpath. */
+  closepath() {
+    return { close: true };
+  },
+  /** `\curveto(c1)(c2)(end)` — a cubic segment inside \pscustom. */
+  curveto(this: PSTricksContext, m: any) {
+    return {
+      x1: X.call(this, m[1]), y1: Y.call(this, m[2]),
+      x2: X.call(this, m[3]), y2: Y.call(this, m[4]),
+      x: X.call(this, m[5]), y: Y.call(this, m[6])
+    };
   },
   multido(this: PSTricksContext, m: any) {
     var spec = m[1] || '';

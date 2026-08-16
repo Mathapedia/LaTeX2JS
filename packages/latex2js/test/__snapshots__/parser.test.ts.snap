@@ -141,6 +141,10 @@ exports[`Parser parse 1`] = `
       "5",
     ],
     "plot": {
+      "closepath": [],
+      "curveto": [],
+      "lineto": [],
+      "moveto": [],
       "multido": [],
       "psarc": [],
       "psaxes": [],
@@ -824,6 +828,10 @@ exports[`Parser parser 1`] = `
       "5",
     ],
     "plot": {
+      "closepath": [],
+      "curveto": [],
+      "lineto": [],
+      "moveto": [],
       "multido": [],
       "psarc": [],
       "psaxes": [],

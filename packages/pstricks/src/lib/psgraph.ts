@@ -203,6 +203,23 @@ function resolveFill(ctx: any, svg: any): string {
 }
 
 /**
+ * Resolves a shape's SVG stroke.
+ *
+ * `linestyle=none` means the outline is not drawn at all. Exactly one renderer
+ * honoured that and the rest painted the outline anyway, so a shape asked to
+ * show only its fill still came out with a border — the same one-place-right
+ * pattern that fillstyle had.
+ *
+ * @param ctx - the shape's parsed data
+ * @param fallback - the colour to use when the shape has no linecolor of its own
+ * @returns an SVG paint value, or `none` when the outline is suppressed
+ */
+function resolveStroke(ctx: any, fallback?: string): string {
+  if (ctx && ctx.linestyle === 'none') return 'none';
+  return (ctx && ctx.linecolor) || fallback || 'black';
+}
+
+/**
  * Whether a command's geometry can be drawn.
  *
  * `X` and `Y` return NaN for a coordinate they cannot compute. Handing that to
@@ -270,7 +287,7 @@ function curveRenderer(this: any, svg: any): void {
     .append('svg:path')
     .attr('d', d)
     .style('stroke-width', this.linewidth)
-    .style('stroke', this.linecolor)
+    .style('stroke', resolveStroke(this))
     .style('stroke-opacity', 1)
     .style('fill', resolveFill(this, svg));
 }
@@ -315,7 +332,7 @@ const psgraph: any = {
       .attr('x2', this.x2)
       .attr('y2', this.y1)
       .style('stroke-width', 2)
-      .style('stroke', 'rgb(0,0,0)')
+      .style('stroke', resolveStroke(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -325,7 +342,7 @@ const psgraph: any = {
       .attr('x2', this.x2)
       .attr('y2', this.y2)
       .style('stroke-width', 2)
-      .style('stroke', 'rgb(0,0,0)')
+      .style('stroke', resolveStroke(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -335,7 +352,7 @@ const psgraph: any = {
       .attr('x2', this.x1)
       .attr('y2', this.y2)
       .style('stroke-width', 2)
-      .style('stroke', 'rgb(0,0,0)')
+      .style('stroke', resolveStroke(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -345,7 +362,7 @@ const psgraph: any = {
       .attr('x2', this.x1)
       .attr('y2', this.y1)
       .style('stroke-width', 2)
-      .style('stroke', 'rgb(0,0,0)')
+      .style('stroke', resolveStroke(this))
       .style('stroke-opacity', 1);
   },
 
@@ -356,7 +373,7 @@ const psgraph: any = {
       .attr('cx', this.cx)
       .attr('cy', this.cy)
       .attr('r', this.r)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
       .style('fill', resolveFill(this, svg))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1);
@@ -409,7 +426,7 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
-      .style('stroke', this.linecolor);
+      .style('stroke', resolveStroke(this));
   },
 
   pspolygon(svg: any): void {
@@ -430,7 +447,8 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
-      .style('stroke', 'black');
+      // Was hardcoded black, so linecolor and linestyle=none were both ignored.
+      .style('stroke', resolveStroke(this));
   },
 
   psarc(svg: any): void {
@@ -450,7 +468,7 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
-      .style('stroke', this.linecolor);
+      .style('stroke', resolveStroke(this));
   },
 
   psaxes(svg: any): void {
@@ -458,13 +476,16 @@ const psgraph: any = {
     var yaxis = [this.bottomLeft[1], this.topRight[1]];
 
     var origin = this.origin;
+    // Resolved once here: the helper below is an inner function, so it cannot
+    // reach the axes' own data through `this`.
+    const axisStroke = resolveStroke(this);
 
     function line(x1: number, y1: number, x2: number, y2: number) {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', 2)
-        .style('stroke', 'rgb(0,0,0)')
+        .style('stroke', axisStroke)
         .style('stroke-opacity', 1);
     }
 
@@ -606,7 +627,9 @@ const psgraph: any = {
 
   psline(svg: any): void {
     var linewidth = this.linewidth,
-      linecolor = this.linecolor;
+      // Resolved here so `linestyle=none` suppresses the stroke: the helpers
+      // below are inner functions and cannot reach the shape through `this`.
+      linecolor = resolveStroke(this);
 
     function solid(x1: number, y1: number, x2: number, y2: number) {
       svg
@@ -651,7 +674,7 @@ const psgraph: any = {
         .attr('cx', this.x1)
         .attr('cy', this.y1)
         .attr('r', 3)
-        .style('stroke', this.linecolor)
+        .style('stroke', resolveStroke(this))
         .style('fill', this.linecolor)
         .style('stroke-width', 1)
         .style('stroke-opacity', 1);
@@ -663,7 +686,7 @@ const psgraph: any = {
         .attr('cx', this.x2)
         .attr('cy', this.y2)
         .attr('r', 3)
-        .style('stroke', this.linecolor)
+        .style('stroke', resolveStroke(this))
         .style('fill', this.linecolor)
         .style('stroke-width', 1)
         .style('stroke-opacity', 1);
@@ -679,7 +702,7 @@ const psgraph: any = {
         .append('path')
         .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
         .style('fill', this.linecolor)
-        .style('stroke', this.linecolor);
+        .style('stroke', resolveStroke(this));
     }
 
     if (this.arrows[1]) {
@@ -687,13 +710,15 @@ const psgraph: any = {
         .append('path')
         .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
         .style('fill', this.linecolor)
-        .style('stroke', this.linecolor);
+        .style('stroke', resolveStroke(this));
     }
   },
 
   userline(svg: any): void {
     var linewidth = this.linewidth,
-      linecolor = this.linecolor;
+      // Resolved here so `linestyle=none` suppresses the stroke: the helpers
+      // below are inner functions and cannot reach the shape through `this`.
+      linecolor = resolveStroke(this);
 
     function solid(x1: number, y1: number, x2: number, y2: number) {
       svg
@@ -742,7 +767,7 @@ const psgraph: any = {
         .attr('cy', this.y1)
         .attr('r', 3)
         .attr('class', 'userline')
-        .style('stroke', this.linecolor)
+        .style('stroke', resolveStroke(this))
         .style('fill', this.linecolor)
         .style('stroke-width', 1)
         .style('stroke-opacity', 1);
@@ -755,7 +780,7 @@ const psgraph: any = {
         .attr('cy', this.y2)
         .attr('r', 3)
         .attr('class', 'userline')
-        .style('stroke', this.linecolor)
+        .style('stroke', resolveStroke(this))
         .style('fill', this.linecolor)
         .style('stroke-width', 1)
         .style('stroke-opacity', 1);
@@ -772,7 +797,7 @@ const psgraph: any = {
         .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
         .attr('class', 'userline')
         .style('fill', this.linecolor)
-        .style('stroke', this.linecolor);
+        .style('stroke', resolveStroke(this));
     }
 
     if (this.arrows[1]) {
@@ -781,7 +806,7 @@ const psgraph: any = {
         .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
         .attr('class', 'userline')
         .style('fill', this.linecolor)
-        .style('stroke', this.linecolor);
+        .style('stroke', resolveStroke(this));
     }
   },
 
@@ -1163,7 +1188,7 @@ const psgraph: any = {
       .attr('cy', this.cy)
       .attr('rx', this.rx)
       .attr('ry', this.ry)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
@@ -1178,7 +1203,7 @@ const psgraph: any = {
         ' C ' + this.x2 + ' ' + this.y2 + ', ' + this.x3 + ' ' + this.y3 + ', ' + this.x4 + ' ' + this.y4
       )
       .style('stroke-width', this.linewidth)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
       .style('stroke-opacity', 1)
       .style('fill', 'none');
   },
@@ -1190,7 +1215,7 @@ const psgraph: any = {
       .append('svg:path')
       .attr('d', d)
       .style('stroke-width', this.linewidth)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },
@@ -1210,7 +1235,7 @@ const psgraph: any = {
       .append('svg:path')
       .attr('d', d)
       .style('stroke-width', this.linewidth)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },
@@ -1222,6 +1247,28 @@ const psgraph: any = {
     (this.commands || []).forEach((cmd: any) => {
       const data = cmd.data;
       if (!data) return;
+      // The canonical path vocabulary. These describe the path directly rather
+      // than contributing a shape, so they come first.
+      if (cmd.key === 'moveto') {
+        d += ' M ' + data.x + ' ' + data.y;
+        started = true;
+        return;
+      }
+      if (cmd.key === 'lineto') {
+        if (!started) { d += 'M ' + data.x + ' ' + data.y; started = true; return; }
+        d += ' L ' + data.x + ' ' + data.y;
+        return;
+      }
+      if (cmd.key === 'curveto') {
+        if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
+        d += ' C ' + data.x1 + ' ' + data.y1 + ', ' + data.x2 + ' ' + data.y2 +
+          ', ' + data.x + ' ' + data.y;
+        return;
+      }
+      if (cmd.key === 'closepath') {
+        if (started) d += ' Z';
+        return;
+      }
       if (cmd.key === 'psline' || cmd.key === 'userline' || cmd.key === 'psbezier') {
         if (cmd.key === 'psbezier') {
           if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
