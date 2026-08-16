@@ -99,8 +99,21 @@ export const loadMathJax = async (
     return;
   }
 
-  if ((globalThis as any).MathJax) {
-    mathJaxInstance = (globalThis as any).MathJax;
+  // Presence is not readiness. `window.MathJax` holds the configuration object
+  // long before the library that reads it has loaded, and pre-configuring the
+  // global is the documented way to set MathJax up — so treating any value
+  // here as a loaded library meant a page that configured MathJax itself never
+  // got the script injected at all, and MathJax never loaded.
+  const existing = (globalThis as any).MathJax;
+  if (existing && typeof existing.typesetPromise === 'function') {
+    mathJaxInstance = existing;
+    callback();
+    return;
+  }
+
+  // Someone has already asked for the script; wait for that one rather than
+  // adding a second copy.
+  if (typeof document !== 'undefined' && document.getElementById('MathJax-script')) {
     callback();
     return;
   }
@@ -109,10 +122,17 @@ export const loadMathJax = async (
   // config object that is handed to MathJax itself.
   const { scriptURL = DEFAULT_SCRIPT_URL, ...mathjaxConfig } = config;
 
-  // A partial config overrides DEFAULT_CONFIG key by key; without this a
-  // caller passing only { scriptURL } would drop the tex setup (ams, tags,
-  // equation numbering) entirely.
-  const merged = deepMerge(DEFAULT_CONFIG, mathjaxConfig) as typeof DEFAULT_CONFIG;
+  // Three sources, weakest first: our defaults, then any configuration the page
+  // had already put on the global, then what this caller passed. Without the
+  // merge a caller passing only { scriptURL } would drop the tex setup — ams,
+  // tags, equation numbering — entirely; without folding in `existing`, a page
+  // that pre-configured MathJax would have its settings thrown away by the
+  // very call that finally loads the library for it.
+  const preconfigured = existing && typeof existing === 'object' ? existing : {};
+  const merged = deepMerge(
+    deepMerge(DEFAULT_CONFIG, preconfigured),
+    mathjaxConfig
+  ) as typeof DEFAULT_CONFIG;
 
   try {
     (globalThis as any).MathJax = {
