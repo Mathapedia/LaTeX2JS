@@ -292,6 +292,11 @@ export const Functions = {
     var plotpoints = obj.plotpoints ? Number(obj.plotpoints) : 0;
     if (plotpoints > 1) {
       step = (endX - startX) / (plotpoints - 1);
+    } else if (obj.plotpoints !== undefined && plotpoints < 2) {
+      // Fewer than two samples has no defined meaning — there is no interval
+      // left to step across — so the default sampling is used instead. Saying
+      // so beats accepting the option and quietly doing something else.
+      obj.plotpointsIgnored = plotpoints;
     }
 
     // Compile the plot expression once; evaluate per sample against a

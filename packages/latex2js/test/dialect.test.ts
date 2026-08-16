@@ -74,3 +74,33 @@ describe('declaring the dialect', () => {
       .toBeGreaterThan(0);
   });
 });
+
+describe('an option that cannot take effect says so', () => {
+  const warnings = (tex: string) => {
+    const l = new LaTeX2JS();
+    l.parse(tex);
+    return ((l as any).lastDiagnostics || [])
+      .filter((d: any) => /plotpoints/.test(d.message))
+      .map((d: any) => d.message);
+  };
+
+  it.each([1, 0])('reports plotpoints=%s, which has no interval to step across', (n) => {
+    // Accepting the option and quietly sampling at the default instead is the
+    // silent-wrongness pattern: the author asked for something and got another.
+    expect(warnings(picture(`\\psplot[algebraic=true,plotpoints=${n}]{-2}{2}{x}`)).join())
+      .toContain('at least 2 samples');
+  });
+
+  it('says nothing when plotpoints can take effect', () => {
+    expect(warnings(picture('\\psplot[algebraic=true,plotpoints=5]{-2}{2}{x}'))).toHaveLength(0);
+  });
+
+  it('says nothing when plotpoints is not given', () => {
+    expect(warnings(picture('\\psplot[algebraic=true]{-2}{2}{x}'))).toHaveLength(0);
+  });
+
+  it('reports it whichever dialect the document declares', () => {
+    expect(warnings(picture('\\psplot[algebraic=true,plotpoints=1]{-2}{2}{x}', '\\psset{dialect=latex2js}\n')).join())
+      .toContain('at least 2 samples');
+  });
+});

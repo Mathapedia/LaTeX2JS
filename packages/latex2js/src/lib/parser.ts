@@ -554,6 +554,15 @@ class Parser {
         }
       }
 
+      if (data && data.plotpointsIgnored !== undefined) {
+        this.diagnose(
+          'warning',
+          `plotpoints=${data.plotpointsIgnored} needs at least 2 samples to mean anything; ` +
+            'the default sampling was used instead',
+          node.loc
+        );
+      }
+
       const bad = nonFiniteFields(data);
       if (bad.length) {
         this.diagnose(
