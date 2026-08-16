@@ -1,10 +1,16 @@
 import LaTeX2JS from '../src';
 
 /**
- * The dialect changes a small, documented set of semantics — not the renderer.
- * These are the differences cheap enough to make bidirectional; RPN plot bodies
- * are the one gap the flag does not close, since reading them would mean
- * writing a PostScript interpreter.
+ * The dialect reports; it never switches the renderer.
+ *
+ * An earlier draft made `log` and starred fills follow the declaration. Two
+ * things killed that. A `dialect=pstricks` reading still cannot read RPN plot
+ * bodies, so it produced output that was neither LaTeX2JS nor PSTricks; and
+ * because rendering depended on a flag, an undeclared document silently
+ * rendered differently — the exact failure this branch spent its time removing.
+ *
+ * So the semantics are fixed, one renderer, and the flag only decides whether
+ * you are told that a construct will not travel.
  */
 const parse = (tex: string, dialect?: 'pstricks' | 'latex2js') => {
   const l = new LaTeX2JS();
@@ -22,50 +28,35 @@ const firstY = (objs: any[]) => {
   return env.y1 - plot.data.data[1] / env.yunit;
 };
 
-describe('log base follows the dialect', () => {
-  // Verified against real PSTricks: log(100) plots at 2, so its log is base 10.
-  // LaTeX2JS has always read it as natural log, and the corpus depends on that
-  // (log(2) appears in derivatives of 2^x, where ln is what the author meant).
-  it('is base 10 under pstricks', () => {
-    expect(firstY(parse(picture('\\psplot[algebraic=true]{-2}{2}{log(100)}')))).toBeCloseTo(2, 3);
-  });
-
-  it('is natural log under latex2js', () => {
-    const y = firstY(parse(picture('\\psplot[algebraic=true]{-2}{2}{log(100)}'), 'latex2js'));
-    expect(y).toBeCloseTo(Math.log(100), 3);
-  });
-
-  it('follows a dialect the document declares', () => {
-    const y = firstY(parse(picture('\\psplot[algebraic=true]{-2}{2}{log(100)}', '\\psset{dialect=latex2js}\n')));
-    expect(y).toBeCloseTo(Math.log(100), 3);
-  });
-
-  it('leaves ln alone in both', () => {
+describe('rendering does not depend on the declared dialect', () => {
+  it('reads log the same either way', () => {
+    // Natural log, in both. PSTricks reads it as base 10; that difference is
+    // reported rather than applied, so no document changes shape when a flag
+    // is added or removed.
     for (const d of ['pstricks', 'latex2js'] as const) {
-      expect(firstY(parse(picture('\\psplot[algebraic=true]{-2}{2}{ln(100)}'), d))).toBeCloseTo(Math.log(100), 3);
+      expect(firstY(parse(picture('\\psplot[algebraic=true]{-2}{2}{log(100)}'), d)))
+        .toBeCloseTo(Math.log(100), 3);
     }
   });
-});
 
-describe('starred shapes follow the dialect', () => {
-  const fillOf = (dialect: 'pstricks' | 'latex2js') => {
-    const objs = parse(picture('\\pscircle*[linecolor=red,fillcolor=cyan](0,0){1}'), dialect);
-    const data = objs[0].plot.pscircle[0].data;
-    return { data, env: objs[0].env };
-  };
-
-  it('carries both colours through either way', () => {
-    // The choice happens at render time; the data keeps what the author wrote.
+  it('reads ln the same either way', () => {
     for (const d of ['pstricks', 'latex2js'] as const) {
-      const { data } = fillOf(d);
+      expect(firstY(parse(picture('\\psplot[algebraic=true]{-2}{2}{ln(100)}'), d)))
+        .toBeCloseTo(Math.log(100), 3);
+    }
+  });
+
+  it('keeps a starred shape filled with the author colour either way', () => {
+    for (const d of ['pstricks', 'latex2js'] as const) {
+      const data = parse(picture('\\pscircle*[linecolor=red,fillcolor=cyan](0,0){1}'), d)[0]
+        .plot.pscircle[0].data;
       expect(data.filled).toBe(true);
-      expect(data.linecolor).toBe('red');
       expect(data.fillcolor).toBe('cyan');
     }
   });
 
-  it('records the dialect on the picture so the renderer can choose', () => {
-    expect(fillOf('pstricks').env.dialect).toBe('pstricks');
-    expect(fillOf('latex2js').env.dialect).toBe('latex2js');
+  it('still records the declaration on the picture', () => {
+    expect(parse(picture('\\pscircle(0,0){1}'), 'latex2js')[0].env.dialect).toBe('latex2js');
+    expect(parse(picture('\\pscircle(0,0){1}'), 'pstricks')[0].env.dialect).toBe('pstricks');
   });
 });
