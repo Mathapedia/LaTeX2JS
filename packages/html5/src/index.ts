@@ -1,5 +1,5 @@
 import LaTeX2JS from 'latex2js';
-import { getMathJax, loadMathJax } from 'mathjaxjs';
+import { getMathJax, loadMathJax, DEFAULT_CONFIG, type MathJaxConfig } from 'mathjaxjs';
 import pspicture from './components/pspicture.js';
 import nicebox from './components/nicebox.js';
 import enumerate from './components/enumerate.js';
@@ -10,9 +10,13 @@ import macros from './components/macros';
 
 const ELEMENTS = { pspicture, nicebox, enumerate, itemize: list, description: list, verbatim, math, macros };
 
-export { pspicture, nicebox, enumerate, list, verbatim, math, macros };
+export { pspicture, nicebox, enumerate, list, verbatim, math, macros, DEFAULT_CONFIG };
 
-export default function render(tex: string, resolve: (div: HTMLDivElement) => void): void {
+export default function render(
+  tex: string,
+  resolve: (div: HTMLDivElement) => void,
+  config?: MathJaxConfig
+): void {
   const done = () => {
     const latex = new LaTeX2JS();
     const parsed = latex.parse(tex);
@@ -32,16 +36,20 @@ export default function render(tex: string, resolve: (div: HTMLDivElement) => vo
   if (getMathJax()) {
     return done();
   }
-  loadMathJax(done);
+  loadMathJax(done, config);
 }
 
-export const init = (): void => {
-  loadMathJax();
+export const init = (config?: MathJaxConfig): void => {
+  loadMathJax(undefined, config);
   document.querySelectorAll('script[type="text/latex"]').forEach((el) => {
-    render(el.innerHTML, (div: HTMLDivElement) => {
-      if (el.parentNode) {
-        el.parentNode.insertBefore(div, el.nextSibling);
-      }
-    });
+    render(
+      el.innerHTML,
+      (div: HTMLDivElement) => {
+        if (el.parentNode) {
+          el.parentNode.insertBefore(div, el.nextSibling);
+        }
+      },
+      config
+    );
   });
 };

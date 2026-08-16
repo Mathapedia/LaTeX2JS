@@ -8,6 +8,8 @@ declare global {
 }
 
 interface MathJaxConfig {
+  /** 自定义 MathJax 脚本地址，不传则使用默认 CDN */
+  scriptURL?: string;
   tex?: {
     inlineMath?: string[][];
     displayMath?: string[][];
@@ -24,6 +26,8 @@ interface MathJaxConfig {
 interface MathJaxProviderProps {
   children: any;
   config?: MathJaxConfig;
+  /** Custom MathJax script URL; falls back to the config key, then the default CDN. */
+  scriptURL?: string;
   loadingComponent?: any;
   className?: string;
 }
@@ -31,6 +35,7 @@ interface MathJaxProviderProps {
 function MathJaxProvider({ 
   children, 
   config,
+  scriptURL: scriptURLProp,
   loadingComponent,
   className = ""
 }: MathJaxProviderProps) {
@@ -54,7 +59,7 @@ function MathJaxProvider({
       } else {
         loadMathJax(() => {
           setMathJaxLoaded(true);
-        }, finalConfig);
+        }, { ...finalConfig, scriptURL: scriptURLProp ?? config?.scriptURL });
       }
     }
   }, []);

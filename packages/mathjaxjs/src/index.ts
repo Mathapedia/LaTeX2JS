@@ -1,3 +1,14 @@
+/**
+ * Where MathJax is loaded from unless a caller overrides it with
+ * `config.scriptURL`.
+ *
+ * Pinned rather than floating on a major tag, so a build is reproducible and
+ * the URL can carry an integrity hash. Being a single constant is what made
+ * the move to MathJax 4 a one-line change: v4 dropped the `es5/` directory, so
+ * the path shape moved as well as the version.
+ */
+export const DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-chtml.js';
+
 export const DEFAULT_CONFIG = {
   tex: {
     inlineMath: [['$', '$'], ['\\(', '\\)']],
@@ -21,11 +32,68 @@ export const DEFAULT_CONFIG = {
   }
 };
 
+/**
+ * Extended configuration: `scriptURL` overrides where MathJax is loaded from.
+ */
+export interface LoadMathJaxConfig {
+  scriptURL?: string;
+}
+
+/** Recursively optional, so callers can override just the keys they want. */
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends (infer U)[]
+    ? Array<DeepPartial<U>>
+    : T[K] extends (...args: any[]) => any
+      ? T[K]
+      : T[K] extends object
+        ? DeepPartial<T[K]>
+        : T[K];
+};
+
+/**
+ * A MathJax configuration that may override any subset of DEFAULT_CONFIG and
+ * optionally point at a custom script URL.
+ */
+export type MathJaxConfig = DeepPartial<typeof DEFAULT_CONFIG> & LoadMathJaxConfig;
+
+
+/**
+ * Merges an override into a base, recursively, without mutating either.
+ *
+ * The config is nested more than one level — `chtml.linebreaks` holds both
+ * `automatic` and `width` — so merging only the top level silently drops the
+ * siblings of whatever a caller overrides: passing
+ * `{ chtml: { linebreaks: { width: "80%" } } }` lost `automatic: true`. The
+ * `MathJaxConfig` type says any subset may be overridden, and this is what
+ * makes that true.
+ *
+ * Arrays replace rather than merge: `tex.packages` and `tex.inlineMath` are
+ * whole values, and concatenating them would silently keep a default a caller
+ * meant to remove.
+ */
+function deepMerge(base: any, override: any): any {
+  if (override === undefined) return base;
+  const mergeable = (v: any) =>
+    v !== null && typeof v === 'object' && !Array.isArray(v) && typeof v !== 'function';
+  if (!mergeable(base) || !mergeable(override)) return override;
+
+  const out: any = { ...base };
+  for (const key of Object.keys(override)) {
+    out[key] = mergeable(base[key]) && mergeable(override[key])
+      ? deepMerge(base[key], override[key])
+      : override[key];
+  }
+  return out;
+}
+
 let mathJaxInstance: any = null;
 
 export const getMathJax = () => mathJaxInstance || (globalThis as any).MathJax;
 
-export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG) => {
+export const loadMathJax = async (
+  callback = () => { },
+  config: MathJaxConfig = DEFAULT_CONFIG
+) => {
   if (typeof window === 'undefined') {
     callback();
     return;
@@ -50,20 +118,32 @@ export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG)
     return;
   }
 
+  // scriptURL is a loader concern, not a MathJax one: keep it out of the
+  // config object that is handed to MathJax itself.
+  const { scriptURL = DEFAULT_SCRIPT_URL, ...mathjaxConfig } = config;
+
+  // Three sources, weakest first: our defaults, then any configuration the page
+  // had already put on the global, then what this caller passed. Without the
+  // merge a caller passing only { scriptURL } would drop the tex setup — ams,
+  // tags, equation numbering — entirely; without folding in `existing`, a page
+  // that pre-configured MathJax would have its settings thrown away by the
+  // very call that finally loads the library for it.
+  const preconfigured = existing && typeof existing === 'object' ? existing : {};
+  const merged = deepMerge(
+    deepMerge(DEFAULT_CONFIG, preconfigured),
+    mathjaxConfig
+  ) as typeof DEFAULT_CONFIG;
+
   try {
     (globalThis as any).MathJax = {
-      ...config,
-      // A page that configured MathJax itself keeps its settings; only the
-      // startup hook below is ours.
-      ...(existing && typeof existing === 'object' ? existing : {}),
+      ...merged,
       startup: {
-        ...config.startup,
-        ...(existing && typeof existing === 'object' ? existing.startup : {}),
+        ...merged.startup,
         ready: () => {
           (globalThis as any).MathJax.startup.defaultReady();
           mathJaxInstance = (globalThis as any).MathJax;
-          if (config.startup?.ready) {
-            config.startup.ready();
+          if (merged.startup.ready) {
+            merged.startup.ready();
           }
           callback();
         }
@@ -71,7 +151,7 @@ export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG)
     };
 
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+    script.src = scriptURL;
     script.async = true;
     script.id = 'MathJax-script';
     script.onload = () => {
