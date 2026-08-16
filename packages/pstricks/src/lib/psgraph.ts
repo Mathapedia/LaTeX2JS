@@ -1207,17 +1207,20 @@ const psgraph: any = {
   },
 
   psbezier(svg: any): void {
+    // The path stays open even when filled: PSTricks bounds the region with the
+    // chord back to the start but does not draw that chord, and SVG fills an
+    // open subpath as if closed while stroking only what was written. Closing
+    // it with Z would fill identically but paint a line along the chord.
+    const d =
+      'M ' + this.x1 + ' ' + this.y1 +
+      ' C ' + this.x2 + ' ' + this.y2 + ', ' + this.x3 + ' ' + this.y3 + ', ' + this.x4 + ' ' + this.y4;
     svg
       .append('svg:path')
-      .attr(
-        'd',
-        'M ' + this.x1 + ' ' + this.y1 +
-        ' C ' + this.x2 + ' ' + this.y2 + ', ' + this.x3 + ' ' + this.y3 + ', ' + this.x4 + ' ' + this.y4
-      )
+      .attr('d', d)
       .style('stroke-width', this.linewidth)
       .style('stroke', resolveStroke(this))
       .style('stroke-opacity', 1)
-      .style('fill', 'none');
+      .style('fill', resolveFill(this, svg));
   },
 
   pscurve(svg: any): void {

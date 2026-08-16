@@ -642,7 +642,8 @@ export const Functions = {
       linestyle: 'solid',
       fillstyle: 'none',
       fillcolor: 'black',
-      linewidth: 2
+      linewidth: 2,
+      filled: /\\psellipse\*/.test(m[0])
     };
     var opts = m[0].match(/\[([^\]]*)\]/);
     if (opts) Object.assign(obj, parseOptions(opts[1]));
@@ -656,6 +657,8 @@ export const Functions = {
     var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
+      fillstyle: 'none',
+      fillcolor: 'black',
       linewidth: 2,
       filled: /\\psbezier\*/.test(m[0])
     };

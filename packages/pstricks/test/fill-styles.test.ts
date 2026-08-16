@@ -73,6 +73,11 @@ const SHAPES: Array<[string, string]> = [
   ['pspolygon', '\\pspolygon[FILL](-2,-1)(0,1.5)(2,-1)'],
   ['pswedge', '\\pswedge[FILL](0,0){2}{30}{150}'],
   ['psframe', '\\psframe[FILL](-2,-1)(2,1)'],
+  // The curves belong here too. They were left out, and psbezier alone kept a
+  // hardcoded `fill: none` — so it ignored every fillstyle and this table never
+  // noticed.
+  ['pscurve', '\\pscurve[FILL](-2,-1)(0,1.5)(2,-1)'],
+  ['psbezier', '\\psbezier[FILL](-2,-1)(-1,1)(1,-1)(2,1)'],
 ];
 
 describe('fill styles resolve the same way for every shape', () => {
@@ -99,6 +104,53 @@ describe('fill styles resolve the same way for every shape', () => {
   it.each(SHAPES)('%s draws no fill for an unimplemented style', (name, template) => {
     const tree = render(name, template.replace('FILL', 'fillstyle=gradient,fillcolor=cyan'));
     expect(fills(tree).filter((f) => f !== 'none')).toHaveLength(0);
+  });
+});
+
+describe('every fillable shape recognises its starred form', () => {
+  // Checked one shape at a time, psellipse was the one that never looked for
+  // the star: `\psellipse*` drew a bare outline where PSTricks fills solid.
+  // Sweeping the whole family is what keeps the next omission from hiding.
+  it.each([
+    ['psframe', '\\psframe*(-2,-1)(2,1)'],
+    ['pscircle', '\\pscircle*(0,0){2}'],
+    ['psellipse', '\\psellipse*(0,0)(2,1)'],
+    ['pspolygon', '\\pspolygon*(-2,-1)(0,1.5)(2,-1)'],
+    ['psarc', '\\psarc*(0,0){2}{30}{150}'],
+    ['pswedge', '\\pswedge*(0,0){2}{30}{150}'],
+    ['pscurve', '\\pscurve*(-2,-1)(0,1.5)(2,-1)'],
+    ['psccurve', '\\psccurve*(-2,-1)(0,1.5)(2,-1)'],
+    ['psbezier', '\\psbezier*(-2,-1)(-1,1)(1,-1)(2,1)'],
+  ])('%s fills when starred', (name, raw) => {
+    const painted = fills(render(name, raw)).filter((f) => f !== 'none');
+    expect(painted.length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ['psframe', '\\psframe(-2,-1)(2,1)'],
+    ['pscircle', '\\pscircle(0,0){2}'],
+    ['psellipse', '\\psellipse(0,0)(2,1)'],
+    ['pspolygon', '\\pspolygon(-2,-1)(0,1.5)(2,-1)'],
+    ['pswedge', '\\pswedge(0,0){2}{30}{150}'],
+    ['pscurve', '\\pscurve(-2,-1)(0,1.5)(2,-1)'],
+    ['psbezier', '\\psbezier(-2,-1)(-1,1)(1,-1)(2,1)'],
+  ])('%s draws no fill when unstarred', (name, raw) => {
+    expect(fills(render(name, raw)).filter((f) => f !== 'none')).toHaveLength(0);
+  });
+});
+
+describe('an open curve is filled without drawing the closing chord', () => {
+  // PSTricks bounds a filled open curve with the chord back to its start but
+  // never paints that chord. SVG fills an open subpath as if closed while
+  // stroking only what was written, so the path must stay open — closing it
+  // with Z fills the same region but adds a line the reference does not have.
+  it.each([
+    ['pscurve', '\\pscurve[fillstyle=solid,fillcolor=cyan](-2,-1)(0,1.5)(2,-1)'],
+    ['psbezier', '\\psbezier[fillstyle=solid,fillcolor=cyan](-2,-1)(-1,1)(1,-1)(2,1)'],
+  ])('%s fills but leaves its path open', (name, raw) => {
+    const path = find(render(name, raw), 'path')!;
+    expect(path.styles.fill).toBe('cyan');
+    expect(path.attrs.d).not.toMatch(/[Zz]\s*$/);
   });
 });
 
