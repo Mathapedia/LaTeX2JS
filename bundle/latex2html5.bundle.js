@@ -3316,8 +3316,16 @@ exports.default = String.raw `
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadMathJax = exports.getMathJax = exports.DEFAULT_CONFIG = exports.DEFAULT_SCRIPT_URL = void 0;
-/** 默认 MathJax 脚本地址，可由用户通过 config.scriptURL 覆盖 */
-exports.DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+/**
+ * Where MathJax is loaded from unless a caller overrides it with
+ * `config.scriptURL`.
+ *
+ * Pinned rather than floating on `mathjax@3`, so a build is reproducible and
+ * the URL can carry an integrity hash. It is also the single place to change
+ * for a major upgrade: MathJax 4 moved the bundles out of `es5/`, so the path
+ * shape changes there and not only the version.
+ */
+exports.DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js';
 exports.DEFAULT_CONFIG = {
     tex: {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
@@ -3340,6 +3348,34 @@ exports.DEFAULT_CONFIG = {
         }
     }
 };
+/**
+ * Merges an override into a base, recursively, without mutating either.
+ *
+ * The config is nested more than one level — `chtml.linebreaks` holds both
+ * `automatic` and `width` — so merging only the top level silently drops the
+ * siblings of whatever a caller overrides: passing
+ * `{ chtml: { linebreaks: { width: "80%" } } }` lost `automatic: true`. The
+ * `MathJaxConfig` type says any subset may be overridden, and this is what
+ * makes that true.
+ *
+ * Arrays replace rather than merge: `tex.packages` and `tex.inlineMath` are
+ * whole values, and concatenating them would silently keep a default a caller
+ * meant to remove.
+ */
+function deepMerge(base, override) {
+    if (override === undefined)
+        return base;
+    const mergeable = (v) => v !== null && typeof v === 'object' && !Array.isArray(v) && typeof v !== 'function';
+    if (!mergeable(base) || !mergeable(override))
+        return override;
+    const out = { ...base };
+    for (const key of Object.keys(override)) {
+        out[key] = mergeable(base[key]) && mergeable(override[key])
+            ? deepMerge(base[key], override[key])
+            : override[key];
+    }
+    return out;
+}
 let mathJaxInstance = null;
 const getMathJax = () => mathJaxInstance || globalThis.MathJax;
 exports.getMathJax = getMathJax;
@@ -3359,13 +3395,7 @@ const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG
     // A partial config overrides DEFAULT_CONFIG key by key; without this a
     // caller passing only { scriptURL } would drop the tex setup (ams, tags,
     // equation numbering) entirely.
-    const merged = {
-        ...exports.DEFAULT_CONFIG,
-        ...mathjaxConfig,
-        tex: { ...exports.DEFAULT_CONFIG.tex, ...mathjaxConfig.tex },
-        chtml: { ...exports.DEFAULT_CONFIG.chtml, ...mathjaxConfig.chtml },
-        startup: { ...exports.DEFAULT_CONFIG.startup, ...mathjaxConfig.startup }
-    };
+    const merged = deepMerge(exports.DEFAULT_CONFIG, mathjaxConfig);
     try {
         globalThis.MathJax = {
             ...merged,
