@@ -202,6 +202,23 @@ describe('pspicture component (SVG rendering)', () => {
     expect(div.querySelectorAll('svg line').length).toBeGreaterThanOrEqual(8);
   });
 
+  it('numbers the grid by default, as PSTricks does', () => {
+    // gridlabels defaults to 10pt. These were opt-in, so a plain \psgrid came
+    // out unnumbered where the reference numbers both edges.
+    const grid = (opts: string) => {
+      const div = pspicture(parsePspicture(
+        `\\begin{pspicture}(0,0)(4,4)\n\\psgrid${opts}\n\\end{pspicture}`
+      ));
+      document.body.appendChild(div);
+      return Array.from(div.querySelectorAll('svg text')).map((t) => t.textContent);
+    };
+    expect(grid('').length).toBeGreaterThan(0);
+    expect(grid('')).toContain('2');
+    // ...and only an explicit zero or none turns them off.
+    expect(grid('[gridlabels=0]')).toHaveLength(0);
+    expect(grid('[gridlabels=none]')).toHaveLength(0);
+  });
+
   it('renders psellipse as an SVG ellipse', () => {
     const env = parsePspicture(`
 \\begin{pspicture}(0,0)(4,4)

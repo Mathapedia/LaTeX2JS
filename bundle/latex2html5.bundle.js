@@ -4385,14 +4385,17 @@ const psgraph = {
             rule(x, y0, x, y1, gridcolor, gridwidth);
         for (const y of ys)
             rule(x0, y, x1, y, gridcolor, gridwidth);
-        // Grid numbers are off unless asked for. PSTricks draws them outside the
-        // grid on an unbounded page; an SVG is sized to the picture's declared
-        // bounds, so on a grid that reaches the edge — the common case — they would
-        // land outside the viewport and be clipped away. A default nobody can see
-        // is worse than no default, so they are opt-in and clamped inside.
-        if (!this.gridlabels || this.gridlabels === 'none' || this.gridlabels === '0')
+        // Grid numbers are drawn by default, as PSTricks draws them: `gridlabels`
+        // defaults to 10pt and only a zero or `none` turns them off. They were
+        // opt-in here on the grounds that PSTricks numbers an unbounded page while
+        // an SVG is clipped to the picture, so a grid flush with the edge would
+        // push them out of the viewport. That is true — the reference renders show
+        // PSTricks itself running off the page — but it is an argument for the
+        // clamping below, not for silently dropping a default the author expects.
+        const labels = this.gridlabels ?? 10;
+        if (labels === 'none' || Number(labels) === 0)
             return;
-        const size = dimension(this.gridlabels, 10);
+        const size = dimension(labels, 10);
         const labelcolor = this.gridlabelcolor ?? 'black';
         const text = (s, x, y, anchor) => {
             svg
