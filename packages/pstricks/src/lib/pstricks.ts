@@ -290,7 +290,7 @@ export const Functions = {
       // `plotstyle=dots` marks the samples rather than joining them; dotsize is
       // the marker radius, matching psdots so a document using both agrees.
       plotstyle: 'line',
-      dotsize: 2
+      dotsize: '2pt 2'
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
 
@@ -595,7 +595,10 @@ export const Functions = {
     var obj: any = {
       linecolor: 'black',
       dotstyle: 'dot',
-      dotsize: 2,
+      // PSTricks reads `dotsize=<dim> <factor>`: the diameter is
+      // dim + factor x linewidth, so a thicker pen draws a bigger dot.
+      dotsize: '2pt 2',
+      linewidth: 0.8 * 1.333,
       data: parseCoordList.call(this, m[2])
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));

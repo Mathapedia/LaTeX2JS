@@ -295,6 +295,10 @@ function resolveStroke(ctx: any, fallback?: string): string {
 const DASH_DEFAULT = '5pt 3pt';
 const DOTSEP_DEFAULT = 3;
 
+/** PSTricks' `dotsize=2pt 2` and `linewidth=0.8pt` defaults. */
+const DOTSIZE_DEFAULT = '2pt 2';
+const DEFAULT_LINEWIDTH_PX = 0.8 * PT_TO_PX;
+
 /**
  * The SVG dash pattern for a shape's linestyle, or `none` when it draws solid.
  *
@@ -326,6 +330,43 @@ function dashArray(ctx: any): string {
 /** Round caps are what turn a zero-length dash into a dot. */
 function dashCap(ctx: any): string {
   return ctx && ctx.linestyle === 'dotted' ? 'round' : 'butt';
+}
+
+/**
+ * The radius of a plotted dot.
+ *
+ * PSTricks reads `dotsize=<dim> <factor>` and sets the dot's *diameter* to
+ * `dim + factor × linewidth`, so a thicker pen draws a proportionally bigger
+ * dot — its `dotsize=2pt 2` default and the halving are both from
+ * pstricks-dots.tex. This was a fixed radius that read neither part, so
+ * `\psdots[linewidth=4pt]` drew the same specks as a hairline where the
+ * reference draws discs five times the size.
+ *
+ * @param ctx - the shape's parsed data, carrying dotsize and linewidth
+ * @returns the radius in device units
+ */
+function dotRadius(ctx: any): number {
+  const parts = String(ctx.dotsize ?? DOTSIZE_DEFAULT).trim().split(/\s+/);
+  const base = dimension(parts[0], 2);
+  const factor = Number(parts[1]);
+  const diameter = base + (isFinite(factor) ? factor : 0) * linewidthPx(ctx);
+  return Math.max(0.1, diameter / 2);
+}
+
+/**
+ * A shape's linewidth in device units.
+ *
+ * Only two of the parse functions convert a `pt` suffix, so the value reaching
+ * a renderer is sometimes a number of pixels and sometimes the string the
+ * author wrote. A bare number keeps its device-unit meaning, matching
+ * parseLinewidth in pstricks.ts.
+ */
+function linewidthPx(ctx: any): number {
+  const v = ctx && ctx.linewidth;
+  if (typeof v === 'number' && isFinite(v)) return v;
+  const m = typeof v === 'string' ? v.trim().match(/^([\d.]+)\s*(pt)?$/) : null;
+  if (!m) return DEFAULT_LINEWIDTH_PX;
+  return Number(m[1]) * (m[2] ? PT_TO_PX : 1);
 }
 
 /**
@@ -519,7 +560,7 @@ const psgraph: any = {
           .append('svg:circle')
           .attr('cx', this.data[i])
           .attr('cy', this.data[i + 1])
-          .attr('r', this.dotsize)
+          .attr('r', dotRadius(this))
           .attr('class', 'psplot')
           .style('fill', this.linecolor)
           .style('stroke', 'none');
@@ -1207,7 +1248,7 @@ const psgraph: any = {
         .append('svg:circle')
         .attr('cx', this.data[i])
         .attr('cy', this.data[i + 1])
-        .attr('r', this.dotsize)
+        .attr('r', dotRadius(this))
         .style('fill', this.linecolor)
         .style('stroke', 'none');
     }

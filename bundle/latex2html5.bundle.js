@@ -3507,6 +3507,9 @@ function resolveStroke(ctx, fallback) {
 /** PSTricks' own defaults for the two broken-line styles, in points. */
 const DASH_DEFAULT = '5pt 3pt';
 const DOTSEP_DEFAULT = 3;
+/** PSTricks' `dotsize=2pt 2` and `linewidth=0.8pt` defaults. */
+const DOTSIZE_DEFAULT = '2pt 2';
+const DEFAULT_LINEWIDTH_PX = 0.8 * PT_TO_PX;
 /**
  * The SVG dash pattern for a shape's linestyle, or `none` when it draws solid.
  *
@@ -3538,6 +3541,43 @@ function dashArray(ctx) {
 /** Round caps are what turn a zero-length dash into a dot. */
 function dashCap(ctx) {
     return ctx && ctx.linestyle === 'dotted' ? 'round' : 'butt';
+}
+/**
+ * The radius of a plotted dot.
+ *
+ * PSTricks reads `dotsize=<dim> <factor>` and sets the dot's *diameter* to
+ * `dim + factor × linewidth`, so a thicker pen draws a proportionally bigger
+ * dot — its `dotsize=2pt 2` default and the halving are both from
+ * pstricks-dots.tex. This was a fixed radius that read neither part, so
+ * `\psdots[linewidth=4pt]` drew the same specks as a hairline where the
+ * reference draws discs five times the size.
+ *
+ * @param ctx - the shape's parsed data, carrying dotsize and linewidth
+ * @returns the radius in device units
+ */
+function dotRadius(ctx) {
+    const parts = String(ctx.dotsize ?? DOTSIZE_DEFAULT).trim().split(/\s+/);
+    const base = dimension(parts[0], 2);
+    const factor = Number(parts[1]);
+    const diameter = base + (isFinite(factor) ? factor : 0) * linewidthPx(ctx);
+    return Math.max(0.1, diameter / 2);
+}
+/**
+ * A shape's linewidth in device units.
+ *
+ * Only two of the parse functions convert a `pt` suffix, so the value reaching
+ * a renderer is sometimes a number of pixels and sometimes the string the
+ * author wrote. A bare number keeps its device-unit meaning, matching
+ * parseLinewidth in pstricks.ts.
+ */
+function linewidthPx(ctx) {
+    const v = ctx && ctx.linewidth;
+    if (typeof v === 'number' && isFinite(v))
+        return v;
+    const m = typeof v === 'string' ? v.trim().match(/^([\d.]+)\s*(pt)?$/) : null;
+    if (!m)
+        return DEFAULT_LINEWIDTH_PX;
+    return Number(m[1]) * (m[2] ? PT_TO_PX : 1);
 }
 /**
  * Whether a command's geometry can be drawn.
@@ -3717,7 +3757,7 @@ const psgraph = {
                     .append('svg:circle')
                     .attr('cx', this.data[i])
                     .attr('cy', this.data[i + 1])
-                    .attr('r', this.dotsize)
+                    .attr('r', dotRadius(this))
                     .attr('class', 'psplot')
                     .style('fill', this.linecolor)
                     .style('stroke', 'none');
@@ -4333,7 +4373,7 @@ const psgraph = {
                 .append('svg:circle')
                 .attr('cx', this.data[i])
                 .attr('cy', this.data[i + 1])
-                .attr('r', this.dotsize)
+                .attr('r', dotRadius(this))
                 .style('fill', this.linecolor)
                 .style('stroke', 'none');
         }
@@ -4919,7 +4959,7 @@ exports.Functions = {
             // `plotstyle=dots` marks the samples rather than joining them; dotsize is
             // the marker radius, matching psdots so a document using both agrees.
             plotstyle: 'line',
-            dotsize: 2
+            dotsize: '2pt 2'
         };
         if (m[1])
             Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
@@ -5230,7 +5270,10 @@ exports.Functions = {
         var obj = {
             linecolor: 'black',
             dotstyle: 'dot',
-            dotsize: 2,
+            // PSTricks reads `dotsize=<dim> <factor>`: the diameter is
+            // dim + factor x linewidth, so a thicker pen draws a bigger dot.
+            dotsize: '2pt 2',
+            linewidth: 0.8 * 1.333,
             data: parseCoordList.call(this, m[2])
         };
         if (m[1])

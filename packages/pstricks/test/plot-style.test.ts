@@ -62,8 +62,20 @@ describe('plotstyle', () => {
 
   it('sizes and colours the markers from dotsize and linecolor', () => {
     const first = render('\\psplot[plotstyle=dots,plotpoints=3,dotsize=7,linecolor=red]{-1}{1}{x}').children[0];
-    expect(first.attrs.r).toBe('7');
+    // dotsize names a diameter in points, not a radius in pixels: 7pt across
+    // is 3.5pt out from the centre, which is 4.67 device units.
+    expect(Number(first.attrs.r)).toBeCloseTo((7 / 2) * 1.333, 3);
     expect(first.styles.fill).toBe('red');
+  });
+
+  it('grows the markers with a thicker pen, as the dotsize factor asks', () => {
+    // PSTricks reads `dotsize=<dim> <factor>` and sets the diameter to
+    // dim + factor x linewidth, so linewidth feeds the marker size.
+    const radius = (opts: string) =>
+      Number(render(`\\psplot[plotstyle=dots,plotpoints=3,${opts}]{-1}{1}{x}`).children[0].attrs.r);
+    expect(radius('dotsize=2pt 2,linewidth=4pt')).toBeGreaterThan(radius('dotsize=2pt 2,linewidth=1pt'));
+    // With no factor the pen makes no difference.
+    expect(radius('dotsize=2pt,linewidth=4pt')).toBeCloseTo(radius('dotsize=2pt,linewidth=1pt'), 6);
   });
 
   it('gives the markers a default size when none is asked for', () => {
