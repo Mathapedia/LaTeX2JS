@@ -35,7 +35,12 @@ export const Expressions = {
 
 
 /**
- * Renders a theorem-like heading, numbered unless the environment is starred.
+ * Opens a theorem-like environment with a run-in heading.
+ *
+ * LaTeX sets these as `**Theorem 1.** statement` on one line, not as a heading
+ * with the statement beneath it — the label is part of the sentence. The
+ * wrapper lets CSS carry that, and lets the body take the italic that amsthm
+ * gives a theorem and withholds from a remark.
  *
  * The number comes from the parser through the receiver, so this registry
  * carries no parser internals; a host that supplies none still renders the
@@ -43,10 +48,10 @@ export const Expressions = {
  * Lemma 1 can both exist — which is what a plain \newtheorem gives.
  *
  * @param title - the label a reader sees, such as `Theorem`
- * @param name - the environment name, for the counter
+ * @param name - the environment name, for the counter and the body style
  * @param parser - the receiver, when the caller supplied one
  * @param match - the matched \begin, so a starred form can opt out
- * @returns the heading markup
+ * @returns the opening markup, closed by the matching `end` entry
  */
 function headed(title: string, name: string, parser: any, match?: any): string {
   const raw = Array.isArray(match) ? String(match[0] ?? '') : String(match ?? '');
@@ -54,7 +59,15 @@ function headed(title: string, name: string, parser: any, match?: any): string {
     ? parser.environmentNumber(name, raw)
     : null;
   const label = number === null || number === undefined ? '' : ' ' + number;
-  return '<h4>' + title + label + '</h4>';
+  return (
+    '<div class="theorem-env theorem-env--' + name + '">' +
+    '<h4 class="theorem-head">' + title + label + '</h4> '
+  );
+}
+
+/** Closes an environment opened by {@link headed}. */
+function closed(): string {
+  return '</div>';
 }
 
 export const Functions = {
@@ -69,28 +82,28 @@ export const Functions = {
   note(this: any, m?: any) { return headed('Note', 'note', this, m); },
   exercise(this: any, m?: any) { return headed('Exercise', 'exercise', this, m); },
   question(this: any, m?: any) { return headed('Question', 'question', this, m); },
-  endclaim: () => '',
-  endcorollary: () => '',
-  enddefinition: () => '',
-  endexample: () => '',
-  endlemma: () => '',
-  endproposition: () => '',
-  endaxiom: () => '',
-  endremark: () => '',
-  endnote: () => '',
-  endexercise: () => '',
-  endquestion: () => '',
-  endproblem: () => '',
-  endsolution: () => '',
-  endtheorem: () => '',
+  endclaim: () => closed(),
+  endcorollary: () => closed(),
+  enddefinition: () => closed(),
+  endexample: () => closed(),
+  endlemma: () => closed(),
+  endproposition: () => closed(),
+  endaxiom: () => closed(),
+  endremark: () => closed(),
+  endnote: () => closed(),
+  endexercise: () => closed(),
+  endquestion: () => closed(),
+  endproblem: () => closed(),
+  endsolution: () => closed(),
+  endtheorem: () => closed(),
   eq: () => '</p>',
   example(this: any, m?: any) { return headed('Example', 'example', this, m); },
   problem(this: any, m?: any) { return headed('Problem', 'problem', this, m); },
-  proof: () => '<h4>Proof</h4>',
+  proof: () => '<div class="theorem-env theorem-env--proof"><h4 class="theorem-head">Proof</h4> ',
   // amsthm closes a proof with an open square. Emitted as a character rather
   // than as math: MathJax defines no \qed, so the previous `$\qed$` surfaced
   // an "Undefined control sequence" box at the end of every proof.
-  qed: () => '<span class="qed">□</span>',
+  qed: () => '<span class="qed">□</span></div>',
   solution(this: any, m?: any) { return headed('Solution', 'solution', this, m); },
   theorem(this: any, m?: any) { return headed('Theorem', 'theorem', this, m); }
 };

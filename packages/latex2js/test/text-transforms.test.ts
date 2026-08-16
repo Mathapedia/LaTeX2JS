@@ -36,7 +36,7 @@ describe('text macros whose arguments are themselves transformed', () => {
 describe('proof environment', () => {
   it('closes with a tombstone character rather than an undefined macro', () => {
     const out = render('\\begin{proof}\nBody.\n\\end{proof}\n');
-    expect(out).toContain('<h4>Proof</h4>');
+    expect(out).toContain('Proof</h4>');
     expect(out).toContain('<span class="qed">□</span>');
     // MathJax defines no \qed, so emitting it as math produced a visible
     // "Undefined control sequence" box at the end of every proof.

@@ -92,7 +92,7 @@ If you know \\TeX, you can \\emph{author} math.
 
     const math = parsed.find((e: any) => e.type === 'math');
     const text = math.lines.join('\n');
-    expect(text).toContain('<h4>Theorem 1</h4>');
+    expect(text).toContain('Theorem 1</h4>');
     expect(text).toContain('<i>author</i>');
     expect(text).toContain('$\\TeX$');
   });
@@ -403,14 +403,14 @@ and \\textcolor{red}{colored} and \\section{Intro}
     `);
     const math = parsed.find((e: any) => e.type === 'math');
     const text = math.lines.join('\n');
-    expect(text).toContain('<h4>Lemma 1</h4>');
-    expect(text).toContain('<h4>Proposition 1</h4>');
-    expect(text).toContain('<h4>Axiom 1</h4>');
-    expect(text).toContain('<h4>Remark 1</h4>');
-    expect(text).toContain('<h4>Note 1</h4>');
-    expect(text).toContain('<h4>Exercise 1</h4>');
-    expect(text).toContain('<h4>Question 1</h4>');
-    expect(text).toContain('<h4>Corollary 1</h4>');
+    expect(text).toContain('Lemma 1</h4>');
+    expect(text).toContain('Proposition 1</h4>');
+    expect(text).toContain('Axiom 1</h4>');
+    expect(text).toContain('Remark 1</h4>');
+    expect(text).toContain('Note 1</h4>');
+    expect(text).toContain('Exercise 1</h4>');
+    expect(text).toContain('Question 1</h4>');
+    expect(text).toContain('Corollary 1</h4>');
   });
 
   it('does not crash on \\end{corollary} (old typo fix)', () => {
@@ -418,7 +418,7 @@ and \\textcolor{red}{colored} and \\section{Intro}
 \\begin{corollary}C\\end{corollary}
     `);
     const math = parsed.find((e: any) => e.type === 'math');
-    expect(math.lines.join('\n')).toContain('<h4>Corollary 1</h4>');
+    expect(math.lines.join('\n')).toContain('Corollary 1</h4>');
     expect(latex.lastDiagnostics).toHaveLength(0);
   });
 

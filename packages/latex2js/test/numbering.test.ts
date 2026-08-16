@@ -19,7 +19,7 @@ const numbers = (html: string): string[] =>
   Array.from(html.matchAll(/<span class="section-number">([^<]*)<\/span>/g)).map((m) => m[1]);
 
 const headings = (html: string): string[] =>
-  Array.from(html.matchAll(/<h4>([^<]*)<\/h4>/g)).map((m) => m[1]);
+  Array.from(html.matchAll(/<h4[^>]*>([^<]*)<\/h4>/g)).map((m) => m[1]);
 
 describe('sectioning', () => {
   it('numbers sections in order', () => {
@@ -141,5 +141,41 @@ describe('numbering survives the surrounding document', () => {
       '\\section{A}\n\\begin{pspicture}(0,0)(2,2)\n\\pscircle(1,1){1}\n\\end{pspicture}\n\\section{B}\n'
     );
     expect(numbers(out)).toEqual(['1', '2']);
+  });
+});
+
+describe('run-in headings', () => {
+  const wrappers = (html: string) => ({
+    open: (html.match(/<div class="theorem-env/g) || []).length,
+    close: (html.match(/<\/div>/g) || []).length,
+  });
+
+  it('wraps an environment so the label can run into its statement', () => {
+    // LaTeX sets these as `Theorem 1. statement` on one line; the wrapper is
+    // what lets CSS do that and give the body its own style.
+    const out = render('\\begin{theorem}\nA statement.\n\\end{theorem}\n');
+    expect(out).toContain('<div class="theorem-env theorem-env--theorem">');
+    expect(out).toContain('<h4 class="theorem-head">Theorem 1</h4>');
+    expect(wrappers(out)).toEqual({ open: 1, close: 1 });
+  });
+
+  it('closes every wrapper it opens, across several environments', () => {
+    const out = render(
+      '\\begin{theorem}\na\n\\end{theorem}\n\\begin{lemma}\nb\n\\end{lemma}\n\\begin{proof}\nc\n\\end{proof}\n'
+    );
+    const { open, close } = wrappers(out);
+    expect(open).toBe(3);
+    expect(close).toBe(3);
+  });
+
+  it('marks the kind so the body can be styled per environment', () => {
+    // amsthm italicises a theorem and leaves a remark upright.
+    expect(render('\\begin{remark}\nx\n\\end{remark}\n')).toContain('theorem-env--remark');
+    expect(render('\\begin{proof}\nx\n\\end{proof}\n')).toContain('theorem-env--proof');
+  });
+
+  it('closes the proof wrapper with its tombstone', () => {
+    const out = render('\\begin{proof}\nx\n\\end{proof}\n');
+    expect(out).toContain('<span class="qed">□</span></div>');
   });
 });
