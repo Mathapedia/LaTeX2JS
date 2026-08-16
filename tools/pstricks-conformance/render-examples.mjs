@@ -385,3 +385,10 @@ const ok = Object.values(results).filter((s) => s === 'OK').length
 const failed = Object.entries(results).filter(([, s]) => s !== 'OK')
 console.log(`render-examples: ${ok}/${ids.length} rendered in ${((Date.now() - t0) / 1000).toFixed(0)}s`)
 for (const [n, s] of failed) console.log(`  ${s.padEnd(12)} ${n}`)
+
+// A picture that stops compiling under real PSTricks is a definite regression,
+// unlike the comparison score, so this is worth failing a build over.
+if (failed.length) {
+  console.error(`render-examples: ${failed.length} picture(s) no longer compile; logs in ref/logs/`)
+  process.exit(1)
+}

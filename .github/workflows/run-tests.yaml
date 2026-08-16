@@ -6,9 +6,16 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A branch only needs its newest commit checked; superseded runs are cancelled
+# so a series of pushes does not queue behind itself.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -48,13 +55,12 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # The pnpm version comes from `packageManager` in package.json. Naming it
-      # here as well makes the action refuse to install rather than pick one.
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
@@ -69,17 +75,115 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Resolve the Playwright version
+        # The browser cache is keyed on the exact version, so an upgrade misses
+        # the cache instead of restoring browsers the new Playwright refuses.
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: playground/.browsers
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
       - name: Install Playwright browsers (workspace-local)
+        # System dependencies are not part of the cached directory, so they are
+        # installed on every run; the browser download is what the cache saves.
         run: |
           export PLAYWRIGHT_BROWSERS_PATH="$GITHUB_WORKSPACE/playground/.browsers"
-          pnpm --filter @latex2js/playground exec playwright install --with-deps chromium
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            pnpm --filter @latex2js/playground exec playwright install-deps chromium
+          else
+            pnpm --filter @latex2js/playground exec playwright install --with-deps chromium
+          fi
 
       - name: Run browser tests (gallery + interactive)
         run: pnpm e2e
+
+      - name: Build a browsable gallery of the renderings
+        # One self-contained page is easier to review than a folder of PNGs.
+        run: node tools/pstricks-conformance/gallery.mjs
+          --renders playground/renders
+          --title "LaTeX2JS renders"
+          --out playground/renders/gallery.html
 
       - name: Upload renderings as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: example-renderings
-          path: playground/renders/*.png
+          path: |
+            playground/renders/*.png
+            playground/renders/gallery.html
+          if-no-files-found: error
+
+  conformance:
+    # Compares LaTeX2JS output against genuine PSTricks. Only the "does every
+    # picture still compile" half gates the build; the similarity score is a
+    # heuristic between two different rasterizers and is published for review
+    # rather than enforced.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull the PSTricks image
+        # Carries a full TeX Live with PSTricks; the runner is amd64, so it runs
+        # natively here rather than emulated as it does on Apple silicon.
+        run: docker pull --platform linux/amd64 pyramation/pstricks-latex:latest
+
+      - name: Render every example with real PSTricks
+        # Fails the job if a picture stops compiling — that is a definite
+        # regression, unlike a shifted similarity score.
+        run: node tools/pstricks-conformance/render-examples.mjs
+          --corpus packages/latex2js/test/corpus
+          --out tools/pstricks-conformance/examples-ref
+          --jobs 4
+
+      - name: Restore Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: playground/.browsers
+          key: playwright-conformance-${{ runner.os }}
+
+      - name: Install Playwright browsers (workspace-local)
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="$GITHUB_WORKSPACE/playground/.browsers"
+          pnpm --filter @latex2js/playground exec playwright install --with-deps chromium
+
+      - name: Render every example with LaTeX2JS
+        run: pnpm --filter @latex2js/playground e2e:gallery
+
+      - name: Score the two against each other
+        run: node tools/pstricks-conformance/compare.mjs
+          --js playground/renders
+          --ref tools/pstricks-conformance/examples-ref/ref
+          --manifest tools/pstricks-conformance/examples-ref/manifest.json
+          --out conformance.html
+
+      - name: Upload the comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: pstricks-conformance
+          path: |
+            conformance.html
+            tools/pstricks-conformance/examples-ref/ref/*.png
           if-no-files-found: error

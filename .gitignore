@@ -12,3 +12,6 @@ playground/.browsers
 playground/test-results
 playground/playwright-report
 playground/renders
+
+# Conformance report written at the repo root by the CI comparison step.
+conformance.html
