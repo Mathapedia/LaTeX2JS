@@ -147,7 +147,10 @@ export const parseArrows = function (m: string) {
   var arrows = [0, 0];
   var dots = [0, 0];
   if (lineType) {
-    var type = lineType.match(/\{([^\-]*)?\-([^\-]*)?\}/);
+    // The braces are optional. PSTricks accepts the same specification as an
+    // option — `[arrows=->]` — and requiring `{->}` meant the option form
+    // matched nothing here, so it was left on the shape as a bare string.
+    var type = lineType.match(/\{?([^\-{}]*)\-([^\-{}]*)\}?/);
     if (type) {
       if (type[1]) {
         // check starting point
@@ -171,6 +174,28 @@ export const parseArrows = function (m: string) {
     arrows: arrows,
     dots: dots
   };
+};
+
+/**
+ * Turns an `arrows` option back into the pair of flags a renderer reads.
+ *
+ * A shape's arrow specification arrives two ways: as the `{->}` group in its
+ * own syntax, which its parse function reads, and as an `arrows=->` option,
+ * which `parseOptions` hands over as a plain string. The string then
+ * overwrote the parsed pair — and since `'->'[0]` is `'-'`, which is truthy,
+ * every renderer testing `arrows[0]` drew a head at BOTH ends regardless of
+ * the direction asked for, while `*-*` drew two arrowheads where PSTricks
+ * draws two discs.
+ *
+ * @param obj - a parsed command, normalized in place
+ */
+export const normalizeArrows = function (obj: any): void {
+  if (!obj || typeof obj.arrows !== 'string') return;
+  const parsed = parseArrows(obj.arrows);
+  obj.arrows = parsed.arrows;
+  // Only take the dots when this specification actually names any, so an
+  // `arrows=` option cannot clear dots the `{*-*}` form already set.
+  if (parsed.dots[0] || parsed.dots[1]) obj.dots = parsed.dots;
 };
 
 // export const evaluate = function (this: any, exp: string) {

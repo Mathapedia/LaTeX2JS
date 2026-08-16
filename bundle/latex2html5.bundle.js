@@ -2161,6 +2161,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const pegParser = __importStar(require("../grammar/parser.js"));
 const dialect_1 = require("./dialect");
 const settings_1 = require("@latex2js/settings");
+const utils_1 = require("@latex2js/utils");
 const counters_1 = require("./counters");
 /**
  * Keys `\psset` may declare that are not style defaults for a shape.
@@ -2790,6 +2791,10 @@ class Parser {
             const cmdEnv = envForUnits(env, node.units);
             const data = this.PSTricks.Functions[k].call(cmdEnv, m);
             applyPsset(data, node.settings, node.raw);
+            // An `arrows` declared by \psset arrives as a string after the parse
+            // function has already turned its own into flags, so it is normalized
+            // once more here rather than in each of them.
+            (0, utils_1.normalizeArrows)(data);
             // \multido{var=start+step}{count}{body} — expand and recurse.
             if (k === 'multido') {
                 this.expandMultido(data, env, plot, elements, node);
@@ -2976,7 +2981,7 @@ class Parser {
 }
 exports.default = Parser;
 
-},{"../grammar/parser.js":9,"./counters":11,"./dialect":12,"@latex2js/settings":23}],17:[function(require,module,exports){
+},{"../grammar/parser.js":9,"./counters":11,"./dialect":12,"@latex2js/settings":23,"@latex2js/utils":25}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Functions = exports.Expressions = void 0;
@@ -4274,40 +4279,42 @@ const psgraph = {
         for (let i = 0; i < pts.length - 1; i++) {
             draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
         }
-        if (this.dots[0]) {
+        // The markers go on the ENDS of the polyline, like the arrowheads below;
+        // x1..y2 name the first segment, which on a three-point line is its
+        // middle vertex.
+        const marker = (at) => {
             svg
                 .append('svg:circle')
-                .attr('cx', this.x1)
-                .attr('cy', this.y1)
-                .attr('r', 3)
+                .attr('cx', at[0])
+                .attr('cy', at[1])
+                .attr('r', dotRadius(this))
                 .style('stroke', resolveStroke(this))
                 .style('fill', this.linecolor)
                 .style('stroke-width', 1)
                 .style('stroke-opacity', 1);
-        }
-        if (this.dots[1]) {
-            svg
-                .append('svg:circle')
-                .attr('cx', this.x2)
-                .attr('cy', this.y2)
-                .attr('r', 3)
-                .style('stroke', resolveStroke(this))
-                .style('fill', this.linecolor)
-                .style('stroke-width', 1)
-                .style('stroke-opacity', 1);
-        }
-        var x1 = this.x1, y1 = this.y1, x2 = this.x2, y2 = this.y2;
+        };
+        if (this.dots[0])
+            marker(pts[0]);
+        if (this.dots[1])
+            marker(pts[pts.length - 1]);
+        // An arrowhead belongs on the END of the polyline, and points along the
+        // last segment. Reading x1..y2 put it on the first segment instead, so a
+        // three-point line grew a head at its middle vertex.
+        const head = pts[pts.length - 1];
+        const beforeHead = pts[pts.length - 2];
+        const tail = pts[0];
+        const afterTail = pts[1];
         if (this.arrows[0]) {
             svg
                 .append('path')
-                .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
+                .attr('d', arrow(afterTail[0], afterTail[1], tail[0], tail[1], this.arrowscale))
                 .style('fill', this.linecolor)
                 .style('stroke', resolveStroke(this));
         }
         if (this.arrows[1]) {
             svg
                 .append('path')
-                .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
+                .attr('d', arrow(beforeHead[0], beforeHead[1], head[0], head[1], this.arrowscale))
                 .style('fill', this.linecolor)
                 .style('stroke', resolveStroke(this));
         }
@@ -5446,6 +5453,17 @@ exports.Functions = {
         var l = (0, utils_1.parseArrows)(m[2]);
         obj.arrows = l.arrows;
         obj.dots = l.dots;
+        // psaxes reads its options key by key rather than assigning them wholesale,
+        // so an `arrows=` option was dropped on the floor and an arrowed axis drew
+        // no head at all — and kept the tick and number the head should suppress.
+        if (m[1]) {
+            const opts = (0, utils_1.parseOptions)(m[1]);
+            if (opts.arrows) {
+                const fromOption = (0, utils_1.parseArrows)(opts.arrows);
+                obj.arrows = fromOption.arrows;
+                obj.dots = fromOption.dots;
+            }
+        }
         // \psaxes*[par]{arrows}(x0,y0)(x1,y1)(x2,y2)
         // m[1] [options]
         // m[2] {<->}
@@ -5533,6 +5551,7 @@ exports.Functions = {
             }
         }
         obj.data = data;
+        (0, utils_1.normalizeArrows)(obj);
         return obj;
     },
     pspolygon(m) {
@@ -5603,6 +5622,7 @@ exports.Functions = {
         obj.angleA = (Number(m[6]) * Math.PI) / 180;
         obj.angleB = (Number(m[7]) * Math.PI) / 180;
         Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
+        (0, utils_1.normalizeArrows)(obj);
         return obj;
     },
     psline(m) {
@@ -5649,6 +5669,7 @@ exports.Functions = {
         if (typeof obj.linewidth === 'string') {
             obj.linewidth = parseLinewidth(obj.linewidth);
         }
+        (0, utils_1.normalizeArrows)(obj);
         return obj;
     },
     uservariable(m) {
@@ -5775,6 +5796,7 @@ exports.Functions = {
         if (typeof obj.linewidth === 'string') {
             obj.linewidth = parseLinewidth(obj.linewidth);
         }
+        (0, utils_1.normalizeArrows)(obj);
         return obj;
     },
     rput(m) {
@@ -6427,7 +6449,7 @@ function parseExpression(source) {
 },{}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MATH_CONSTANTS = exports.MATH_FUNCTIONS = exports.ExpressionError = exports.parseExpression = exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.parseArrows = exports.parseOptions = exports.resolveColor = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
+exports.MATH_CONSTANTS = exports.MATH_FUNCTIONS = exports.ExpressionError = exports.parseExpression = exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.normalizeArrows = exports.parseArrows = exports.parseOptions = exports.resolveColor = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
 const expression_1 = require("./expression");
 const simplerepl = function (regex, replace) {
     return function (_m, contents) {
@@ -6569,7 +6591,10 @@ const parseArrows = function (m) {
     var arrows = [0, 0];
     var dots = [0, 0];
     if (lineType) {
-        var type = lineType.match(/\{([^\-]*)?\-([^\-]*)?\}/);
+        // The braces are optional. PSTricks accepts the same specification as an
+        // option — `[arrows=->]` — and requiring `{->}` meant the option form
+        // matched nothing here, so it was left on the shape as a bare string.
+        var type = lineType.match(/\{?([^\-{}]*)\-([^\-{}]*)\}?/);
         if (type) {
             if (type[1]) {
                 // check starting point
@@ -6597,6 +6622,30 @@ const parseArrows = function (m) {
     };
 };
 exports.parseArrows = parseArrows;
+/**
+ * Turns an `arrows` option back into the pair of flags a renderer reads.
+ *
+ * A shape's arrow specification arrives two ways: as the `{->}` group in its
+ * own syntax, which its parse function reads, and as an `arrows=->` option,
+ * which `parseOptions` hands over as a plain string. The string then
+ * overwrote the parsed pair — and since `'->'[0]` is `'-'`, which is truthy,
+ * every renderer testing `arrows[0]` drew a head at BOTH ends regardless of
+ * the direction asked for, while `*-*` drew two arrowheads where PSTricks
+ * draws two discs.
+ *
+ * @param obj - a parsed command, normalized in place
+ */
+const normalizeArrows = function (obj) {
+    if (!obj || typeof obj.arrows !== 'string')
+        return;
+    const parsed = (0, exports.parseArrows)(obj.arrows);
+    obj.arrows = parsed.arrows;
+    // Only take the dots when this specification actually names any, so an
+    // `arrows=` option cannot clear dots the `{*-*}` form already set.
+    if (parsed.dots[0] || parsed.dots[1])
+        obj.dots = parsed.dots;
+};
+exports.normalizeArrows = normalizeArrows;
 // export const evaluate = function (this: any, exp: string) {
 //   var num = Number(exp);
 //   if (isNaN(num)) {

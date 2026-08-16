@@ -1,6 +1,7 @@
 import * as pegParser from '../grammar/parser.js';
 import { dialectUses } from './dialect';
 import { normalizeDialect } from '@latex2js/settings';
+import { normalizeArrows } from '@latex2js/utils';
 import { Counters, SectionLevel } from './counters';
 
 export interface Diagnostic {
@@ -716,6 +717,10 @@ class Parser {
       const cmdEnv = envForUnits(env, node.units);
       const data = this.PSTricks.Functions[k].call(cmdEnv, m);
       applyPsset(data, node.settings, node.raw);
+      // An `arrows` declared by \psset arrives as a string after the parse
+      // function has already turned its own into flags, so it is normalized
+      // once more here rather than in each of them.
+      normalizeArrows(data);
 
       // \multido{var=start+step}{count}{body} — expand and recurse.
       if (k === 'multido') {

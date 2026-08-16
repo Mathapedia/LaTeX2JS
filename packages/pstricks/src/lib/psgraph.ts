@@ -919,39 +919,35 @@ const psgraph: any = {
       draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
     }
 
-    if (this.dots[0]) {
+    // The markers go on the ENDS of the polyline, like the arrowheads below;
+    // x1..y2 name the first segment, which on a three-point line is its
+    // middle vertex.
+    const marker = (at: number[]) => {
       svg
         .append('svg:circle')
-        .attr('cx', this.x1)
-        .attr('cy', this.y1)
-        .attr('r', 3)
+        .attr('cx', at[0])
+        .attr('cy', at[1])
+        .attr('r', dotRadius(this))
         .style('stroke', resolveStroke(this))
         .style('fill', this.linecolor)
         .style('stroke-width', 1)
         .style('stroke-opacity', 1);
-    }
+    };
+    if (this.dots[0]) marker(pts[0]);
+    if (this.dots[1]) marker(pts[pts.length - 1]);
 
-    if (this.dots[1]) {
-      svg
-        .append('svg:circle')
-        .attr('cx', this.x2)
-        .attr('cy', this.y2)
-        .attr('r', 3)
-        .style('stroke', resolveStroke(this))
-        .style('fill', this.linecolor)
-        .style('stroke-width', 1)
-        .style('stroke-opacity', 1);
-    }
-
-    var x1 = this.x1,
-      y1 = this.y1,
-      x2 = this.x2,
-      y2 = this.y2;
+    // An arrowhead belongs on the END of the polyline, and points along the
+    // last segment. Reading x1..y2 put it on the first segment instead, so a
+    // three-point line grew a head at its middle vertex.
+    const head = pts[pts.length - 1];
+    const beforeHead = pts[pts.length - 2];
+    const tail = pts[0];
+    const afterTail = pts[1];
 
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
+        .attr('d', arrow(afterTail[0], afterTail[1], tail[0], tail[1], this.arrowscale))
         .style('fill', this.linecolor)
         .style('stroke', resolveStroke(this));
     }
@@ -959,7 +955,7 @@ const psgraph: any = {
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
+        .attr('d', arrow(beforeHead[0], beforeHead[1], head[0], head[1], this.arrowscale))
         .style('fill', this.linecolor)
         .style('stroke', resolveStroke(this));
     }

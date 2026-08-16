@@ -2,6 +2,7 @@ import {
   RE,
   parseOptions,
   parseArrows,
+  normalizeArrows,
   evaluate,
   parseExpression,
   X,
@@ -264,6 +265,17 @@ export const Functions = {
     var l = parseArrows(m[2]);
     obj.arrows = l.arrows;
     obj.dots = l.dots;
+    // psaxes reads its options key by key rather than assigning them wholesale,
+    // so an `arrows=` option was dropped on the floor and an arrowed axis drew
+    // no head at all — and kept the tick and number the head should suppress.
+    if (m[1]) {
+      const opts = parseOptions(m[1]);
+      if (opts.arrows) {
+        const fromOption = parseArrows(opts.arrows);
+        obj.arrows = fromOption.arrows;
+        obj.dots = fromOption.dots;
+      }
+    }
     // \psaxes*[par]{arrows}(x0,y0)(x1,y1)(x2,y2)
     // m[1] [options]
     // m[2] {<->}
@@ -349,6 +361,7 @@ export const Functions = {
       }
     }
     obj.data = data;
+    normalizeArrows(obj);
     return obj;
   },
   pspolygon(this: PSTricksContext, m: any) {
@@ -417,6 +430,7 @@ export const Functions = {
     obj.angleA = (Number(m[6]) * Math.PI) / 180;
     obj.angleB = (Number(m[7]) * Math.PI) / 180;
     Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
+    normalizeArrows(obj);
     return obj;
   },
   psline(this: PSTricksContext, m: any) {
@@ -462,6 +476,7 @@ export const Functions = {
     if (typeof obj.linewidth === 'string') {
       obj.linewidth = parseLinewidth(obj.linewidth);
     }
+    normalizeArrows(obj);
     return obj;
   },
   uservariable(this: PSTricksContext, m: any) {
@@ -586,6 +601,7 @@ export const Functions = {
     if (typeof obj.linewidth === 'string') {
       obj.linewidth = parseLinewidth(obj.linewidth);
     }
+    normalizeArrows(obj);
     return obj;
   },
   rput(this: PSTricksContext, m: any) {
