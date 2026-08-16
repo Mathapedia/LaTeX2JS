@@ -108,3 +108,34 @@ describe('an arrowhead takes the end of its axis', () => {
     expect(labels).toContain('2');
   });
 });
+
+describe('showorigin', () => {
+  // Verified against PSTricks: showorigin=false removes the tick and the
+  // number at the origin, leaving every other tick and number alone.
+  it('draws the origin tick and number by default', () => {
+    const plain = render('\\psaxes{->}(0,0)(-3,-3)(3,3)');
+    expect(plain.labels).toContain('0');
+  });
+
+  it('suppresses the origin number when showorigin=false', () => {
+    const suppressed = render('\\psaxes[showorigin=false]{->}(0,0)(-3,-3)(3,3)');
+    expect(suppressed.labels).not.toContain('0');
+  });
+
+  it('removes exactly the two origin ticks', () => {
+    const plain = render('\\psaxes[labels=none]{->}(0,0)(-3,-3)(3,3)');
+    const suppressed = render('\\psaxes[showorigin=false,labels=none]{->}(0,0)(-3,-3)(3,3)');
+    // one origin tick per axis
+    expect(suppressed.tickCount).toBe(plain.tickCount - 2);
+  });
+
+  it('keeps every other number and tick', () => {
+    const plain = render('\\psaxes{->}(0,0)(-3,-3)(3,3)');
+    const suppressed = render('\\psaxes[showorigin=false]{->}(0,0)(-3,-3)(3,3)');
+    expect(suppressed.labels).toContain('1');
+    expect(suppressed.labels).toContain('-1');
+    expect(suppressed.labels).not.toContain('0');
+    // only the two origin ticks are gone
+    expect(suppressed.tickCount).toBe(plain.tickCount - 2);
+  });
+});

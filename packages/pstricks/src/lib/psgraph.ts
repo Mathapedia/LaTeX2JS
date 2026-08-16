@@ -1,8 +1,11 @@
 import { Y } from '@latex2js/utils';
 
-function arrow(x1: number, y1: number, x2: number, y2: number) {
+function arrow(x1: number, y1: number, x2: number, y2: number, arrowscale?: number | string) {
   var t = Math.PI / 6;
-  var d = 8;
+  // arrowscale is a multiplier on the 8px default head size; anything that
+  // is not a positive number falls back to 1 (the PSTricks default).
+  var scale = Number(arrowscale);
+  var d = 8 * (scale > 0 ? scale : 1);
   var dx = x2 - x1,
     dy = y2 - y1;
   var l = Math.sqrt(dx * dx + dy * dy);
@@ -497,12 +500,15 @@ const psgraph: any = {
 
     var xticks = () => {
       positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
+        // showorigin=false suppresses the tick at the origin itself.
+        if (this.showorigin === false && Math.abs(x - origin[0]) < 1e-6) return;
         line(x, origin[1] - 5, x, origin[1] + 5);
       });
     };
 
     var yticks = () => {
       positions(yaxis[0], yaxis[1], origin[1], this.dy).forEach((y) => {
+        if (this.showorigin === false && Math.abs(y - origin[1]) < 1e-6) return;
         line(origin[0] - 5, y, origin[0] + 5, y);
       });
     };
@@ -536,6 +542,8 @@ const psgraph: any = {
         // the axis line straight through the glyph, so it shifts clear of it
         // and serves both axes — as it does on a hand-drawn pair of axes.
         const atOrigin = Math.abs(x - origin[0]) < 1e-6;
+        // showorigin=false drops the number at the origin with its tick.
+        if (atOrigin && this.showorigin === false) return;
         if (atOrigin) label(String(value(x, 'x')), x - 7, origin[1] + 20, 'end');
         else label(String(value(x, 'x')), x, origin[1] + 20, 'middle');
       });
@@ -567,13 +575,13 @@ const psgraph: any = {
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(xaxis[1], origin[1], xaxis[0], origin[1]))
+        .attr('d', arrow(xaxis[1], origin[1], xaxis[0], origin[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
 
       svg
         .append('path')
-        .attr('d', arrow(origin[0], yaxis[1], origin[0], yaxis[0]))
+        .attr('d', arrow(origin[0], yaxis[1], origin[0], yaxis[0], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
     }
@@ -581,13 +589,13 @@ const psgraph: any = {
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(xaxis[0], origin[1], xaxis[1], origin[1]))
+        .attr('d', arrow(xaxis[0], origin[1], xaxis[1], origin[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
 
       svg
         .append('path')
-        .attr('d', arrow(origin[0], yaxis[0], origin[0], yaxis[1]))
+        .attr('d', arrow(origin[0], yaxis[0], origin[0], yaxis[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
     }
@@ -666,7 +674,7 @@ const psgraph: any = {
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(x2, y2, x1, y1))
+        .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
         .style('fill', this.linecolor)
         .style('stroke', this.linecolor);
     }
@@ -674,7 +682,7 @@ const psgraph: any = {
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(x1, y1, x2, y2))
+        .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
         .style('fill', this.linecolor)
         .style('stroke', this.linecolor);
     }
@@ -758,7 +766,7 @@ const psgraph: any = {
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(x2, y2, x1, y1))
+        .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
         .attr('class', 'userline')
         .style('fill', this.linecolor)
         .style('stroke', this.linecolor);
@@ -767,7 +775,7 @@ const psgraph: any = {
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(x1, y1, x2, y2))
+        .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
         .attr('class', 'userline')
         .style('fill', this.linecolor)
         .style('stroke', this.linecolor);

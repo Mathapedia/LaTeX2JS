@@ -210,7 +210,8 @@ export const Functions = {
       arrows: [0, 0],
       dots: [0, 0],
       ticks: 'all',
-      labels: 'all'
+      labels: 'all',
+      showorigin: true
     };
     if (m[1]) {
       var options = parseOptions(m[1]);
@@ -225,6 +226,12 @@ export const Functions = {
       // ticks and labels could never be turned on.
       if (options.ticks) obj.ticks = options.ticks;
       if (options.labels) obj.labels = options.labels;
+      // arrowscale scales the axis arrowheads; it reaches the renderer as a
+      // string via parseOptions and is converted where the head is drawn.
+      if (options.arrowscale) obj.arrowscale = options.arrowscale;
+      // showorigin=false suppresses the tick and number at the origin; the
+      // default is to draw them.
+      if (options.showorigin) obj.showorigin = options.showorigin !== 'false';
     }
     // arrows?
     var l = parseArrows(m[2]);
