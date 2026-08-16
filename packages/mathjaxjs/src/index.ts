@@ -31,8 +31,21 @@ export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG)
     return;
   }
 
-  if ((globalThis as any).MathJax) {
-    mathJaxInstance = (globalThis as any).MathJax;
+  // Presence is not readiness. `window.MathJax` holds the configuration object
+  // long before the library that reads it has loaded, and pre-configuring the
+  // global is the documented way to set MathJax up — so treating any value
+  // here as a loaded library meant a page that configured MathJax itself never
+  // got the script injected at all, and MathJax never loaded.
+  const existing = (globalThis as any).MathJax;
+  if (existing && typeof existing.typesetPromise === 'function') {
+    mathJaxInstance = existing;
+    callback();
+    return;
+  }
+
+  // Someone has already asked for the script; wait for that one rather than
+  // adding a second copy.
+  if (typeof document !== 'undefined' && document.getElementById('MathJax-script')) {
     callback();
     return;
   }
@@ -40,8 +53,12 @@ export const loadMathJax = async (callback = () => { }, config = DEFAULT_CONFIG)
   try {
     (globalThis as any).MathJax = {
       ...config,
+      // A page that configured MathJax itself keeps its settings; only the
+      // startup hook below is ours.
+      ...(existing && typeof existing === 'object' ? existing : {}),
       startup: {
         ...config.startup,
+        ...(existing && typeof existing === 'object' ? existing.startup : {}),
         ready: () => {
           (globalThis as any).MathJax.startup.defaultReady();
           mathJaxInstance = (globalThis as any).MathJax;
