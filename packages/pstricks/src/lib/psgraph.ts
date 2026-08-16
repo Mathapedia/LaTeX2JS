@@ -37,13 +37,41 @@ function arrow(x1: number, y1: number, x2: number, y2: number) {
 
 /**
  * Catmull-Rom → cubic Bézier path for a flat [x0,y0,x1,y1,...] point list.
- * `closed` wraps the curve back to the start point.
+ *
+ * The three PSTricks curve commands are three different shapes, not one:
+ * `\pscurve` runs through every point, `\psccurve` wraps back to the start, and
+ * `\psecurve` uses the first and last points **only** to set the tangents and
+ * draws just the span between the interior ones. Treating `psecurve` as closed
+ * — as this did — produced a loop where the reference draws a short open arc.
+ *
+ * @param data - flat coordinate pairs
+ * @param mode - which of the three curves to build
+ * @returns an SVG path, empty when there are too few points for the mode
  */
-function buildCurvePath(data: number[], closed: boolean): string {
+function buildCurvePath(data: number[], mode: 'open' | 'closed' | 'endpoints'): string {
   const pts: Array<[number, number]> = [];
   for (let i = 0; i < data.length; i += 2) pts.push([data[i], data[i + 1]]);
   const n = pts.length;
+  const closed = mode === 'closed';
   if (n < 2) return '';
+  // The outer points of an endpoints curve are tangent controls, so four are
+  // needed before there is any span left to draw.
+  if (mode === 'endpoints') {
+    if (n < 4) return '';
+    let d = 'M ' + pts[1][0] + ' ' + pts[1][1];
+    for (let i = 1; i < n - 2; i++) {
+      const p0 = pts[i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2];
+      const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p2[0] + ' ' + p2[1];
+    }
+    return d;
+  }
   const at = (i: number) => pts[((i % n) + n) % n];
   let d = 'M ' + pts[0][0] + ' ' + pts[0][1];
   for (let i = 0; i < n - 1; i++) {
@@ -229,7 +257,8 @@ function fullCirclePath(cx: number, cy: number, r: number): string {
 }
 
 function curveRenderer(this: any, svg: any): void {
-  const d = buildCurvePath(this.data, !!this.closed);
+  const mode = this.endpoints ? 'endpoints' : this.closed ? 'closed' : 'open';
+  const d = buildCurvePath(this.data, mode);
   if (!d) return;
   svg
     .append('svg:path')
@@ -1144,7 +1173,7 @@ const psgraph: any = {
   },
 
   pscurve(svg: any): void {
-    const d = buildCurvePath(this.data, !!this.closed);
+    const d = buildCurvePath(this.data, this.endpoints ? 'endpoints' : this.closed ? 'closed' : 'open');
     if (!d) return;
     svg
       .append('svg:path')

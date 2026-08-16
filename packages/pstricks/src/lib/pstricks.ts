@@ -647,7 +647,10 @@ export const Functions = {
       fillstyle: 'none',
       fillcolor: 'black',
       linewidth: 2,
-      closed: /\\psecurve|\\psccurve/.test(m[0])
+      // Only psccurve wraps. psecurve is an open curve whose first and last
+      // points are tangent controls rather than points it passes through.
+      closed: /\\psccurve/.test(m[0]),
+      endpoints: /\\psecurve/.test(m[0])
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     // first point is captured separately (m[2], m[3]); the rest follow
