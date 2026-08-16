@@ -328,6 +328,24 @@ const psgraph: any = {
   },
 
   psplot(svg: any): void {
+    // `plotstyle=dots` marks the samples instead of joining them. It was parsed
+    // and dropped, so a plot asking for dots drew a line through them — or, at
+    // plotpoints=1, a path of one point, which is nothing at all. That is why
+    // the tangent markers were missing from every picture in graph.tex.
+    if (this.plotstyle === 'dots') {
+      for (let i = 0; i < this.data.length; i += 2) {
+        svg
+          .append('svg:circle')
+          .attr('cx', this.data[i])
+          .attr('cy', this.data[i + 1])
+          .attr('r', this.dotsize)
+          .attr('class', 'psplot')
+          .style('fill', this.linecolor)
+          .style('stroke', 'none');
+      }
+      return;
+    }
+
     var context = [];
     context.push('M');
     if (hasFill(this)) {

@@ -271,7 +271,11 @@ export const Functions = {
       linestyle: 'solid',
       fillstyle: 'none',
       fillcolor: 'none',
-      linewidth: 2
+      linewidth: 2,
+      // `plotstyle=dots` marks the samples rather than joining them; dotsize is
+      // the marker radius, matching psdots so a document using both agrees.
+      plotstyle: 'line',
+      dotsize: 2
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
 
