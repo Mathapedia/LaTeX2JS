@@ -356,12 +356,39 @@ class Parser {
     return this.isIgnored('\\begin{' + name + '}');
   }
 
+  /**
+   * A blank source line becomes a `<br>`, but a heading already carries its own
+   * margins, so a `<br>` next to one stacks two gaps where the author asked for
+   * one. Dropping the adjacent break leaves the heading's own spacing to do the
+   * work — and a run of breaks collapses to a single paragraph gap.
+   */
+  collapseBreaks(lines: string[]): string[] {
+    const isBlock = (l: string) => /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote)\b/i.test(l);
+    const out: string[] = [];
+    for (const line of lines) {
+      if (line !== '<br>') {
+        while (isBlock(line) && out[out.length - 1] === '<br>') out.pop();
+        out.push(line);
+        continue;
+      }
+      if (!out.length) continue;
+      if (isBlock(out[out.length - 1])) continue;
+      if (out[out.length - 1] === '<br>') continue;
+      out.push(line);
+    }
+    while (out[out.length - 1] === '<br>') out.pop();
+    return out;
+  }
+
   newEnvironment(type: string): void {
     if (
       this.environment &&
       (this.environment.lines.length || this.environment.type !== 'math')
     ) {
       this.environment.settings = { ...this.settings };
+      if (!this.environment.type.match(/pspicture|verbatim/)) {
+        this.environment.lines = this.collapseBreaks(this.environment.lines);
+      }
       this.objects.push(this.environment);
     }
     this.environment = {

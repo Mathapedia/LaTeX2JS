@@ -4,10 +4,7 @@ exports[`Parser parse 1`] = `
 [
   {
     "lines": [
-      "<br>",
       "Let's get to the point. The core of PSTricks is graphics!",
-      "<br>",
-      "<br>",
     ],
     "settings": {
       "fillstyle": "none",
@@ -613,11 +610,7 @@ exports[`Parser parse 1`] = `
   },
   {
     "lines": [
-      "<br>",
-      "<br>",
-      "<br>",
       "which can be produced using the following $\\TeX$:",
-      "<br>",
     ],
     "settings": {
       "fillstyle": "none",
@@ -665,10 +658,7 @@ exports[`Parser parse 1`] = `
     "type": "verbatim",
   },
   {
-    "lines": [
-      "<br>",
-      "<br>",
-    ],
+    "lines": [],
     "settings": {
       "fillstyle": "none",
       "h": 10,
@@ -693,10 +683,7 @@ exports[`Parser parser 1`] = `
 [
   {
     "lines": [
-      "<br>",
       "Let's get to the point. The core of PSTricks is graphics!",
-      "<br>",
-      "<br>",
     ],
     "settings": {
       "fillstyle": "none",
@@ -1302,11 +1289,7 @@ exports[`Parser parser 1`] = `
   },
   {
     "lines": [
-      "<br>",
-      "<br>",
-      "<br>",
       "which can be produced using the following $\\TeX$:",
-      "<br>",
     ],
     "settings": {
       "fillstyle": "none",
@@ -1354,10 +1337,7 @@ exports[`Parser parser 1`] = `
     "type": "verbatim",
   },
   {
-    "lines": [
-      "<br>",
-      "<br>",
-    ],
+    "lines": [],
     "settings": {
       "fillstyle": "none",
       "h": 10,
