@@ -2,12 +2,12 @@
  * Where MathJax is loaded from unless a caller overrides it with
  * `config.scriptURL`.
  *
- * Pinned rather than floating on `mathjax@3`, so a build is reproducible and
- * the URL can carry an integrity hash. It is also the single place to change
- * for a major upgrade: MathJax 4 moved the bundles out of `es5/`, so the path
- * shape changes there and not only the version.
+ * Pinned rather than floating on a major tag, so a build is reproducible and
+ * the URL can carry an integrity hash. Being a single constant is what made
+ * the move to MathJax 4 a one-line change: v4 dropped the `es5/` directory, so
+ * the path shape moved as well as the version.
  */
-export const DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js';
+export const DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-chtml.js';
 
 export const DEFAULT_CONFIG = {
   tex: {
