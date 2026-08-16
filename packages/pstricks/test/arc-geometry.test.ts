@@ -73,6 +73,51 @@ describe('arc sweep direction', () => {
   });
 });
 
+describe('arc endpoints are measured from the arc centre', () => {
+  // The endpoints were transformed from `r*cos(theta)` alone, which places them
+  // as though every arc were centred on the picture origin. A pie at (0,0)
+  // looked right; the same wedge anywhere else collapsed into a spike reaching
+  // back to the origin.
+  it.each([
+    ['pswedge', '\\pswedge(3,2){1}{0}{90}', 'pswedge(0,0){1}{0}{90}'],
+    ['psarc', '\\psarc(3,2){1}{0}{90}', 'psarc(0,0){1}{0}{90}'],
+  ])('%s at an offset centre is the same shape translated', (name, offset) => {
+    const a = arcCommand(pathsFrom(name, offset)[0]);
+    const b = arcCommand(pathsFrom(name, offset.replace('(3,2)', '(0,0)'))[0]);
+    // ctx has xunit = yunit = 50, so a centre 3 right and 2 up moves the
+    // endpoint 150 right and 100 up (y inverted).
+    expect(a.x - b.x).toBeCloseTo(150, 3);
+    expect(a.y - b.y).toBeCloseTo(-100, 3);
+    expect(a.r).toBeCloseTo(b.r, 6);
+  });
+
+  it('puts a quarter wedge endpoint one radius from its centre', () => {
+    // \pswedge(3,2){1}{0}{90} ends at (3,3): one unit above the centre.
+    const { x, y } = arcCommand(pathsFrom('pswedge', '\\pswedge(3,2){1}{0}{90}')[0]);
+    expect(x).toBeCloseTo((10 - (5 - 3)) * 50, 3);
+    expect(y).toBeCloseTo((5 - 3) * 50, 3);
+  });
+});
+
+describe('shapes are unfilled unless asked', () => {
+  // PSTricks fills nothing by default; an unstarred \psarc is an open curve.
+  it('draws an unstarred psarc as an open path', () => {
+    const d = pathsFrom('psarc', '\\psarc[linecolor=red](2,2){1}{30}{150}')[0];
+    expect(d.trim().endsWith('Z')).toBe(false);
+    expect(d).not.toContain(' L ');
+  });
+
+  it('closes a starred psarc into a filled wedge', () => {
+    const d = pathsFrom('psarc', '\\psarc*(2,2){1}{30}{150}')[0];
+    expect(d.trim().endsWith('Z')).toBe(true);
+  });
+
+  it('closes an unstarred psarc once a fillstyle is given', () => {
+    const d = pathsFrom('psarc', '\\psarc[fillstyle=solid,fillcolor=red](2,2){1}{30}{150}')[0];
+    expect(d.trim().endsWith('Z')).toBe(true);
+  });
+});
+
 describe('pie chart geometry', () => {
   it('gives every wedge of a five-slice pie the same radius and direction', () => {
     const wedges = [[0, 72], [72, 144], [144, 216], [216, 288], [288, 360]].map(

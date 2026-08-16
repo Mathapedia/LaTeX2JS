@@ -447,7 +447,12 @@ const psgraph: any = {
 
     const xlabels = () => {
       positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
-        label(String(value(x, 'x')), x, origin[1] + 20, 'middle');
+        // The origin's number sits directly under the y axis, which would draw
+        // the axis line straight through the glyph, so it shifts clear of it
+        // and serves both axes — as it does on a hand-drawn pair of axes.
+        const atOrigin = Math.abs(x - origin[0]) < 1e-6;
+        if (atOrigin) label(String(value(x, 'x')), x - 7, origin[1] + 20, 'end');
+        else label(String(value(x, 'x')), x, origin[1] + 20, 'middle');
       });
     };
 

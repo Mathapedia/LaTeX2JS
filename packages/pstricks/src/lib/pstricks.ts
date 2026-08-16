@@ -22,6 +22,41 @@ function parseLinewidth(value: string): number {
   return Number(m[1]) * (m[2] ? 1.333 : 1);
 }
 
+/**
+ * Device-space endpoints of an arc, measured from the arc's own centre.
+ *
+ * The radius is an offset from `(cx, cy)`, not from the picture origin, so the
+ * centre has to be added before the coordinate transform. Transforming
+ * `r*cos(theta)` alone places both endpoints as though every arc were centred
+ * on the origin — correct only for one that happens to be, which is why a pie
+ * at (0,0) looked right while the same wedge anywhere else collapsed to a
+ * spike reaching back to the origin.
+ *
+ * @param cx - centre x in picture units (empty or absent means 0)
+ * @param cy - centre y in picture units
+ * @param r - radius in picture units
+ * @param angleA - start angle in radians
+ * @param angleB - end angle in radians
+ * @returns the `A` and `B` endpoints in device coordinates
+ */
+function arcEndpoints(
+  this: any,
+  cx: any,
+  cy: any,
+  r: any,
+  angleA: number,
+  angleB: number
+): { A: { x: number; y: number }; B: { x: number; y: number } } {
+  const ox = cx === undefined || cx === '' ? 0 : Number(cx);
+  const oy = cy === undefined || cy === '' ? 0 : Number(cy);
+  const radius = Number(r);
+  const at = (angle: number) => ({
+    x: X.call(this, ox + radius * Math.cos(angle)),
+    y: Y.call(this, oy + radius * Math.sin(angle))
+  });
+  return { A: at(angleA), B: at(angleB) };
+}
+
 export const Expressions = {
   pspicture: /\\begin\{pspicture\}\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
   psframe: /\\psframe\*?(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
@@ -306,7 +341,10 @@ export const Functions = {
     var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
-      fillstyle: 'solid',
+      // PSTricks leaves every shape unfilled unless a fillstyle is
+      // given or the starred form is used; an unstarred \psarc is an open
+      // curve, not a solid black wedge.
+      fillstyle: 'none',
       fillcolor: 'black',
       linewidth: 2,
       arrows: arrows,
@@ -335,14 +373,7 @@ export const Functions = {
     obj.r = Number(m[5]) * this.xunit;
     obj.angleA = (Number(m[6]) * Math.PI) / 180;
     obj.angleB = (Number(m[7]) * Math.PI) / 180;
-    obj.A = {
-      x: X.call(this, Number(m[5]) * Math.cos(obj.angleA)),
-      y: Y.call(this, Number(m[5]) * Math.sin(obj.angleA))
-    };
-    obj.B = {
-      x: X.call(this, Number(m[5]) * Math.cos(obj.angleB)),
-      y: Y.call(this, Number(m[5]) * Math.sin(obj.angleB))
-    };
+    Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
     return obj;
   },
   psline(this: PSTricksContext, m: any) {
@@ -620,7 +651,10 @@ export const Functions = {
     var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
-      fillstyle: 'solid',
+      // PSTricks leaves every shape unfilled unless a fillstyle is
+      // given or the starred form is used; an unstarred \psarc is an open
+      // curve, not a solid black wedge.
+      fillstyle: 'none',
       fillcolor: 'black',
       linewidth: 2
     };
@@ -630,14 +664,7 @@ export const Functions = {
     obj.r = Number(m[4]) * this.xunit;
     obj.angleA = (Number(m[5]) * Math.PI) / 180;
     obj.angleB = (Number(m[6]) * Math.PI) / 180;
-    obj.A = {
-      x: X.call(this, Number(m[4]) * Math.cos(obj.angleA)),
-      y: Y.call(this, Number(m[4]) * Math.sin(obj.angleA))
-    };
-    obj.B = {
-      x: X.call(this, Number(m[4]) * Math.cos(obj.angleB)),
-      y: Y.call(this, Number(m[4]) * Math.sin(obj.angleB))
-    };
+    Object.assign(obj, arcEndpoints.call(this, m[2], m[3], m[4], obj.angleA, obj.angleB));
     return obj;
   },
   pscustom(this: PSTricksContext, m: any) {
