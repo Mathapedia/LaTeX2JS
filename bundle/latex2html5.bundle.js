@@ -2153,6 +2153,67 @@ const dialect_1 = require("./dialect");
 const settings_1 = require("@latex2js/settings");
 const counters_1 = require("./counters");
 /**
+ * Keys `\psset` may declare that are not style defaults for a shape.
+ *
+ * Units are consumed when the picture is set up and are already folded into
+ * every coordinate by the time a command is parsed; copying them onto the
+ * shape as well would apply them a second time. The dialect is a document
+ * property, not a drawing option.
+ */
+const PSSET_NON_STYLE = new Set(['unit', 'runit', 'xunit', 'yunit', 'dialect']);
+/**
+ * The style defaults out of a parsed `\psset`.
+ *
+ * Kept apart from `settings`, which is not purely psset state: the pspicture
+ * parse function is invoked with `settings` as its receiver and assigns the
+ * picture bounds onto it, so `settings` also carries x0, y0, x1, y1, w and h.
+ * Copying those onto a shape overwrites its computed geometry with the corner
+ * of the picture.
+ *
+ * @param declared - the result of parsing one \psset
+ * @returns only the keys that are defaults for a later command
+ */
+function pssetStyle(declared) {
+    const style = {};
+    for (const [key, value] of Object.entries(declared || {})) {
+        if (PSSET_NON_STYLE.has(key))
+            continue;
+        if (value === undefined)
+            continue;
+        style[key] = value;
+    }
+    return style;
+}
+/**
+ * Applies the `\psset` defaults in force where a command was written.
+ *
+ * A command's own brackets win, its psset defaults come next, and the
+ * hardcoded default in its parse function is only the last resort. That order
+ * cannot be expressed by assigning before or after `parseOptions`, because by
+ * the time the parse function returns there is no way to tell a hardcoded
+ * `linecolor: 'black'` from one the author wrote — so the inline options are
+ * re-read here, and a psset key is applied to anything the author left out.
+ *
+ * Without this, psset parsed and then discarded every style key: a picture
+ * opening with `\psset{linewidth=2pt,linestyle=dashed,fillstyle=solid}` drew
+ * plain thin outlines.
+ *
+ * @param data - the parsed command, mutated in place
+ * @param settings - the psset state at this command's position in the source
+ * @param raw - the command's source, read for its own bracket group
+ */
+function applyPsset(data, style, raw) {
+    if (!data || !style)
+        return;
+    const bracket = typeof raw === 'string' ? raw.match(/\[([^\]]*)\]/) : null;
+    const inline = bracket ? bracket[1].split(',').map((p) => p.split('=')[0].trim()) : [];
+    for (const [key, value] of Object.entries(style)) {
+        if (inline.indexOf(key) !== -1)
+            continue;
+        data[key] = value;
+    }
+}
+/**
  * Names the numeric fields of a parsed command that came out non-finite.
  *
  * `X` and `Y` return NaN for a coordinate they cannot compute rather than
@@ -2203,6 +2264,7 @@ class Parser {
             '',
             'units=1cm,linecolor=black,linestyle=solid,fillstyle=none'
         ]);
+        this.style = pssetStyle(this.settings);
         this.diagnostics = [];
         // The embedding application can declare the dialect once for every document
         // it renders; a document's own \psset overrides it.
@@ -2433,8 +2495,14 @@ class Parser {
                     this.parseUnits(node.raw);
                     return;
                 }
-                if (inPspicture)
+                // The settings in force at THIS point in the source, not at the end of
+                // it. Commands are collected during the walk and parsed afterwards, so
+                // reading `this.settings` when they are parsed would give every shape
+                // in the picture the last \psset rather than the one above it.
+                if (inPspicture) {
+                    node.settings = { ...this.style };
                     this.environment.commands.push(node);
+                }
                 else
                     this.pushMathLine(node.raw);
                 break;
@@ -2555,6 +2623,7 @@ class Parser {
         if (declared.dialect)
             this.dialect = declared.dialect;
         Object.assign(this.settings, declared);
+        Object.assign(this.style, pssetStyle(declared));
     }
     metaData(environment, envNode) {
         if (this.PSTricks.Expressions.hasOwnProperty(environment)) {
@@ -2624,6 +2693,7 @@ class Parser {
                 return;
             }
             const data = this.PSTricks.Functions[k].call(env, m);
+            applyPsset(data, node.settings, node.raw);
             // \multido{var=start+step}{count}{body} — expand and recurse.
             if (k === 'multido') {
                 this.expandMultido(data, env, plot, elements, node);
@@ -5251,18 +5321,33 @@ exports.Functions = {
             text: m[3]
         };
     },
+    /**
+     * `\psset` declares defaults that every later command inherits.
+     *
+     * Every key is kept, not only the nine Settings knows about. Those nine need
+     * conversion — units become numbers, the dialect is canonicalized — and the
+     * rest are style defaults a shape reads in place of its own hardcoded one.
+     * Dropping them is why `\psset{linewidth=2pt,linestyle=dashed}` drew a thin
+     * solid line: the keys parsed, matched nothing, and were discarded.
+     */
     psset(m) {
-        const pairs = m[1].split(',').map((pair) => pair.split('='));
         const obj = {};
-        pairs.forEach((pair) => {
-            const key = pair[0];
-            const value = pair[1];
+        if (!m || !m[1])
+            return obj;
+        // parseOptions rather than a bare split, so a colour here resolves the
+        // same way it would inside a command's own brackets.
+        const declared = (0, utils_1.parseOptions)(m[1]);
+        Object.entries(declared).forEach(([key, value]) => {
+            let converted = false;
             Object.keys(settings_1.default.Expressions).forEach((setting) => {
                 const exp = settings_1.default.Expressions[setting];
                 if (key.match(exp)) {
                     settings_1.default.Functions[setting](obj, value);
+                    converted = true;
                 }
             });
+            if (!converted)
+                obj[key] = value;
         });
         return obj;
     },

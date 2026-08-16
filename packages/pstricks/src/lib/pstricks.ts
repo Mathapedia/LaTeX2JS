@@ -576,18 +576,31 @@ export const Functions = {
       text: m[3]
     };
   },
+  /**
+   * `\psset` declares defaults that every later command inherits.
+   *
+   * Every key is kept, not only the nine Settings knows about. Those nine need
+   * conversion — units become numbers, the dialect is canonicalized — and the
+   * rest are style defaults a shape reads in place of its own hardcoded one.
+   * Dropping them is why `\psset{linewidth=2pt,linestyle=dashed}` drew a thin
+   * solid line: the keys parsed, matched nothing, and were discarded.
+   */
   psset(this: PSTricksContext, m: any) {
-    const pairs = m[1].split(',').map((pair: string) => pair.split('='));
-    const obj = {};
-    pairs.forEach((pair: string[]) => {
-      const key = pair[0];
-      const value = pair[1];
+    const obj: any = {};
+    if (!m || !m[1]) return obj;
+    // parseOptions rather than a bare split, so a colour here resolves the
+    // same way it would inside a command's own brackets.
+    const declared = parseOptions(m[1]);
+    Object.entries(declared).forEach(([key, value]) => {
+      let converted = false;
       Object.keys(Settings.Expressions).forEach((setting) => {
         const exp = (Settings.Expressions as any)[setting];
         if (key.match(exp)) {
           (Settings.Functions as any)[setting](obj, value);
+          converted = true;
         }
       });
+      if (!converted) obj[key] = value;
     });
     return obj;
   },
