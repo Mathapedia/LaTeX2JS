@@ -1,5 +1,48 @@
 import { Y, parseExpression } from '@latex2js/utils';
 
+/**
+ * How long to keep waiting for a MathJax that is present but not yet usable.
+ * Bounded, so a page that configures MathJax and never loads it still shows
+ * its labels rather than hiding them forever.
+ */
+const MATHJAX_READY_TIMEOUT_MS = 10000;
+
+/**
+ * Resolves to a MathJax that can actually typeset, or null if none will be.
+ *
+ * `window.MathJax` is present long before it can typeset anything: the loader
+ * assigns the configuration object to the global and only then injects the CDN
+ * script, so between those two moments the global exists and `typesetPromise`
+ * does not. Reading that capability once, synchronously, therefore fails on a
+ * cold load and succeeds on a warm one — which is why an rput label sat
+ * off-centre on first paint and corrected itself on reload. It was centred on
+ * the width of the raw LaTeX, and never measured again once MathJax arrived
+ * and replaced it with the formula.
+ *
+ * The absence of the global is a different case from a global that is not
+ * ready: a page with no MathJax at all must show its labels immediately, so
+ * only the second waits.
+ *
+ * @returns the usable MathJax, or null when there is none to wait for
+ */
+function mathJaxWhenReady(): Promise<any> {
+  const usable = (mj: any) => (mj && typeof mj.typesetPromise === 'function' ? mj : null);
+  const now = (globalThis as any).MathJax;
+  if (!now) return Promise.resolve(null);
+  if (usable(now)) return Promise.resolve(now);
+
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const poll = () => {
+      const ready = usable((globalThis as any).MathJax);
+      if (ready) return resolve(ready);
+      if (Date.now() - started >= MATHJAX_READY_TIMEOUT_MS) return resolve(null);
+      setTimeout(poll, 50);
+    };
+    poll();
+  });
+}
+
 function arrow(x1: number, y1: number, x2: number, y2: number, arrowscale?: number | string) {
   var t = Math.PI / 6;
   // arrowscale is a multiplier on the 8px default head size; anything that
@@ -1161,8 +1204,10 @@ const psgraph: any = {
 
     // Enhanced MathJax processing with better async handling
     const processContent = async () => {
-      const mathJax = (window as any).MathJax;
-      
+      // Awaited, not read once: the global is assigned before the library it
+      // names has loaded, so a synchronous check races the CDN.
+      const mathJax = await mathJaxWhenReady();
+
       if (mathJax && mathJax.typesetPromise) {
         try {
           // Set content before MathJax processing
