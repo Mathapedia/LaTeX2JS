@@ -1,4 +1,5 @@
 /** @jest-environment jsdom */
+import { resolveColor } from '@latex2js/utils';
 import LaTeX2JS from 'latex2js';
 import pspicture from '../src/components/pspicture';
 import math from '../src/components/math';
@@ -85,7 +86,7 @@ describe('pspicture component (SVG rendering)', () => {
     // that ignored the setting and made dotted lines look dashed too.
     const [on, off] = path.style.strokeDasharray.split(',').map(Number);
     expect(on / off).toBeCloseTo(5 / 3, 3);
-    expect(path.style.stroke).toBe('red');
+    expect(path.style.stroke).toBe(resolveColor('red'));
   });
 
   it('draws a dotted line differently from a dashed one', () => {
@@ -300,7 +301,7 @@ describe('pspicture component (SVG rendering)', () => {
   };
 
   it.each(['pstricks', 'latex2js'] as const)('fills a starred shape with fillcolor under %s', (d) => {
-    expect(starredFill(d)).toBe('red');
+    expect(starredFill(d)).toBe(resolveColor('red'));
   });
 
   it('fills star-variant primitives', () => {
@@ -315,7 +316,7 @@ describe('pspicture component (SVG rendering)', () => {
     const circle = div.querySelector('svg circle')!;
     expect(circle.style.fill).toBe('black'); // default fillcolor
     const rect = div.querySelector('svg rect')!;
-    expect(rect.style.fill).toBe('red');
+    expect(rect.style.fill).toBe(resolveColor('red'));
   });
 
   it('renders multido-expanded commands', () => {

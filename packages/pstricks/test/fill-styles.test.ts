@@ -1,3 +1,4 @@
+import { resolveColor } from '@latex2js/utils';
 import { Expressions, Functions } from '../src/lib/pstricks';
 import psgraph from '../src/lib/psgraph';
 
@@ -7,6 +8,9 @@ import psgraph from '../src/lib/psgraph';
  * to. These pin the resolved paint per shape, which is the only place that
  * divergence is observable.
  */
+/** Colour names resolve to their xcolor RGB, so assertions compare that. */
+const CYAN = resolveColor('cyan');
+
 function makeContext() {
   return {
     xunit: 50, yunit: 50,
@@ -83,7 +87,7 @@ const SHAPES: Array<[string, string]> = [
 describe('fill styles resolve the same way for every shape', () => {
   it.each(SHAPES)('%s fills flat for fillstyle=solid', (name, template) => {
     const tree = render(name, template.replace('FILL', 'fillstyle=solid,fillcolor=cyan'));
-    expect(fills(tree)).toContain('cyan');
+    expect(fills(tree)).toContain(CYAN);
   });
 
   it.each(SHAPES)('%s draws no fill for fillstyle=none', (name, template) => {
@@ -98,7 +102,7 @@ describe('fill styles resolve the same way for every shape', () => {
     const painted = fills(tree).filter((f) => f !== 'none');
     expect(painted.length).toBeGreaterThan(0);
     painted.forEach((f) => expect(f).toMatch(/^url\(#l2j-hatch-\d+\)$/));
-    expect(painted).not.toContain('cyan');
+    expect(painted).not.toContain(CYAN);
   });
 
   it.each(SHAPES)('%s draws no fill for an unimplemented style', (name, template) => {
@@ -149,7 +153,7 @@ describe('an open curve is filled without drawing the closing chord', () => {
     ['psbezier', '\\psbezier[fillstyle=solid,fillcolor=cyan](-2,-1)(-1,1)(1,-1)(2,1)'],
   ])('%s fills but leaves its path open', (name, raw) => {
     const path = find(render(name, raw), 'path')!;
-    expect(path.styles.fill).toBe('cyan');
+    expect(path.styles.fill).toBe(CYAN);
     expect(path.attrs.d).not.toMatch(/[Zz]\s*$/);
   });
 });
@@ -175,12 +179,12 @@ describe('hatch pattern geometry', () => {
     )!;
     expect(p.attrs.patternTransform).toBe('rotate(0)');
     expect(Number(p.attrs.width)).toBeCloseTo(8 * 1.333, 3);
-    expect(p.children.find((c) => c.tag === 'line')!.styles.stroke).toBe('red');
+    expect(p.children.find((c) => c.tag === 'line')!.styles.stroke).toBe(resolveColor('red'));
   });
 
   it('lays a starred hatch over the fill colour', () => {
     const p = find(render('pscircle', '\\pscircle[fillstyle=hlines*,fillcolor=yellow](0,0){2}'), 'pattern')!;
-    expect(p.children.find((c) => c.tag === 'rect')!.styles.fill).toBe('yellow');
+    expect(p.children.find((c) => c.tag === 'rect')!.styles.fill).toBe(resolveColor('yellow'));
     expect(p.children.filter((c) => c.tag === 'line')).toHaveLength(1);
   });
 });

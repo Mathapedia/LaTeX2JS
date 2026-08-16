@@ -1,3 +1,4 @@
+import { resolveColor } from '@latex2js/utils';
 import { Expressions, Functions } from '../src/lib/pstricks';
 import psgraph from '../src/lib/psgraph';
 
@@ -65,7 +66,7 @@ describe('plotstyle', () => {
     // dotsize names a diameter in points, not a radius in pixels: 7pt across
     // is 3.5pt out from the centre, which is 4.67 device units.
     expect(Number(first.attrs.r)).toBeCloseTo((7 / 2) * 1.333, 3);
-    expect(first.styles.fill).toBe('red');
+    expect(first.styles.fill).toBe(resolveColor('red'));
   });
 
   it('grows the markers with a thicker pen, as the dotsize factor asks', () => {

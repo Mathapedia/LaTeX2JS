@@ -1,3 +1,4 @@
+import { resolveColor } from '@latex2js/utils';
 import LaTeX2JS from '../src';
 
 /**
@@ -51,7 +52,7 @@ describe('rendering does not depend on the declared dialect', () => {
       const data = parse(picture('\\pscircle*[linecolor=red,fillcolor=cyan](0,0){1}'), d)[0]
         .plot.pscircle[0].data;
       expect(data.filled).toBe(true);
-      expect(data.fillcolor).toBe('cyan');
+      expect(data.fillcolor).toBe(resolveColor('cyan'));
     }
   });
 

@@ -23,12 +23,39 @@ describe('resolveColor', () => {
     expect(resolveColor(input)).toBe(expected);
   });
 
-  it.each(['red', 'lightblue', '#ff0000', 'rgb(1,2,3)'])(
-    'leaves %s untouched when there is no mix term',
+  it.each(['lightblue', '#ff0000', 'rgb(1,2,3)', 'notacolor'])(
+    'leaves %s untouched when it is not an xcolor name',
     (input) => {
       expect(resolveColor(input)).toBe(input);
     },
   );
+
+  // Nine of xcolor's base colours name a different colour in CSS. Handing the
+  // name straight to the browser drew the CSS one, so a document asking for
+  // pure green got the much darker #008000.
+  it.each([
+    ['green', 'rgb(0,255,0)'],
+    ['purple', 'rgb(191,0,64)'],
+    ['violet', 'rgb(128,0,128)'],
+    ['lime', 'rgb(191,255,0)'],
+    ['orange', 'rgb(255,128,0)'],
+    ['brown', 'rgb(191,128,64)'],
+    ['pink', 'rgb(255,191,191)'],
+    ['darkgray', 'rgb(64,64,64)'],
+    ['lightgray', 'rgb(191,191,191)'],
+  ])('resolves the plain name %s to its xcolor value', (input, expected) => {
+    expect(resolveColor(input)).toBe(expected);
+  });
+
+  it.each([
+    ['red', 'rgb(255,0,0)'],
+    ['blue', 'rgb(0,0,255)'],
+    ['cyan', 'rgb(0,255,255)'],
+    ['teal', 'rgb(0,128,128)'],
+    ['olive', 'rgb(128,128,0)'],
+  ])('agrees with CSS on %s, and still resolves it', (input, expected) => {
+    expect(resolveColor(input)).toBe(expected);
+  });
 
   it.each(['notacolor!40', 'gray!notanumber', 'gray!40!notacolor'])(
     'returns %s unchanged rather than guessing',

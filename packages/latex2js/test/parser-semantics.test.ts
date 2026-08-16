@@ -1,3 +1,4 @@
+import { resolveColor } from '@latex2js/utils';
 import LaTeX2JS from '../src';
 
 const latex = new LaTeX2JS();
@@ -35,7 +36,7 @@ describe('PSTricks plot semantics', () => {
     const env = parsed.find((e: any) => e.type === 'pspicture');
     const line = env.plot.psline[0].data;
     expect(line.linestyle).toBe('dashed');
-    expect(line.linecolor).toBe('red');
+    expect(line.linecolor).toBe(resolveColor('red'));
   });
 
   it('computes pscircle center and radius', () => {
@@ -323,7 +324,7 @@ describe('feature port: PSTricks commands', () => {
     const env = parsed.find((e: any) => e.type === 'pspicture');
     expect(env.plot.pscircle[0].data.filled).toBe(true);
     expect(env.plot.psframe[0].data.filled).toBe(true);
-    expect(env.plot.psframe[0].data.fillcolor).toBe('red');
+    expect(env.plot.psframe[0].data.fillcolor).toBe(resolveColor('red'));
     expect(env.plot.pspolygon[0].data.filled).toBe(true);
     expect(env.plot.psline[0].data.filled).toBe(true);
     expect(env.plot.psarc[0].data.filled).toBe(true);
