@@ -1,4 +1,8 @@
 import * as pegParser from '../grammar/parser.js';
+import { dialectUses } from './dialect';
+import { normalizeDialect } from '@latex2js/settings';
+import { normalizeArrows } from '@latex2js/utils';
+import { Counters, SectionLevel } from './counters';
 
 export interface Diagnostic {
   severity: 'error' | 'warning';
@@ -24,6 +28,10 @@ interface CommandNode {
   name: string;
   raw: string;
   loc: Loc;
+  /** The \psset state where this command was written, attached during the walk. */
+  settings?: any;
+  /** The units in force there, which rescale the command's coordinates. */
+  units?: { xunit: number; yunit: number; runit: number };
 }
 
 interface EnvNode {
@@ -42,6 +50,160 @@ type Segment =
   | EnvNode
   | { kind: 'strayEnd'; name: string; raw: string; loc: Loc }
   | { kind: 'raw'; text: string };
+
+/**
+ * Keys `\psset` may declare that are not style defaults for a shape.
+ *
+ * Units are consumed when the picture is set up and are already folded into
+ * every coordinate by the time a command is parsed; copying them onto the
+ * shape as well would apply them a second time. The dialect is a document
+ * property, not a drawing option.
+ */
+const PSSET_NON_STYLE = new Set(['unit', 'runit', 'xunit', 'yunit', 'dialect']);
+
+/**
+ * The style defaults out of a parsed `\psset`.
+ *
+ * Kept apart from `settings`, which is not purely psset state: the pspicture
+ * parse function is invoked with `settings` as its receiver and assigns the
+ * picture bounds onto it, so `settings` also carries x0, y0, x1, y1, w and h.
+ * Copying those onto a shape overwrites its computed geometry with the corner
+ * of the picture.
+ *
+ * @param declared - the result of parsing one \psset
+ * @returns only the keys that are defaults for a later command
+ */
+function pssetStyle(declared: any): { [key: string]: any } {
+  const style: { [key: string]: any } = {};
+  for (const [key, value] of Object.entries(declared || {})) {
+    if (PSSET_NON_STYLE.has(key)) continue;
+    if (value === undefined) continue;
+    style[key] = value;
+  }
+  return style;
+}
+
+/**
+ * Applies the `\psset` defaults in force where a command was written.
+ *
+ * A command's own brackets win, its psset defaults come next, and the
+ * hardcoded default in its parse function is only the last resort. That order
+ * cannot be expressed by assigning before or after `parseOptions`, because by
+ * the time the parse function returns there is no way to tell a hardcoded
+ * `linecolor: 'black'` from one the author wrote — so the inline options are
+ * re-read here, and a psset key is applied to anything the author left out.
+ *
+ * Without this, psset parsed and then discarded every style key: a picture
+ * opening with `\psset{linewidth=2pt,linestyle=dashed,fillstyle=solid}` drew
+ * plain thin outlines.
+ *
+ * @param data - the parsed command, mutated in place
+ * @param settings - the psset state at this command's position in the source
+ * @param raw - the command's source, read for its own bracket group
+ */
+function applyPsset(data: any, style: any, raw: string): void {
+  if (!data || !style) return;
+  const bracket = typeof raw === 'string' ? raw.match(/\[([^\]]*)\]/) : null;
+  const inline = bracket ? bracket[1].split(',').map((p) => p.split('=')[0].trim()) : [];
+  for (const [key, value] of Object.entries(style)) {
+    if (inline.indexOf(key) !== -1) continue;
+    data[key] = value;
+  }
+}
+
+/**
+ * The environment a command's coordinates should be computed against, once the
+ * `\psset` above it has changed the units.
+ *
+ * A picture fixes its units when `\begin{pspicture}` is read, so a later
+ * `\psset{xunit=2}` inside it had no effect at all — `\psellipse(0,0)(1,1.5)`
+ * came out taller than wide where PSTricks draws it wider than tall.
+ *
+ * The picture's origin does not move when the units change: the box was laid
+ * out with the units in force at `\begin`, and only the coordinates written
+ * after the declaration are rescaled. `X(v)` is `(w - x1) * xunit + v * xunit`,
+ * so holding the first term at its original value while the second takes the
+ * new unit means solving for the `w` that keeps the offset — which is what the
+ * adjusted bounds below do.
+ *
+ * @param env - the picture environment, carrying the units from \begin
+ * @param units - the units in force where the command was written
+ * @returns `env` itself when nothing changed, else a rescaled copy
+ */
+function envForUnits(env: any, units: any): any {
+  if (!env || !units) return env;
+  const xunit = Number(units.xunit);
+  const yunit = Number(units.yunit);
+  const sameX = !isFinite(xunit) || xunit === env.xunit;
+  const sameY = !isFinite(yunit) || yunit === env.yunit;
+  const sameR = !isFinite(Number(units.runit)) || Number(units.runit) === env.runit;
+  if (sameX && sameY && sameR) return env;
+
+  const scaled = { ...env };
+  // A radius follows runit, and needs no origin correction: it is a length,
+  // not a position.
+  const runit = Number(units.runit);
+  if (isFinite(runit) && runit > 0) scaled.runit = runit;
+  if (!sameX && xunit > 0) {
+    const originX = (env.w - env.x1) * env.xunit;
+    scaled.xunit = xunit;
+    scaled.w = originX / xunit + env.x1;
+  }
+  if (!sameY && yunit > 0) {
+    const originY = env.y1 * env.yunit;
+    scaled.yunit = yunit;
+    scaled.y1 = originY / yunit;
+  }
+  return scaled;
+}
+
+/**
+ * The brace group of an `\rput`, matched by depth rather than by regex.
+ *
+ * The rput expression ends in `\{(.*)\}`, which is greedy and brace-blind: on
+ * `\rput(0,0){\pscircle(0,0){0.8}}` it captures through the inner group and
+ * leaves the tail behind, which is how `0.8}` ended up rendered as a label.
+ *
+ * @param raw - the command's source
+ * @returns the contents of the outermost brace group, empty when unbalanced
+ */
+function braceGroup(raw: string): string {
+  if (typeof raw !== 'string') return '';
+  const start = raw.indexOf('{');
+  if (start === -1) return '';
+  let depth = 0;
+  for (let i = start; i < raw.length; i++) {
+    if (raw[i] === '{') depth++;
+    else if (raw[i] === '}' && --depth === 0) return raw.slice(start + 1, i);
+  }
+  return '';
+}
+
+/**
+ * Names the numeric fields of a parsed command that came out non-finite.
+ *
+ * `X` and `Y` return NaN for a coordinate they cannot compute rather than
+ * inventing one at the origin, so this is where that shows up: a command whose
+ * geometry is unusable is reported against its own source location instead of
+ * drawing a plausible shape in the wrong place.
+ *
+ * @param value - a parsed command's data
+ * @returns the paths of the offending fields, empty when everything is usable
+ */
+function nonFiniteFields(value: any, path = '', depth = 0): string[] {
+  if (depth > 4 || value === null || value === undefined) return [];
+  if (typeof value === 'number') return isFinite(value) ? [] : [path || 'value'];
+  if (Array.isArray(value)) {
+    return value.flatMap((v, i) =>
+      typeof v === 'number' && !isFinite(v) ? [`${path}[${i}]`] : nonFiniteFields(v, `${path}[${i}]`, depth + 1)
+    );
+  }
+  if (typeof value !== 'object') return [];
+  // `global` is the shared environment, not this command's own geometry.
+  return Object.entries(value)
+    .filter(([k]) => k !== 'global' && k !== 'env')
+    .flatMap(([k, v]) => nonFiniteFields(v, path ? `${path}.${k}` : k, depth + 1));
+}
 
 /**
  * Parser: turns a LaTeX-ish document into the flat environment objects the
@@ -65,6 +227,10 @@ class Parser {
   environment: any;
   settings: any;
   diagnostics: Diagnostic[];
+  dialect: 'pstricks' | 'latex2js';
+  counters: Counters;
+  /** Style defaults declared by \psset, kept apart from `settings`. */
+  style: { [key: string]: any };
 
   constructor(LaTeX2JS: any) {
     this.Ignore = LaTeX2JS.Ignore;
@@ -78,7 +244,40 @@ class Parser {
       '',
       'units=1cm,linecolor=black,linestyle=solid,fillstyle=none'
     ]);
+    this.style = pssetStyle(this.settings);
     this.diagnostics = [];
+    // The embedding application can declare the dialect once for every document
+    // it renders; a document's own \psset overrides it.
+    this.dialect = normalizeDialect(LaTeX2JS.dialect) ?? 'pstricks';
+    this.counters = new Counters();
+  }
+
+  /**
+   * The number a sectioning command should carry, or null when it is starred.
+   *
+   * Text transforms call this through their receiver, so the registry stays
+   * free of parser internals and a third-party transform that does not care
+   * about numbering keeps working.
+   *
+   * @param level - which sectioning level is starting
+   * @param raw - the command's source, so a starred form can opt out
+   * @returns the dotted number, or null for an unnumbered heading
+   */
+  sectionNumber(level: SectionLevel, raw: string): string | null {
+    if (/\\[a-z]+\*/.test(raw)) return null;
+    return this.counters.section(level);
+  }
+
+  /**
+   * The number a theorem-like environment should carry, or null when starred.
+   *
+   * @param name - the environment name, such as `theorem`
+   * @param raw - the `\begin` source, so a starred form can opt out
+   * @returns the next number for that kind, or null when unnumbered
+   */
+  environmentNumber(name: string, raw: string): number | null {
+    if (/\{[a-z]+\*\}/.test(raw)) return null;
+    return this.counters.environment(name);
   }
 
   // -------------------------------------------------------------------------
@@ -87,6 +286,9 @@ class Parser {
 
   parse(text: string): any[] {
     this.diagnostics = [];
+    // A parser instance is reused across documents; without this the second
+    // would continue the first one's numbering.
+    this.counters.reset();
     if (!text) return [];
     const tree = this.parseTree(text);
     this.walk(tree);
@@ -280,7 +482,21 @@ class Parser {
           this.parseUnits(node.raw);
           return;
         }
-        if (inPspicture) this.environment.commands.push(node);
+        // The settings in force at THIS point in the source, not at the end of
+        // it. Commands are collected during the walk and parsed afterwards, so
+        // reading `this.settings` when they are parsed would give every shape
+        // in the picture the last \psset rather than the one above it.
+        if (inPspicture) {
+          node.settings = { ...this.style };
+          // Units are snapshotted separately: they are not style defaults to
+          // copy onto a shape, they change how its coordinates are computed.
+          node.units = {
+            xunit: this.settings.xunit,
+            yunit: this.settings.yunit,
+            runit: this.settings.runit
+          };
+          this.environment.commands.push(node);
+        }
         else this.pushMathLine(node.raw);
         break;
       }
@@ -399,7 +615,10 @@ class Parser {
 
   parseUnits(line: string): void {
     var m = line.replace(/\n/g, ' ').match(this.PSTricks.Expressions.psset);
-    Object.assign(this.settings, this.PSTricks.Functions.psset.call(this, m));
+    const declared = this.PSTricks.Functions.psset.call(this, m);
+    if (declared.dialect) this.dialect = declared.dialect;
+    Object.assign(this.settings, declared);
+    Object.assign(this.style, pssetStyle(declared));
   }
 
   metaData(environment: string, envNode: EnvNode): void {
@@ -429,6 +648,13 @@ class Parser {
         if (typeof this.environment.env.yunit === 'undefined') {
           this.environment.env.yunit = this.settings.yunit;
         }
+        // A radius is scaled by runit, not by xunit, so it has to reach the
+        // env too or every circle falls back to the coordinate unit.
+        if (typeof this.environment.env.runit === 'undefined') {
+          this.environment.env.runit = this.settings.runit;
+        }
+        // Renderers read the dialect for the handful of semantics it changes.
+        this.environment.env.dialect = this.dialect;
       }
     }
   }
@@ -487,7 +713,14 @@ class Parser {
         );
         return;
       }
-      const data = this.PSTricks.Functions[k].call(env, m);
+      // Units declared inside the picture rescale what comes after them.
+      const cmdEnv = envForUnits(env, node.units);
+      const data = this.PSTricks.Functions[k].call(cmdEnv, m);
+      applyPsset(data, node.settings, node.raw);
+      // An `arrows` declared by \psset arrives as a string after the parse
+      // function has already turned its own into flags, so it is normalized
+      // once more here rather than in each of them.
+      normalizeArrows(data);
 
       // \multido{var=start+step}{count}{body} — expand and recurse.
       if (k === 'multido') {
@@ -498,10 +731,68 @@ class Parser {
       // \pscustom{...} — pre-extract the inner commands into pixel data so
       // the renderer can build a single filled/stroked path.
       if (k === 'pscustom' && data.body) {
-        data.commands = this.extractCustomBody(data.body, env);
+        data.commands = this.extractCustomBody(data.body, cmdEnv);
+      }
+
+      // \rput(x,y){...} places its contents at (x,y). The contents are usually
+      // a label, and were assumed to be one — so a graphics command inside an
+      // rput drew nothing at all, and the tail the greedy regex left over was
+      // set as text. Graphics are placed by translating a group, which keeps
+      // them in document order among the other shapes rather than in the
+      // separate DOM pass the labels go through.
+      if (k === 'rput') {
+        const children = this.extractCustomBody(braceGroup(node.raw), cmdEnv);
+        if (children.length) {
+          // The contents' own origin lands on (x,y), so the offset is the
+          // command's position measured from where (0,0) falls.
+          const originX = (cmdEnv.w - cmdEnv.x1) * cmdEnv.xunit;
+          const originY = cmdEnv.y1 * cmdEnv.yunit;
+          elements.push({
+            name: 'rputgroup',
+            data: { dx: data.x - originX, dy: data.y - originY, children },
+            match: m,
+            fn: this.PSTricks.Functions[k],
+            loc: node.loc
+          });
+          return;
+        }
       }
 
       plot[k].push({ data: data, env: env, match: m, fn: this.PSTricks.Functions[k] });
+      // Under the PSTricks reading, anything this project added is worth
+      // naming. A document that declares the LaTeX2JS dialect has said it means
+      // to use them, so it is not told again.
+      if (this.dialect === 'pstricks') {
+        // `data` carries the command's parsed options, which is what the
+        // detector inspects alongside the raw source.
+        for (const use of dialectUses(k, node.raw ?? '', data)) {
+          this.diagnose(
+            'warning',
+            `${use.construct} is a LaTeX2JS extension: ${use.detail}. ` +
+              'Declare \\psset{dialect=latex2js} if that is intended.',
+            node.loc
+          );
+        }
+      }
+
+      if (data && data.plotpointsIgnored !== undefined) {
+        this.diagnose(
+          'warning',
+          `plotpoints=${data.plotpointsIgnored} needs at least 2 samples to mean anything; ` +
+            'the default sampling was used instead',
+          node.loc
+        );
+      }
+
+      const bad = nonFiniteFields(data);
+      if (bad.length) {
+        this.diagnose(
+          'warning',
+          `\\${k} produced no usable value for ${bad.join(', ')}; it will not be drawn`,
+          node.loc
+        );
+      }
+
       elements.push({ name: k, data: data, match: m, fn: this.PSTricks.Functions[k], loc: node.loc });
 
       // side effects preserved from the old parser:
@@ -607,7 +898,9 @@ class Parser {
   parseHeadersExpression(line: string, exp: RegExp, k: string, contents: string): string {
     var match = line.match(exp);
     if (match) {
-      return this.Headers.Functions[k].call(this);
+      // The match is passed so a numbered environment can see whether its
+      // \begin was starred, which is how LaTeX spells "do not number this one".
+      return this.Headers.Functions[k].call(this, match);
     }
     return contents;
   }

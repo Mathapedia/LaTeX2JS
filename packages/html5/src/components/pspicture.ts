@@ -46,6 +46,17 @@ export default function render(that: ComponentProps): HTMLDivElement {
         if (!env.variables) env.variables = {};
         env.variables[variable] = val;
 
+        // Re-render through the incremental path so plots stay in document
+        // order; removing the .psplot nodes and re-appending them put them at
+        // the end of the SVG, on top of every later shape. The graph keys the
+        // re-render on the variable that moved.
+        const redraw = (that as any).redraw;
+        if (typeof redraw === 'function') {
+          redraw({ changed: [variable] });
+          return;
+        }
+
+        // Fallback for a psgraph that predates the incremental renderer.
         svgEl.selectAll('.psplot').remove();
         Object.entries(plot).forEach(([k, plotData]: [string, any]) => {
           if (k.match(/psplot/)) {

@@ -33,6 +33,57 @@ span.qed {
   text-align: right;
 }
 
+/*
+ * Theorem-like environments, set the way LaTeX sets them: the label runs into
+ * the statement as part of the sentence rather than sitting above it as a
+ * heading, and the body of a theorem is italic while a remark or a proof is
+ * not. The markup keeps a real heading element, so the structure survives for
+ * anything reading the document rather than looking at it.
+ */
+.theorem-env {
+  margin: 1em 0;
+}
+
+h4.theorem-head {
+  display: inline;
+  margin: 0;
+  font-size: inherit;
+  font-style: normal;
+  font-weight: bold;
+}
+
+h4.theorem-head::after {
+  content: '.';
+}
+
+.theorem-env--theorem,
+.theorem-env--lemma,
+.theorem-env--corollary,
+.theorem-env--proposition,
+.theorem-env--definition,
+.theorem-env--axiom,
+.theorem-env--claim {
+  font-style: italic;
+}
+
+/* amsthm leaves these upright even though they are numbered alongside. */
+.theorem-env--remark,
+.theorem-env--note,
+.theorem-env--example,
+.theorem-env--exercise,
+.theorem-env--question,
+.theorem-env--problem,
+.theorem-env--solution,
+.theorem-env--proof {
+  font-style: normal;
+}
+
+/* The proof label is italic where a theorem label is bold. */
+.theorem-env--proof > h4.theorem-head {
+  font-weight: normal;
+  font-style: italic;
+}
+
 .nicebox {
   margin-top: 20px;
   min-height: 20px;

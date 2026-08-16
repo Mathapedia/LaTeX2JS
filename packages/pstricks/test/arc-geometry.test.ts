@@ -118,6 +118,31 @@ describe('shapes are unfilled unless asked', () => {
   });
 });
 
+describe('a span of a full turn or more paints the whole circle', () => {
+  // PSTricks keeps sweeping past 360 and overlaps itself, so {0}{450} is a
+  // circle. Reducing the span modulo a turn before asking how big it was threw
+  // the extra turn away and left the 90 degree remainder.
+  const isFullCircle = (d: string) =>
+    (d.match(/ A /g) || []).length === 2 && d.trim().endsWith('Z');
+
+  it.each([
+    ['psarc', '\\psarc(0,0){1.5}{0}{450}'],
+    ['psarc', '\\psarc(0,0){1.5}{0}{360}'],
+    ['psarc', '\\psarc(0,0){1.5}{30}{750}'],
+    ['pswedge', '\\pswedge(0,0){1.5}{0}{450}'],
+    ['pswedge', '\\pswedge(0,0){1.5}{0}{360}'],
+  ])('%s closes a full circle for %s', (name, raw) => {
+    expect(isFullCircle(pathsFrom(name, raw)[0])).toBe(true);
+  });
+
+  it.each([
+    ['psarc', '\\psarc(0,0){1.5}{0}{90}'],
+    ['pswedge', '\\pswedge(0,0){1.5}{0}{90}'],
+  ])('%s still draws a partial span as an arc for %s', (name, raw) => {
+    expect(isFullCircle(pathsFrom(name, raw)[0])).toBe(false);
+  });
+});
+
 describe('pie chart geometry', () => {
   it('gives every wedge of a five-slice pie the same radius and direction', () => {
     const wedges = [[0, 72], [72, 144], [144, 216], [216, 288], [288, 360]].map(

@@ -305,6 +305,8 @@ export const MATH_CONSTANTS: Record<string, string> = {
   pi: 'Math.PI',
   π: 'Math.PI',
   PI: 'Math.PI',
+  // pst-plot's own spelling, used by \psplot expressions.
+  Pi: 'Math.PI',
   E: 'Math.E',
 };
 

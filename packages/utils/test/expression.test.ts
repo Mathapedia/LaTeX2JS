@@ -66,6 +66,13 @@ describe('parseExpression', () => {
     expect(ev('2*E')).toBeCloseTo(2 * Math.E);
   });
 
+  it('supports pst-plot\'s Pi spelling', () => {
+    // pst-plot writes the constant as `Pi`; without it the identifier fell
+    // through to the variable scope and evaluated to NaN.
+    expect(ev('Pi')).toBeCloseTo(Math.PI);
+    expect(ev('sin(Pi/2)')).toBeCloseTo(1);
+  });
+
   it('reads user variables from the scope', () => {
     expect(ev('n*x + a', { n: 4, x: 2, a: 1 })).toBe(9);
     expect(ev('alpha * sin(theta*x)/(x*phi)', { alpha: 2, theta: 3, x: 1, phi: 4 })).toBeCloseTo(

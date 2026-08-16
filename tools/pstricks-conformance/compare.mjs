@@ -174,6 +174,15 @@ const cosine = (a, b) => {
 }
 
 function score(a, b) {
+  // Two blank images agree completely. The cosine signals are zero for an empty
+  // grid, so without this an intentionally empty case — `linestyle=none`, a
+  // zero-radius circle — scored as the worst possible disagreement and buried
+  // the real ones.
+  const aEmpty = !a.box
+  const bEmpty = !b.box
+  if (aEmpty && bEmpty) return { ink: 1, hue: 1, layout: 1, overall: 1, blank: true }
+  if (aEmpty !== bEmpty) return { ink: 0, hue: 0, layout: 0, overall: 0, oneBlank: true }
+
   const ink = sim(a.ink, b.ink)
   const hue = cosine(a.hue, b.hue)
   const layout = cosine(a.grid, b.grid)

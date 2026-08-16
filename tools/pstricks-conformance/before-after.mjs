@@ -167,8 +167,10 @@ for (const name of names) {
   })
 }
 
-// Below this is antialiasing noise, not a change worth showing.
-const THRESHOLD = 0.0004
+// Measured noise floor: re-rendering the corpus with no code change at all
+// still moves 0.1-0.16% of pixels, because MathJax's font rasterization is not
+// byte-deterministic between runs. Anything under that says nothing.
+const THRESHOLD = 0.002
 const changed = rows.filter((r) => r.isNew || r.moved > THRESHOLD).sort((a, b) => b.moved - a.moved)
 const unchanged = rows.length - changed.length
 

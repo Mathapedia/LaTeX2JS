@@ -27,9 +27,9 @@ export const Expressions = {
   textsc: /\\textsc\{[^}]*\}/g,
   underline: /\\underline\{[^}]*\}/g,
   overline: /\\overline\{[^}]*\}/g,
-  section: /\\section\{[^}]*\}/,
-  subsection: /\\subsection\{[^}]*\}/,
-  subsubsection: /\\subsubsection\{[^}]*\}/,
+  section: /\\section\*?\{[^}]*\}/,
+  subsection: /\\subsection\*?\{[^}]*\}/,
+  subsubsection: /\\subsubsection\*?\{[^}]*\}/,
   paragraph: /\\paragraph\{[^}]*\}/,
   hspace: /\\hspace\{[^}]*\}/,
   noindent: /\\noindent/g,
@@ -39,6 +39,32 @@ export const Expressions = {
   textcolor: /\\textcolor\{[^}]*\}\{[^}]*\}/g,
   footnote: /\\footnote\{[^}]*\}/g,
 };
+
+
+/**
+ * Renders one sectioning command, numbered unless it is starred.
+ *
+ * The number comes from the parser through the receiver, so this registry
+ * carries no parser internals and a host that supplies neither still renders
+ * the heading — just without a number.
+ *
+ * @param tag - the heading element for this level
+ * @param level - the sectioning level, for the counter
+ * @param m - the match: [full, star, title]
+ * @param parser - the receiver, when the caller supplied one
+ * @returns the heading markup
+ */
+function heading(tag: string, level: string, m: RegExpMatchArray, parser: any): string {
+  const starred = m[1] === '*';
+  const title = m[2];
+  const number = !starred && parser && typeof parser.sectionNumber === 'function'
+    ? parser.sectionNumber(level, m[0])
+    : null;
+  const label = number === null || number === undefined
+    ? ''
+    : '<span class="section-number">' + number + '</span> ';
+  return '<' + tag + '>' + label + title + '</' + tag + '>';
+}
 
 export const Functions = {
   cite: function(m: any[], contents: string): string {
@@ -129,14 +155,14 @@ export const Functions = {
   overline: matchrepl(/\\overline\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<span style="text-decoration: overline;">' + m[1] + '</span>';
   }),
-  section: matchrepl(/\\section\{([^}]*)\}/, function(m: RegExpMatchArray) {
-    return '<h2>' + m[1] + '</h2>';
+  section: matchrepl(/\\section(\*?)\{([^}]*)\}/, function(this: any, m: RegExpMatchArray) {
+    return heading('h2', 'section', m, this);
   }),
-  subsection: matchrepl(/\\subsection\{([^}]*)\}/, function(m: RegExpMatchArray) {
-    return '<h3>' + m[1] + '</h3>';
+  subsection: matchrepl(/\\subsection(\*?)\{([^}]*)\}/, function(this: any, m: RegExpMatchArray) {
+    return heading('h3', 'subsection', m, this);
   }),
-  subsubsection: matchrepl(/\\subsubsection\{([^}]*)\}/, function(m: RegExpMatchArray) {
-    return '<h4>' + m[1] + '</h4>';
+  subsubsection: matchrepl(/\\subsubsection(\*?)\{([^}]*)\}/, function(this: any, m: RegExpMatchArray) {
+    return heading('h4', 'subsubsection', m, this);
   }),
   paragraph: matchrepl(/\\paragraph\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return '<h5>' + m[1] + '</h5>';

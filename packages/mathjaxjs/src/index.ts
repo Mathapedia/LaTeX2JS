@@ -4,6 +4,11 @@ export const DEFAULT_CONFIG = {
     displayMath: [['$$', '$$'], ['\\[', '\\]']],
     processEscapes: true,
     processEnvironments: true,
+    // Number AMS environments — equation, align, gather — and resolve \label
+    // and \ref against those numbers. Equation numbering stays with MathJax
+    // rather than the parser: it already owns the math, and two systems
+    // numbering the same document would disagree.
+    tags: 'ams',
     packages: ['base', 'ams', 'newcommand', 'configmacros']
   },
   chtml: {

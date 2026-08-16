@@ -50,6 +50,14 @@ jobs:
           pnpm --filter latex2js grammar
           git diff --exit-code -- packages/latex2js/src/grammar/
 
+      - name: Shipped bundle is up to date
+        # bundle/latex2html5.bundle.js is a build artifact that is committed and
+        # served by latex2js.com. Nothing regenerated it on a change, so it
+        # silently drifted from the source it claims to be — the site kept
+        # serving an older renderer while the tests all passed. `pnpm build`
+        # rewrites it, so a diff here means the committed bundle is stale.
+        run: git diff --exit-code -- bundle/
+
       - name: Playground production build
         run: pnpm dev:build
 

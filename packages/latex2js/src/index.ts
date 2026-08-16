@@ -16,6 +16,16 @@ export default class LaTeX2HTML5 {
   Delimiters: any;
   lastDiagnostics: any[] = [];
 
+  /**
+   * Which language documents are read as, when they do not declare one.
+   *
+   * An application that only ever renders LaTeX2JS content sets this once
+   * rather than editing every document; a document's own
+   * `\psset{dialect=...}` still overrides it. Defaults to `pstricks`, so an
+   * undeclared extension is reported rather than passing unnoticed.
+   */
+  dialect: 'pstricks' | 'latex2js' = 'pstricks';
+
   constructor(
     Text = TextExt,
     Headers = HeadersExt,

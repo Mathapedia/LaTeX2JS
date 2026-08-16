@@ -159,6 +159,14 @@ function shim(src) {
     out += src[i++]
   }
 
+  // The dialect declaration is itself a LaTeX2JS-only key, so xkeyval rejects
+  // it — declaring which language a document is written in cannot be written in
+  // a way PSTricks accepts. It is shimmed away like every other extension.
+  if (/dialect\s*=/.test(out)) applied.add('dialect')
+  out = out.replace(/\\psset\{\s*dialect\s*=\s*\w+\s*\}\n?/g, '')
+  out = out.replace(/,\s*dialect\s*=\s*\w+/g, '')
+  out = out.replace(/dialect\s*=\s*\w+\s*,\s*/g, '')
+
   // bare linewidth numbers need a unit; `1.5 pt` is already valid TeX
   out = out.replace(/linewidth=(\d+(?:\.\d+)?)(?=[,\]])/g, 'linewidth=$1pt')
   // plotpoints is a count, but the corpus writes it as a dimension
@@ -284,8 +292,15 @@ function wrapDocument(body, { document: whole }) {
     ? '\\documentclass[11pt]{article}\n\\usepackage[paperwidth=7in,paperheight=11in,margin=0.5in]{geometry}\n\\pagestyle{empty}'
     : '\\documentclass[border=6pt]{standalone}'
 
+  // Every theorem-like environment LaTeX2JS numbers needs declaring here, or
+  // the reference fails on an environment the renderer handles fine.
+  const THEOREM_ENVS = [
+    'theorem', 'lemma', 'corollary', 'proposition', 'definition', 'axiom',
+    'claim', 'example', 'remark', 'note', 'exercise', 'question', 'problem',
+    'solution',
+  ]
   const envs = whole
-    ? '\\newtheorem{theorem}{Theorem}\n\\newtheorem{lemma}{Lemma}\n\\newtheorem{proposition}{Proposition}\n\\newtheorem{definition}{Definition}\n'
+    ? THEOREM_ENVS.map((n) => `\\newtheorem{${n}}{${n[0].toUpperCase()}${n.slice(1)}}`).join('\n') + '\n'
     : ''
 
   return `${cls}\n${packages}\n${defs}\n${envs}\\begin{document}\n${body}\n\\end{document}\n`

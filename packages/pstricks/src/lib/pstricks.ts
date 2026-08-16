@@ -2,6 +2,7 @@ import {
   RE,
   parseOptions,
   parseArrows,
+  normalizeArrows,
   evaluate,
   parseExpression,
   X,
@@ -16,6 +17,21 @@ import Settings from '@latex2js/settings';
  * Parse a PSTricks linewidth value: a bare number is used as-is (SVG px),
  * a `pt` value is converted to px (1pt ≈ 1.333px).
  */
+/**
+ * The unit a radius is measured in.
+ *
+ * PSTricks scales a radius by `runit` and a coordinate by `xunit`/`yunit`, so
+ * `\psset{xunit=2}` stretches where a circle sits without changing how big it
+ * is. Reading the radius through xunit made `\pscircle(0,0){1}` twice the size
+ * the reference draws it. `runit` shares the same default, so this only parts
+ * company from the old reading once a document sets the axes independently.
+ */
+function radiusUnit(ctx: any): number {
+  const r = Number(ctx && ctx.runit);
+  if (isFinite(r) && r > 0) return r;
+  return Number(ctx && ctx.xunit);
+}
+
 function parseLinewidth(value: string): number {
   const m = value.trim().match(/^([\d.]+)\s*(pt)?$/);
   if (!m) return 2;
@@ -90,7 +106,7 @@ export const Expressions = {
     RE.squiggle
   ),
   psline: new RegExp(
-    '\\\\psline\\*?' + RE.options + RE.type + RE.coords + RE.coordsOpt
+    '\\\\psline\\*?' + RE.options + RE.type + RE.coords + RE.coordsOpt + '((?:\\s*\\([^)]*\\))*)'
   ),
   userline: new RegExp(
     '\\\\userline' +
@@ -106,19 +122,29 @@ export const Expressions = {
   uservariable: new RegExp(
     '\\\\uservariable' + RE.options + RE.squiggle + RE.coords + RE.squiggle
   ),
-  rput: /\\rput\((.*),(.*)\)\{(.*)\}/,
+  // The coordinates cannot contain a paren or the separating comma. They were
+  // `(.*),(.*)`, which is greedy: on `\rput(1,-2){\pscircle(0,0){0.5}}` the x
+  // capture ran to the comma inside the nested shape, so the placement read
+  // its coordinates out of the contents.
+  rput: /\\rput\(\s*([^,()]*),([^()]*?)\s*\)\s*\{([\s\S]*)\}/,
   psset: /\\psset\{(.*)\}/,
   psdots: new RegExp('\\\\psdots' + RE.options + '(.*)'),
   psgrid: new RegExp(
     '\\\\psgrid' + RE.options + RE.coordsOpt + RE.coordsOpt + RE.coordsOpt
   ),
   psellipse: /\\psellipse.*\(\s*(.*),(.*)\s*\)\(\s*(.*),(.*)\s*\)/,
-  psbezier: /\\psbezier(\[[^\]]*\])?\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)/,
-  pscurve: new RegExp('\\\\pscurve' + RE.options + RE.coords + '(.*)'),
-  psecurve: new RegExp('\\\\psecurve' + RE.options + RE.coords + '(.*)'),
-  psccurve: new RegExp('\\\\psccurve' + RE.options + RE.coords + '(.*)'),
-  pswedge: /\\pswedge(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\{(.*)\}\{(.*)\}\{(.*)\}/,
-  pscustom: /\\pscustom(\[[^\]]*\])?\{([\s\S]*)\}/,
+  psbezier: /\\psbezier\*?(\[[^\]]*\])?\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)\((.*),(.*)\)/,
+  pscurve: new RegExp('\\\\pscurve\\*?' + RE.options + RE.coords + '(.*)'),
+  psecurve: new RegExp('\\\\psecurve\\*?' + RE.options + RE.coords + '(.*)'),
+  psccurve: new RegExp('\\\\psccurve\\*?' + RE.options + RE.coords + '(.*)'),
+  pswedge: /\\pswedge\*?(\[[^\]]*\])?\(\s*(.*),(.*)\s*\)\{(.*)\}\{(.*)\}\{(.*)\}/,
+  pscustom: /\\pscustom\*?(\[[^\]]*\])?\{([\s\S]*)\}/,
+  // The canonical \pscustom path vocabulary. Only meaningful inside one, and
+  // inert elsewhere because psgraph has no renderer under these names.
+  moveto: /\\moveto\(\s*([^,)]*),([^)]*)\s*\)/,
+  lineto: /\\lineto\(\s*([^,)]*),([^)]*)\s*\)/,
+  closepath: /\\closepath/,
+  curveto: /\\curveto\(\s*([^,)]*),([^)]*)\s*\)\(\s*([^,)]*),([^)]*)\s*\)\(\s*([^,)]*),([^)]*)\s*\)/,
   multido: /\\multido\{([^}]*)\}\{([^}]*)\}\{([\s\S]*)\}/
 };
 
@@ -191,7 +217,9 @@ export const Functions = {
     var obj: any = {
       cx: X.call(this, m[1]),
       cy: Y.call(this, m[2]),
-      r: this.xunit * m[3],
+      // A radius is a magnitude. PSTricks draws the same circle for a negative
+      // one; SVG rejects it outright, so the shape vanished with a console error.
+      r: Math.abs(radiusUnit(this) * Number(m[3])),
       linecolor: 'black',
       linestyle: 'solid',
       fillstyle: 'none',
@@ -210,7 +238,8 @@ export const Functions = {
       arrows: [0, 0],
       dots: [0, 0],
       ticks: 'all',
-      labels: 'all'
+      labels: 'all',
+      showorigin: true
     };
     if (m[1]) {
       var options = parseOptions(m[1]);
@@ -225,11 +254,28 @@ export const Functions = {
       // ticks and labels could never be turned on.
       if (options.ticks) obj.ticks = options.ticks;
       if (options.labels) obj.labels = options.labels;
+      // arrowscale scales the axis arrowheads; it reaches the renderer as a
+      // string via parseOptions and is converted where the head is drawn.
+      if (options.arrowscale) obj.arrowscale = options.arrowscale;
+      // showorigin=false suppresses the tick and number at the origin; the
+      // default is to draw them.
+      if (options.showorigin) obj.showorigin = options.showorigin !== 'false';
     }
     // arrows?
     var l = parseArrows(m[2]);
     obj.arrows = l.arrows;
     obj.dots = l.dots;
+    // psaxes reads its options key by key rather than assigning them wholesale,
+    // so an `arrows=` option was dropped on the floor and an arrowed axis drew
+    // no head at all — and kept the tick and number the head should suppress.
+    if (m[1]) {
+      const opts = parseOptions(m[1]);
+      if (opts.arrows) {
+        const fromOption = parseArrows(opts.arrows);
+        obj.arrows = fromOption.arrows;
+        obj.dots = fromOption.dots;
+      }
+    }
     // \psaxes*[par]{arrows}(x0,y0)(x1,y1)(x2,y2)
     // m[1] [options]
     // m[2] {<->}
@@ -271,7 +317,11 @@ export const Functions = {
       linestyle: 'solid',
       fillstyle: 'none',
       fillcolor: 'none',
-      linewidth: 2
+      linewidth: 2,
+      // `plotstyle=dots` marks the samples rather than joining them; dotsize is
+      // the marker radius, matching psdots so a document using both agrees.
+      plotstyle: 'line',
+      dotsize: '2pt 2'
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
 
@@ -281,6 +331,11 @@ export const Functions = {
     var plotpoints = obj.plotpoints ? Number(obj.plotpoints) : 0;
     if (plotpoints > 1) {
       step = (endX - startX) / (plotpoints - 1);
+    } else if (obj.plotpoints !== undefined && plotpoints < 2) {
+      // Fewer than two samples has no defined meaning — there is no interval
+      // left to step across — so the default sampling is used instead. Saying
+      // so beats accepting the option and quietly doing something else.
+      obj.plotpointsIgnored = plotpoints;
     }
 
     // Compile the plot expression once; evaluate per sample against a
@@ -306,6 +361,7 @@ export const Functions = {
       }
     }
     obj.data = data;
+    normalizeArrows(obj);
     return obj;
   },
   pspolygon(this: PSTricksContext, m: any) {
@@ -370,10 +426,11 @@ export const Functions = {
       obj.cy = Y.call(this, m[4]);
     }
     // choose x units over y, no reason...
-    obj.r = Number(m[5]) * this.xunit;
+    obj.r = Math.abs(Number(m[5]) * radiusUnit(this));
     obj.angleA = (Number(m[6]) * Math.PI) / 180;
     obj.angleB = (Number(m[7]) * Math.PI) / 180;
     Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
+    normalizeArrows(obj);
     return obj;
   },
   psline(this: PSTricksContext, m: any) {
@@ -403,6 +460,15 @@ export const Functions = {
       obj.x2 = X.call(this, m[3]);
       obj.y2 = Y.call(this, m[4]);
     }
+    // \psline takes any number of points, not two. Everything past the second
+    // was dropped, so a polyline silently rendered as its first segment.
+    obj.points = [[obj.x1, obj.y1], [obj.x2, obj.y2]];
+    const extra = m[8];
+    if (extra) {
+      for (const pair of String(extra).matchAll(/\(\s*([^,()]*),([^,()]*)\s*\)/g)) {
+        obj.points.push([X.call(this, pair[1]), Y.call(this, pair[2])]);
+      }
+    }
     if (options) {
       Object.assign(obj, parseOptions(options));
     }
@@ -410,6 +476,7 @@ export const Functions = {
     if (typeof obj.linewidth === 'string') {
       obj.linewidth = parseLinewidth(obj.linewidth);
     }
+    normalizeArrows(obj);
     return obj;
   },
   uservariable(this: PSTricksContext, m: any) {
@@ -534,6 +601,7 @@ export const Functions = {
     if (typeof obj.linewidth === 'string') {
       obj.linewidth = parseLinewidth(obj.linewidth);
     }
+    normalizeArrows(obj);
     return obj;
   },
   rput(this: PSTricksContext, m: any) {
@@ -543,18 +611,31 @@ export const Functions = {
       text: m[3]
     };
   },
+  /**
+   * `\psset` declares defaults that every later command inherits.
+   *
+   * Every key is kept, not only the nine Settings knows about. Those nine need
+   * conversion — units become numbers, the dialect is canonicalized — and the
+   * rest are style defaults a shape reads in place of its own hardcoded one.
+   * Dropping them is why `\psset{linewidth=2pt,linestyle=dashed}` drew a thin
+   * solid line: the keys parsed, matched nothing, and were discarded.
+   */
   psset(this: PSTricksContext, m: any) {
-    const pairs = m[1].split(',').map((pair: string) => pair.split('='));
-    const obj = {};
-    pairs.forEach((pair: string[]) => {
-      const key = pair[0];
-      const value = pair[1];
+    const obj: any = {};
+    if (!m || !m[1]) return obj;
+    // parseOptions rather than a bare split, so a colour here resolves the
+    // same way it would inside a command's own brackets.
+    const declared = parseOptions(m[1]);
+    Object.entries(declared).forEach(([key, value]) => {
+      let converted = false;
       Object.keys(Settings.Expressions).forEach((setting) => {
         const exp = (Settings.Expressions as any)[setting];
         if (key.match(exp)) {
           (Settings.Functions as any)[setting](obj, value);
+          converted = true;
         }
       });
+      if (!converted) obj[key] = value;
     });
     return obj;
   },
@@ -562,7 +643,10 @@ export const Functions = {
     var obj: any = {
       linecolor: 'black',
       dotstyle: 'dot',
-      dotsize: 2,
+      // PSTricks reads `dotsize=<dim> <factor>`: the diameter is
+      // dim + factor x linewidth, so a thicker pen draws a bigger dot.
+      dotsize: '2pt 2',
+      linewidth: 0.8 * 1.333,
       data: parseCoordList.call(this, m[2])
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
@@ -609,7 +693,8 @@ export const Functions = {
       linestyle: 'solid',
       fillstyle: 'none',
       fillcolor: 'black',
-      linewidth: 2
+      linewidth: 2,
+      filled: /\\psellipse\*/.test(m[0])
     };
     var opts = m[0].match(/\[([^\]]*)\]/);
     if (opts) Object.assign(obj, parseOptions(opts[1]));
@@ -623,7 +708,10 @@ export const Functions = {
     var obj: any = {
       linecolor: 'black',
       linestyle: 'solid',
-      linewidth: 2
+      fillstyle: 'none',
+      fillcolor: 'black',
+      linewidth: 2,
+      filled: /\\psbezier\*/.test(m[0])
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     obj.x1 = X.call(this, m[2]);
@@ -643,7 +731,11 @@ export const Functions = {
       fillstyle: 'none',
       fillcolor: 'black',
       linewidth: 2,
-      closed: /\\psecurve|\\psccurve/.test(m[0])
+      filled: /\\ps[ce]?curve\*/.test(m[0]),
+      // Only psccurve wraps. psecurve is an open curve whose first and last
+      // points are tangent controls rather than points it passes through.
+      closed: /\\psccurve/.test(m[0]),
+      endpoints: /\\psecurve/.test(m[0])
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     // first point is captured separately (m[2], m[3]); the rest follow
@@ -667,12 +759,13 @@ export const Functions = {
       // curve, not a solid black wedge.
       fillstyle: 'none',
       fillcolor: 'black',
-      linewidth: 2
+      linewidth: 2,
+      filled: /\\pswedge\*/.test(m[0])
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     obj.cx = X.call(this, m[2]);
     obj.cy = Y.call(this, m[3]);
-    obj.r = Number(m[4]) * this.xunit;
+    obj.r = Math.abs(Number(m[4]) * radiusUnit(this));
     obj.angleA = (Number(m[5]) * Math.PI) / 180;
     obj.angleB = (Number(m[6]) * Math.PI) / 180;
     Object.assign(obj, arcEndpoints.call(this, m[2], m[3], m[4], obj.angleA, obj.angleB));
@@ -685,10 +778,31 @@ export const Functions = {
       fillstyle: 'none',
       fillcolor: 'black',
       linewidth: 2,
+      filled: /\\pscustom\*/.test(m[0]),
       body: m[2]
     };
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     return obj;
+  },
+  /** `\moveto(x,y)` — starts a new subpath inside \pscustom. */
+  moveto(this: PSTricksContext, m: any) {
+    return { x: X.call(this, m[1]), y: Y.call(this, m[2]) };
+  },
+  /** `\lineto(x,y)` — a straight segment inside \pscustom. */
+  lineto(this: PSTricksContext, m: any) {
+    return { x: X.call(this, m[1]), y: Y.call(this, m[2]) };
+  },
+  /** `\closepath` — closes the current subpath. */
+  closepath() {
+    return { close: true };
+  },
+  /** `\curveto(c1)(c2)(end)` — a cubic segment inside \pscustom. */
+  curveto(this: PSTricksContext, m: any) {
+    return {
+      x1: X.call(this, m[1]), y1: Y.call(this, m[2]),
+      x2: X.call(this, m[3]), y2: Y.call(this, m[4]),
+      x: X.call(this, m[5]), y: Y.call(this, m[6])
+    };
   },
   multido(this: PSTricksContext, m: any) {
     var spec = m[1] || '';

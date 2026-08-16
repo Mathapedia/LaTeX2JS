@@ -46,7 +46,14 @@ const COMMANDS = {
   psccurve: { fills: true, body: (o) => `\\psccurve${o}(-2,-1)(-1,1)(0,-0.5)(1,1.5)(2,0)` },
   psdots: { fills: false, body: (o) => `\\psdots${o}(-2,-1)(-1,0)(0,1)(1,0)(2,-1)` },
   psgrid: { fills: false, body: (o) => `\\psgrid${o}(-2,-2)(2,2)` },
-  psplot: { fills: false, body: (o) => `\\psplot${o}{-2}{2}{x x mul}` },
+  // Written in the algebraic dialect both engines can read. An RPN body is the
+  // one difference the dialect flag does not close, and it is covered once as a
+  // deliberate edge case rather than by every psplot variation reporting the
+  // same known gap.
+  psplot: {
+    fills: false,
+    body: (o) => `\\psplot${o ? `${o.slice(0, -1)},algebraic=true]` : '[algebraic=true]'}{-2}{2}{x^2}`,
+  },
   pscustom: { fills: true, body: (o) => `\\pscustom${o}{\\moveto(-2,-1)\\lineto(0,1.5)\\lineto(2,-1)\\closepath}` },
   psaxes: { fills: false, body: (o) => `\\psaxes${o}(0,0)(-2,-2)(2,2)` },
 }
@@ -109,7 +116,12 @@ const EDGE_CASES = [
   { id: 'edge-wedge-full', why: 'A wedge spanning the whole circle.', body: `\\pswedge[fillstyle=solid,fillcolor=orange](0,0){1.8}{0}{360}` },
   { id: 'edge-decimal-precision', why: 'Long decimals must not be truncated into visible error.', body: `\\psline(-1.9999,-0.9999)(1.9999,0.9999)` },
   { id: 'edge-plot-discontinuous', why: 'A function with a pole inside the plotted range.', body: `\\psplot{-2}{2}{1 x div}` },
-  { id: 'edge-plot-constant', why: 'A constant function.', body: `\\psplot{-2}{2}{1}` },
+  { id: 'edge-plot-constant', why: 'A constant function.', body: `\\psplot[algebraic=true]{-2}{2}{1}` },
+  {
+    id: 'edge-plot-rpn',
+    why: 'An RPN PostScript body, which is what PSTricks reads by default. LaTeX2JS always reads infix, so this is the one dialect difference the flag does not close — it should render in the reference and report a diagnostic here.',
+    body: `\\psplot{-2}{2}{x x mul}`,
+  },
   { id: 'edge-empty-pscustom', why: 'pscustom with no path operators.', body: `\\pscustom{}` },
   { id: 'edge-unknown-command', why: 'An unimplemented command must warn, not crash the whole picture.', body: `\\psline(-2,-1)(2,1)\n\\psunknowncmd(0,0){1}\n\\pscircle(0,0){1}` },
   { id: 'edge-nested-pspicture-content', why: 'Many elements in one picture.', body: Array.from({ length: 12 }, (_, i) => `\\pscircle[linecolor=${COLORS[i % COLORS.length]}](${(i % 5) - 2},${Math.floor(i / 5) - 1}){0.4}`).join('\n') },

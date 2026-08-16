@@ -1,8 +1,11 @@
-import { Y } from '@latex2js/utils';
+import { Y, parseExpression } from '@latex2js/utils';
 
-function arrow(x1: number, y1: number, x2: number, y2: number) {
+function arrow(x1: number, y1: number, x2: number, y2: number, arrowscale?: number | string) {
   var t = Math.PI / 6;
-  var d = 8;
+  // arrowscale is a multiplier on the 8px default head size; anything that
+  // is not a positive number falls back to 1 (the PSTricks default).
+  var scale = Number(arrowscale);
+  var d = 8 * (scale > 0 ? scale : 1);
   var dx = x2 - x1,
     dy = y2 - y1;
   var l = Math.sqrt(dx * dx + dy * dy);
@@ -35,38 +38,138 @@ function arrow(x1: number, y1: number, x2: number, y2: number) {
   return context.join(' ');
 }
 
+/** PSTricks' `curvature=a b c` default. */
+const CURVATURE_DEFAULT = { a: 1, b: 0.1, c: 0 };
+
 /**
- * Catmull-Rom → cubic Bézier path for a flat [x0,y0,x1,y1,...] point list.
- * `closed` wraps the curve back to the start point.
+ * The control-point scaling PSTricks itself uses, transcribed from the `CC`
+ * and `IC` procedures in its PostScript prologue (pstricks.pro).
+ *
+ * This is not a Catmull-Rom spline, which is what stood here. The difference
+ * is where the control offset gets its length: Catmull-Rom takes it from the
+ * chord between a point's two neighbours, so at a sharp turn — where that
+ * chord collapses — the curve pinches into a cusp. PSTricks takes it from the
+ * length of the segment being drawn, which stays large through the turn, so
+ * the curve rounds outward instead. Every psccurve and psecurve in the corpus
+ * drew with corners the reference does not have.
+ *
+ * @param prev - the point before this one
+ * @param cur - the point the tangent is taken at
+ * @param next - the point after this one
+ * @param p - effective curvature parameters, already through `IC`
+ * @returns the control points just before and just after `cur`
  */
-function buildCurvePath(data: number[], closed: boolean): string {
+function curveControls(
+  prev: [number, number],
+  cur: [number, number],
+  next: [number, number],
+  p: { a: number; b: number; c: number }
+): { before: [number, number]; after: [number, number] } {
+  const d0x = cur[0] - prev[0];
+  const d0y = cur[1] - prev[1];
+  const d1x = next[0] - cur[0];
+  const d1y = next[1] - cur[1];
+  const l0 = Math.hypot(d0x, d0y);
+  const l1 = Math.hypot(d1x, d1y);
+
+  // The tangent leans toward whichever neighbouring segment is longer, by
+  // `c` — which IC has already shifted by one, so the default 0 means 1.
+  const w0 = Math.pow(l1, p.c);
+  const w1 = Math.pow(l0, p.c);
+  const tx = d0x * w0 + d1x * w1;
+  const ty = d0y * w0 + d1y * w1;
+  const tlen = Math.hypot(tx, ty);
+  if (!tlen || !isFinite(tlen)) return { before: [...cur], after: [...cur] };
+
+  // Sharper turns pull the control points in. With the default b of 0.1 this
+  // is a very weak effect until the path nearly doubles back on itself.
+  const turn = Math.atan2(d0y, d0x) - Math.atan2(d1y, d1x);
+  const m = (p.a * Math.pow(Math.abs(Math.cos(turn / 2)), p.b)) / tlen / 2;
+
+  return {
+    before: [cur[0] - l0 * tx * m, cur[1] - l0 * ty * m],
+    after: [cur[0] + l1 * tx * m, cur[1] + l1 * ty * m],
+  };
+}
+
+/**
+ * Reads `curvature` and applies the rescaling PSTricks' `IC` does once before
+ * a curve is drawn: c is shifted up by one and clamped, and a is folded
+ * together with the b exponent.
+ */
+function curvatureParams(ctx: any): { a: number; b: number; c: number } {
+  const raw = String((ctx && ctx.curvature) ?? '').trim();
+  const parts = raw ? raw.split(/[\s,]+/).map(Number) : [];
+  const a = isFinite(parts[0]) ? parts[0] : CURVATURE_DEFAULT.a;
+  const b = isFinite(parts[1]) ? parts[1] : CURVATURE_DEFAULT.b;
+  const c = isFinite(parts[2]) ? parts[2] : CURVATURE_DEFAULT.c;
+  return {
+    a: ((a * 2) / 3) / Math.pow(Math.cos(Math.PI / 4), b),
+    b,
+    c: Math.min(3, Math.max(0, c + 1)),
+  };
+}
+
+/**
+ * Cubic Bézier path through a flat [x0,y0,x1,y1,...] point list.
+ *
+ * The three PSTricks curve commands are three different shapes, not one:
+ * `\pscurve` runs through every point, `\psccurve` wraps back to the start, and
+ * `\psecurve` uses the first and last points **only** to set the tangents and
+ * draws just the span between the interior ones. Treating `psecurve` as closed
+ * — as this did — produced a loop where the reference draws a short open arc.
+ *
+ * @param data - flat coordinate pairs
+ * @param mode - which of the three curves to build
+ * @param ctx - the shape's parsed data, read for `curvature`
+ * @returns an SVG path, empty when there are too few points for the mode
+ */
+function buildCurvePath(
+  data: number[],
+  mode: 'open' | 'closed' | 'endpoints',
+  ctx?: any
+): string {
   const pts: Array<[number, number]> = [];
   for (let i = 0; i < data.length; i += 2) pts.push([data[i], data[i + 1]]);
   const n = pts.length;
-  if (n < 2) return '';
-  const at = (i: number) => pts[((i % n) + n) % n];
+  const p = curvatureParams(ctx);
+  const seg = (from: [number, number], c1: [number, number], c2: [number, number], to: [number, number]) =>
+    ' C ' + c1[0] + ' ' + c1[1] + ', ' + c2[0] + ' ' + c2[1] + ', ' + to[0] + ' ' + to[1];
+
+  if (mode === 'closed') {
+    // ClosedCurve wraps the neighbour lookup; PSTricks copies the first three
+    // points onto the end of the stack to the same effect.
+    if (n < 3) return '';
+    const at = (i: number) => pts[((i % n) + n) % n];
+    const ctrl = pts.map((_, i) => curveControls(at(i - 1), at(i), at(i + 1), p));
+    let d = 'M ' + pts[0][0] + ' ' + pts[0][1];
+    for (let i = 0; i < n; i++) {
+      d += seg(at(i), ctrl[i].after, ctrl[(i + 1) % n].before, at(i + 1));
+    }
+    return d + ' Z';
+  }
+
+  if (mode === 'endpoints') {
+    // AltCurve draws P1..Pn-2; the outer points only feed the tangents.
+    if (n < 4) return '';
+    let d = 'M ' + pts[1][0] + ' ' + pts[1][1];
+    for (let i = 1; i < n - 2; i++) {
+      const after = curveControls(pts[i - 1], pts[i], pts[i + 1], p).after;
+      const before = curveControls(pts[i], pts[i + 1], pts[i + 2], p).before;
+      d += seg(pts[i], after, before, pts[i + 1]);
+    }
+    return d;
+  }
+
+  // OpenCurve. IC starts with a zero tangent and EOC ends with one, so the
+  // outermost control point of each end sits on the endpoint itself.
+  if (n < 3) return '';
   let d = 'M ' + pts[0][0] + ' ' + pts[0][1];
   for (let i = 0; i < n - 1; i++) {
-    const p0 = closed ? at(i - 1) : i === 0 ? pts[0] : pts[i - 1];
-    const p1 = pts[i];
-    const p2 = pts[i + 1];
-    const p3 = closed ? at(i + 2) : i + 2 < n ? pts[i + 2] : pts[i + 1];
-    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
-    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
-    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
-    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
-    d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p2[0] + ' ' + p2[1];
-  }
-  if (closed) {
-    const pn1 = pts[n - 1];
-    const p0 = pts[0];
-    const pn2 = pts[n - 2];
-    const p1 = pts[1];
-    const c1x = pn1[0] + (p0[0] - pn2[0]) / 6;
-    const c1y = pn1[1] + (p0[1] - pn2[1]) / 6;
-    const c2x = p0[0] - (p1[0] - pn1[0]) / 6;
-    const c2y = p0[1] - (p1[1] - pn1[1]) / 6;
-    d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p0[0] + ' ' + p0[1] + ' Z';
+    const after = i === 0 ? pts[0] : curveControls(pts[i - 1], pts[i], pts[i + 1], p).after;
+    const before =
+      i + 1 === n - 1 ? pts[n - 1] : curveControls(pts[i], pts[i + 1], pts[i + 2], p).before;
+    d += seg(pts[i], after, before, pts[i + 1]);
   }
   return d;
 }
@@ -128,7 +231,10 @@ function hasFill(ctx: any): boolean {
 function resolveFill(ctx: any, svg: any): string {
   const style: string = ctx.fillstyle ?? 'none';
 
-  // The starred forms set `filled`; they fill flat regardless of style.
+  // The starred forms set `filled`; they fill flat regardless of style, in the
+  // fillcolor the author wrote. PSTricks fills them with linecolor instead —
+  // a difference the dialect reports rather than switches, because rendering
+  // must not depend on a flag that cannot deliver PSTricks output anyway.
   if (ctx.filled || style === 'solid') return ctx.fillcolor;
   if (style === 'none' || !style) return 'none';
 
@@ -169,6 +275,124 @@ function resolveFill(ctx: any, svg: any): string {
 }
 
 /**
+ * Resolves a shape's SVG stroke.
+ *
+ * `linestyle=none` means the outline is not drawn at all. Exactly one renderer
+ * honoured that and the rest painted the outline anyway, so a shape asked to
+ * show only its fill still came out with a border — the same one-place-right
+ * pattern that fillstyle had.
+ *
+ * @param ctx - the shape's parsed data
+ * @param fallback - the colour to use when the shape has no linecolor of its own
+ * @returns an SVG paint value, or `none` when the outline is suppressed
+ */
+function resolveStroke(ctx: any, fallback?: string): string {
+  if (ctx && ctx.linestyle === 'none') return 'none';
+  return (ctx && ctx.linecolor) || fallback || 'black';
+}
+
+/** PSTricks' own defaults for the two broken-line styles, in points. */
+const DASH_DEFAULT = '5pt 3pt';
+const DOTSEP_DEFAULT = 3;
+
+/** PSTricks' `dotsize=2pt 2` and `linewidth=0.8pt` defaults. */
+const DOTSIZE_DEFAULT = '2pt 2';
+const DEFAULT_LINEWIDTH_PX = 0.8 * PT_TO_PX;
+
+/**
+ * The SVG dash pattern for a shape's linestyle, or `none` when it draws solid.
+ *
+ * `linestyle=dashed` and `linestyle=dotted` were honoured by psline and
+ * pspolygon and ignored by every other shape, and where they were honoured
+ * both emitted the same `9,5` — so a dotted line rendered as a dashed one and
+ * neither followed the `dash` or `dotsep` the author set.
+ *
+ * @param ctx - the shape's parsed data, carrying linestyle, dash and dotsep
+ * @returns an SVG stroke-dasharray value
+ */
+function dashArray(ctx: any): string {
+  const style: string = (ctx && ctx.linestyle) || 'solid';
+  const round = (n: number) => Math.round(n * 1000) / 1000;
+  if (style === 'dotted') {
+    // A zero-length dash under a round cap is how SVG draws a round dot; the
+    // gap is dotsep plus the width the cap itself occupies.
+    const sep = dimension(ctx.dotsep, DOTSEP_DEFAULT);
+    return '0,' + round(sep + (Number(ctx.linewidth) || 0));
+  }
+  if (style !== 'dashed') return 'none';
+  // `dash=5pt 3pt` names the black length then the white one.
+  const parts = String(ctx.dash ?? DASH_DEFAULT).trim().split(/\s+/);
+  const on = dimension(parts[0], 5);
+  const off = dimension(parts[1] ?? parts[0], 3);
+  return round(on) + ',' + round(off);
+}
+
+/** Round caps are what turn a zero-length dash into a dot. */
+function dashCap(ctx: any): string {
+  return ctx && ctx.linestyle === 'dotted' ? 'round' : 'butt';
+}
+
+/**
+ * The radius of a plotted dot.
+ *
+ * PSTricks reads `dotsize=<dim> <factor>` and sets the dot's *diameter* to
+ * `dim + factor × linewidth`, so a thicker pen draws a proportionally bigger
+ * dot — its `dotsize=2pt 2` default and the halving are both from
+ * pstricks-dots.tex. This was a fixed radius that read neither part, so
+ * `\psdots[linewidth=4pt]` drew the same specks as a hairline where the
+ * reference draws discs five times the size.
+ *
+ * @param ctx - the shape's parsed data, carrying dotsize and linewidth
+ * @returns the radius in device units
+ */
+function dotRadius(ctx: any): number {
+  const parts = String(ctx.dotsize ?? DOTSIZE_DEFAULT).trim().split(/\s+/);
+  const base = dimension(parts[0], 2);
+  const factor = Number(parts[1]);
+  const diameter = base + (isFinite(factor) ? factor : 0) * linewidthPx(ctx);
+  return Math.max(0.1, diameter / 2);
+}
+
+/**
+ * A shape's linewidth in device units.
+ *
+ * Only two of the parse functions convert a `pt` suffix, so the value reaching
+ * a renderer is sometimes a number of pixels and sometimes the string the
+ * author wrote. A bare number keeps its device-unit meaning, matching
+ * parseLinewidth in pstricks.ts.
+ */
+function linewidthPx(ctx: any): number {
+  const v = ctx && ctx.linewidth;
+  if (typeof v === 'number' && isFinite(v)) return v;
+  const m = typeof v === 'string' ? v.trim().match(/^([\d.]+)\s*(pt)?$/) : null;
+  if (!m) return DEFAULT_LINEWIDTH_PX;
+  return Number(m[1]) * (m[2] ? PT_TO_PX : 1);
+}
+
+/**
+ * Whether a command's geometry can be drawn.
+ *
+ * `X` and `Y` return NaN for a coordinate they cannot compute. Handing that to
+ * SVG does not fail visibly: an invalid geometry attribute is treated as absent
+ * and the element falls back to its default, so a broken shape reappears at the
+ * origin looking intentional. Skipping it is the honest result, and the parser
+ * has already reported the reason against the source line.
+ *
+ * @param ctx - a command's parsed data
+ * @returns false when any of its own numeric fields is non-finite
+ */
+function drawable(ctx: any, depth = 0): boolean {
+  if (depth > 4 || ctx === null || ctx === undefined) return true;
+  if (typeof ctx === 'number') return isFinite(ctx);
+  if (Array.isArray(ctx)) return ctx.every((v) => drawable(v, depth + 1));
+  if (typeof ctx !== 'object') return true;
+  return Object.entries(ctx).every(
+    // `global` is the shared environment, not this command's geometry.
+    ([k, v]) => k === 'global' || k === 'env' || drawable(v, depth + 1)
+  );
+}
+
+/**
  * SVG arc flags for a PSTricks arc running from `angleA` to `angleB`.
  *
  * PSTricks always sweeps counter-clockwise in its own coordinates, taking the
@@ -181,11 +405,19 @@ function resolveFill(ctx: any, svg: any): string {
  * @param angleB - end angle in radians
  * @returns the sweep span plus SVG's large-arc and sweep flags
  */
-function arcFlags(angleA: number, angleB: number): { delta: number; large: number; sweep: number } {
-  let delta = angleB - angleA;
-  if (!isFinite(delta)) delta = 0;
-  delta = ((delta % TAU) + TAU) % TAU;
-  return { delta, large: delta > Math.PI ? 1 : 0, sweep: 0 };
+function arcFlags(
+  angleA: number,
+  angleB: number
+): { delta: number; large: number; sweep: number; full: boolean } {
+  let raw = angleB - angleA;
+  if (!isFinite(raw)) raw = 0;
+  // A span of a full turn or more paints the whole circle: PSTricks keeps
+  // sweeping past 360 and simply overlaps itself, so \psarc{0}{450} is a
+  // circle, not the 90 degrees the modulo below leaves behind. Reducing first
+  // and asking afterwards is what lost the extra turn.
+  const full = Math.abs(raw) >= TAU - 1e-9;
+  const delta = ((raw % TAU) + TAU) % TAU;
+  return { delta, large: delta > Math.PI ? 1 : 0, sweep: 0, full };
 }
 
 /**
@@ -206,15 +438,105 @@ function fullCirclePath(cx: number, cy: number, r: number): string {
 }
 
 function curveRenderer(this: any, svg: any): void {
-  const d = buildCurvePath(this.data, !!this.closed);
+  const mode = this.endpoints ? 'endpoints' : this.closed ? 'closed' : 'open';
+  const d = buildCurvePath(this.data, mode, this);
   if (!d) return;
   svg
     .append('svg:path')
     .attr('d', d)
     .style('stroke-width', this.linewidth)
-    .style('stroke', this.linecolor)
+    .style('stroke', resolveStroke(this))
+    .style('stroke-dasharray', dashArray(this))
+    .style('stroke-linecap', dashCap(this))
     .style('stroke-opacity', 1)
     .style('fill', resolveFill(this, svg));
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** Options for a re-render of the picture. */
+interface RedrawOptions {
+  /** Pointer position in device coordinates; omitted keeps the last one. */
+  coords?: number[] | null;
+  /** Variable names declared to have changed, e.g. a slider that moved. */
+  changed?: string[];
+  /** Rebuild the whole picture from scratch (first frame, forced redraws). */
+  force?: boolean;
+  /** This render is driven by a pointer event, not by a variable change. */
+  pointer?: boolean;
+}
+
+/**
+ * A selection-like wrapper that patches nodes in place instead of appending.
+ *
+ * Renderers call `svg.append('svg:path').attr(...).style(...)` and never
+ * inspect what they built, so this shim satisfies the same interface while
+ * reconciling: `append` reuses the child that occupied the same slot last
+ * time when its tag still matches, and `attr`/`style`/`text` skip writes
+ * whose value is already there. Appending past the previous child count
+ * creates nodes; children left over from a bigger previous frame are dropped
+ * by {@link PatchSelection#prune}.
+ *
+ * Keying children by position inside an element is what lets a renderer that
+ * emits a variable number of nodes — psgrid at a new subdivision, psline with
+ * a different point count — still patch in place and shed its leftovers.
+ */
+class PatchSelection {
+  /** Number of appends this pass; public so the caller can prune by it. */
+  slot = 0;
+  private readonly node: Element | null;
+
+  constructor(node: Element | null) {
+    this.node = node;
+  }
+
+  append(tagName: string): PatchSelection {
+    const node = this.node;
+    if (!node) return new PatchSelection(null);
+    const tag = tagName.startsWith('svg:') ? tagName.slice(4) : tagName;
+    const existing = node.children[this.slot] as Element | undefined;
+    let child: Element;
+    if (existing && existing.localName === tag) {
+      child = existing;
+    } else {
+      child = document.createElementNS(SVG_NS, tag);
+      if (existing) node.replaceChild(child, existing);
+      else node.appendChild(child);
+    }
+    this.slot++;
+    return new PatchSelection(child);
+  }
+
+  attr(name: string, value: string | number): this {
+    if (this.node) {
+      const v = String(value);
+      if (this.node.getAttribute(name) !== v) this.node.setAttribute(name, v);
+    }
+    return this;
+  }
+
+  style(name: string, value: string | number): this {
+    if (this.node instanceof SVGElement) {
+      const v = String(value);
+      const styles = this.node.style as any;
+      if (styles[name] !== v) styles[name] = v;
+    }
+    return this;
+  }
+
+  text(content: string): this {
+    if (this.node && this.node.textContent !== content) this.node.textContent = content;
+    return this;
+  }
+
+  /** Removes children past the last slot written this pass. */
+  prune(): void {
+    const node = this.node;
+    if (!node) return;
+    while (node.children.length > this.slot) {
+      node.removeChild(node.children[node.children.length - 1]);
+    }
+  }
 }
 
 const psgraph: any = {
@@ -257,7 +579,9 @@ const psgraph: any = {
       .attr('x2', this.x2)
       .attr('y2', this.y1)
       .style('stroke-width', 2)
-      .style('stroke', 'rgb(0,0,0)')
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -267,7 +591,9 @@ const psgraph: any = {
       .attr('x2', this.x2)
       .attr('y2', this.y2)
       .style('stroke-width', 2)
-      .style('stroke', 'rgb(0,0,0)')
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -277,7 +603,9 @@ const psgraph: any = {
       .attr('x2', this.x1)
       .attr('y2', this.y2)
       .style('stroke-width', 2)
-      .style('stroke', 'rgb(0,0,0)')
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -287,7 +615,9 @@ const psgraph: any = {
       .attr('x2', this.x1)
       .attr('y2', this.y1)
       .style('stroke-width', 2)
-      .style('stroke', 'rgb(0,0,0)')
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1);
   },
 
@@ -298,13 +628,33 @@ const psgraph: any = {
       .attr('cx', this.cx)
       .attr('cy', this.cy)
       .attr('r', this.r)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('fill', resolveFill(this, svg))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1);
   },
 
   psplot(svg: any): void {
+    // `plotstyle=dots` marks the samples instead of joining them. It was parsed
+    // and dropped, so a plot asking for dots drew a line through them — or, at
+    // plotpoints=1, a path of one point, which is nothing at all. That is why
+    // the tangent markers were missing from every picture in graph.tex.
+    if (this.plotstyle === 'dots') {
+      for (let i = 0; i < this.data.length; i += 2) {
+        svg
+          .append('svg:circle')
+          .attr('cx', this.data[i])
+          .attr('cy', this.data[i + 1])
+          .attr('r', dotRadius(this))
+          .attr('class', 'psplot')
+          .style('fill', this.linecolor)
+          .style('stroke', 'none');
+      }
+      return;
+    }
+
     var context = [];
     context.push('M');
     if (hasFill(this)) {
@@ -333,7 +683,9 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
-      .style('stroke', this.linecolor);
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this));
   },
 
   pspolygon(svg: any): void {
@@ -354,16 +706,19 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
-      .style('stroke', 'black');
+      // Was hardcoded black, so linecolor and linestyle=none were both ignored.
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this));
   },
 
   psarc(svg: any): void {
-    const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
+    const { delta, large, sweep, full } = arcFlags(this.angleA, this.angleB);
     const filled = hasFill(this);
     const arc =
       ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
       ' ' + this.B.x + ' ' + this.B.y;
-    const d = delta === 0
+    const d = full || delta === 0
       ? fullCirclePath(this.cx, this.cy, this.r)
       : filled
         ? 'M ' + this.cx + ' ' + this.cy + ' L ' + this.A.x + ' ' + this.A.y + arc + ' Z'
@@ -374,7 +729,9 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
-      .style('stroke', this.linecolor);
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this));
   },
 
   psaxes(svg: any): void {
@@ -382,13 +739,16 @@ const psgraph: any = {
     var yaxis = [this.bottomLeft[1], this.topRight[1]];
 
     var origin = this.origin;
+    // Resolved once here: the helper below is an inner function, so it cannot
+    // reach the axes' own data through `this`.
+    const axisStroke = resolveStroke(this);
 
     function line(x1: number, y1: number, x2: number, y2: number) {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', 2)
-        .style('stroke', 'rgb(0,0,0)')
+        .style('stroke', axisStroke)
         .style('stroke-opacity', 1);
     }
 
@@ -427,12 +787,15 @@ const psgraph: any = {
 
     var xticks = () => {
       positions(xaxis[0], xaxis[1], origin[0], this.dx).forEach((x) => {
+        // showorigin=false suppresses the tick at the origin itself.
+        if (this.showorigin === false && Math.abs(x - origin[0]) < 1e-6) return;
         line(x, origin[1] - 5, x, origin[1] + 5);
       });
     };
 
     var yticks = () => {
       positions(yaxis[0], yaxis[1], origin[1], this.dy).forEach((y) => {
+        if (this.showorigin === false && Math.abs(y - origin[1]) < 1e-6) return;
         line(origin[0] - 5, y, origin[0] + 5, y);
       });
     };
@@ -466,6 +829,8 @@ const psgraph: any = {
         // the axis line straight through the glyph, so it shifts clear of it
         // and serves both axes — as it does on a hand-drawn pair of axes.
         const atOrigin = Math.abs(x - origin[0]) < 1e-6;
+        // showorigin=false drops the number at the origin with its tick.
+        if (atOrigin && this.showorigin === false) return;
         if (atOrigin) label(String(value(x, 'x')), x - 7, origin[1] + 20, 'end');
         else label(String(value(x, 'x')), x, origin[1] + 20, 'middle');
       });
@@ -497,13 +862,13 @@ const psgraph: any = {
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(xaxis[1], origin[1], xaxis[0], origin[1]))
+        .attr('d', arrow(xaxis[1], origin[1], xaxis[0], origin[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
 
       svg
         .append('path')
-        .attr('d', arrow(origin[0], yaxis[1], origin[0], yaxis[0]))
+        .attr('d', arrow(origin[0], yaxis[1], origin[0], yaxis[0], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
     }
@@ -511,13 +876,13 @@ const psgraph: any = {
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(xaxis[0], origin[1], xaxis[1], origin[1]))
+        .attr('d', arrow(xaxis[0], origin[1], xaxis[1], origin[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
 
       svg
         .append('path')
-        .attr('d', arrow(origin[0], yaxis[0], origin[0], yaxis[1]))
+        .attr('d', arrow(origin[0], yaxis[0], origin[0], yaxis[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
     }
@@ -525,133 +890,105 @@ const psgraph: any = {
 
   psline(svg: any): void {
     var linewidth = this.linewidth,
-      linecolor = this.linecolor;
+      // Resolved here so `linestyle=none` suppresses the stroke: the helpers
+      // below are inner functions and cannot reach the shape through `this`.
+      linecolor = resolveStroke(this);
 
-    function solid(x1: number, y1: number, x2: number, y2: number) {
+    // One drawing function for all three styles. There used to be three, and
+    // `dashed` and `dotted` were byte-identical — both hardcoded `9,5` — so a
+    // dotted line rendered as a dashed one.
+    const dash = dashArray(this);
+    const cap = dashCap(this);
+    function draw(x1: number, y1: number, x2: number, y2: number) {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', linewidth)
         .style('stroke', linecolor)
+        .style('stroke-dasharray', dash)
+        .style('stroke-linecap', cap)
         .style('stroke-opacity', 1);
     }
 
-    function dashed(x1: number, y1: number, x2: number, y2: number) {
-      svg
-        .append('svg:path')
-        .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-        .style('stroke-width', linewidth)
-        .style('stroke', linecolor)
-        .style('stroke-dasharray', '9,5')
-        .style('stroke-opacity', 1);
+    // Every segment of the polyline. A two-point line is the same drawing it
+    // always was; anything past the second point used to be dropped.
+    const pts = this.points && this.points.length >= 2
+      ? this.points
+      : [[this.x1, this.y1], [this.x2, this.y2]];
+    for (let i = 0; i < pts.length - 1; i++) {
+      draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
     }
 
-    function dotted(x1: number, y1: number, x2: number, y2: number) {
-      svg
-        .append('svg:path')
-        .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-        .style('stroke-width', linewidth)
-        .style('stroke', linecolor)
-        .style('stroke-dasharray', '9,5')
-        .style('stroke-opacity', 1);
-    }
-
-    if (this.linestyle.match(/dotted/)) {
-      dotted(this.x1, this.y1, this.x2, this.y2);
-    } else if (this.linestyle.match(/dashed/)) {
-      dashed(this.x1, this.y1, this.x2, this.y2);
-    } else {
-      solid(this.x1, this.y1, this.x2, this.y2);
-    }
-
-    if (this.dots[0]) {
+    // The markers go on the ENDS of the polyline, like the arrowheads below;
+    // x1..y2 name the first segment, which on a three-point line is its
+    // middle vertex.
+    const marker = (at: number[]) => {
       svg
         .append('svg:circle')
-        .attr('cx', this.x1)
-        .attr('cy', this.y1)
-        .attr('r', 3)
-        .style('stroke', this.linecolor)
+        .attr('cx', at[0])
+        .attr('cy', at[1])
+        .attr('r', dotRadius(this))
+        .style('stroke', resolveStroke(this))
         .style('fill', this.linecolor)
         .style('stroke-width', 1)
         .style('stroke-opacity', 1);
-    }
+    };
+    if (this.dots[0]) marker(pts[0]);
+    if (this.dots[1]) marker(pts[pts.length - 1]);
 
-    if (this.dots[1]) {
-      svg
-        .append('svg:circle')
-        .attr('cx', this.x2)
-        .attr('cy', this.y2)
-        .attr('r', 3)
-        .style('stroke', this.linecolor)
-        .style('fill', this.linecolor)
-        .style('stroke-width', 1)
-        .style('stroke-opacity', 1);
-    }
-
-    var x1 = this.x1,
-      y1 = this.y1,
-      x2 = this.x2,
-      y2 = this.y2;
+    // An arrowhead belongs on the END of the polyline, and points along the
+    // last segment. Reading x1..y2 put it on the first segment instead, so a
+    // three-point line grew a head at its middle vertex.
+    const head = pts[pts.length - 1];
+    const beforeHead = pts[pts.length - 2];
+    const tail = pts[0];
+    const afterTail = pts[1];
 
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(x2, y2, x1, y1))
+        .attr('d', arrow(afterTail[0], afterTail[1], tail[0], tail[1], this.arrowscale))
         .style('fill', this.linecolor)
-        .style('stroke', this.linecolor);
+        .style('stroke', resolveStroke(this));
     }
 
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(x1, y1, x2, y2))
+        .attr('d', arrow(beforeHead[0], beforeHead[1], head[0], head[1], this.arrowscale))
         .style('fill', this.linecolor)
-        .style('stroke', this.linecolor);
+        .style('stroke', resolveStroke(this));
     }
   },
 
   userline(svg: any): void {
     var linewidth = this.linewidth,
-      linecolor = this.linecolor;
+      // Resolved here so `linestyle=none` suppresses the stroke: the helpers
+      // below are inner functions and cannot reach the shape through `this`.
+      linecolor = resolveStroke(this);
 
-    function solid(x1: number, y1: number, x2: number, y2: number) {
+    // One drawing function for all three styles; see the note in psline.
+    const dash = dashArray(this);
+    const cap = dashCap(this);
+    function draw(x1: number, y1: number, x2: number, y2: number) {
       svg
         .append('svg:path')
         .attr('class', 'userline')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', linewidth)
         .style('stroke', linecolor)
+        .style('stroke-dasharray', dash)
+        .style('stroke-linecap', cap)
         .style('stroke-opacity', 1);
     }
 
-    function dashed(x1: number, y1: number, x2: number, y2: number) {
-      svg
-        .append('svg:path')
-        .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-        .attr('class', 'userline')
-        .style('stroke-width', linewidth)
-        .style('stroke', linecolor)
-        .style('stroke-dasharray', '9,5')
-        .style('stroke-opacity', 1);
-    }
-
-    function dotted(x1: number, y1: number, x2: number, y2: number) {
-      svg
-        .append('svg:path')
-        .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-        .attr('class', 'userline')
-        .style('stroke-width', linewidth)
-        .style('stroke', linecolor)
-        .style('stroke-dasharray', '9,5')
-        .style('stroke-opacity', 1);
-    }
-
-    if (this.linestyle.match(/dotted/)) {
-      dotted(this.x1, this.y1, this.x2, this.y2);
-    } else if (this.linestyle.match(/dashed/)) {
-      dashed(this.x1, this.y1, this.x2, this.y2);
-    } else {
-      solid(this.x1, this.y1, this.x2, this.y2);
+    // Every segment of the polyline. A two-point line is the same drawing it
+    // always was; anything past the second point used to be dropped.
+    const pts = this.points && this.points.length >= 2
+      ? this.points
+      : [[this.x1, this.y1], [this.x2, this.y2]];
+    for (let i = 0; i < pts.length - 1; i++) {
+      draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
     }
 
     if (this.dots[0]) {
@@ -661,7 +998,7 @@ const psgraph: any = {
         .attr('cy', this.y1)
         .attr('r', 3)
         .attr('class', 'userline')
-        .style('stroke', this.linecolor)
+        .style('stroke', resolveStroke(this))
         .style('fill', this.linecolor)
         .style('stroke-width', 1)
         .style('stroke-opacity', 1);
@@ -674,7 +1011,7 @@ const psgraph: any = {
         .attr('cy', this.y2)
         .attr('r', 3)
         .attr('class', 'userline')
-        .style('stroke', this.linecolor)
+        .style('stroke', resolveStroke(this))
         .style('fill', this.linecolor)
         .style('stroke-width', 1)
         .style('stroke-opacity', 1);
@@ -688,20 +1025,41 @@ const psgraph: any = {
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(x2, y2, x1, y1))
+        .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
         .attr('class', 'userline')
         .style('fill', this.linecolor)
-        .style('stroke', this.linecolor);
+        .style('stroke', resolveStroke(this));
     }
 
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(x1, y1, x2, y2))
+        .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
         .attr('class', 'userline')
         .style('fill', this.linecolor)
-        .style('stroke', this.linecolor);
+        .style('stroke', resolveStroke(this));
     }
+  },
+
+  /**
+   * Graphics placed by an `\rput`, drawn into a translated group.
+   *
+   * The label form of rput is handled separately, in the DOM pass below. This
+   * is the case where the contents are shapes: they are drawn here so they
+   * keep their place in document order, which the DOM pass cannot express
+   * because it appends after the SVG is finished.
+   */
+  rputgroup(svg: any): void {
+    const g = svg
+      .append('svg:g')
+      .attr('class', 'rput-group')
+      .attr('transform', 'translate(' + this.dx + ',' + this.dy + ')');
+    (this.children || []).forEach((child: any) => {
+      if (!child || !psgraph.hasOwnProperty(child.key)) return;
+      if (!drawable(child.data)) return;
+      child.data.global = this.global;
+      (psgraph as any)[child.key].call(child.data, g);
+    });
   },
 
   rput(el: any): void {
@@ -859,12 +1217,15 @@ const psgraph: any = {
     const elements = env && env.elements;
 
     /**
-     * Recomputes an interactive element against the pointer position. Static
-     * elements keep the data the parser produced.
+     * Recomputes an interactive element against the pointer position and the
+     * current variable values.
+     *
+     * Only elements whose data is derived from something that moves can change:
+     * a psplot re-runs its sampled function against the variables it names, and
+     * a userline re-evaluates its head/tail expressions at the pointer. Anything
+     * else keeps the geometry the parser produced.
      */
-    function resolveData(item: any, coords: number[] | null, variables: any): any {
-      if (!coords || !item.fn) return item.data;
-
+    function resolveDynamic(item: any, coords: number[] | null, variables: any): any {
       if (item.name === 'psplot') {
         Object.entries(variables || {}).forEach(([name, value]: [string, any]) => {
           env.variables[name] = value;
@@ -875,6 +1236,9 @@ const psgraph: any = {
       }
 
       if (item.name === 'userline') {
+        // The head/tail expressions can only be evaluated against a pointer;
+        // without one the element keeps the geometry it was parsed with.
+        if (!coords) return item.data;
         const d = item.fn.call(env, item.match);
         env.x2 = coords[0];
         env.y2 = coords[1];
@@ -903,6 +1267,17 @@ const psgraph: any = {
       return item.data;
     }
 
+    /**
+     * The entry the first frame uses: without a pointer position the parser's
+     * own data is the contract. Re-running a plot's function here would resolve
+     * variables that appear later in the document, which the parse-time data
+     * deliberately does not see.
+     */
+    function resolveData(item: any, coords: number[] | null, variables: any): any {
+      if (!coords || !item.fn) return item.data;
+      return resolveDynamic(item, coords, variables);
+    }
+
     /** Evaluates every \uservariable at the pointer position, in source order. */
     function readVariables(coords: number[]): { [name: string]: any } {
       const variables: { [name: string]: any } = {};
@@ -918,47 +1293,258 @@ const psgraph: any = {
       return variables;
     }
 
-    /**
-     * Draws the whole picture into a fresh layer.
-     *
-     * Redrawing everything is what keeps interaction faithful to the source.
-     * Removing just the interactive elements and appending them again put them
-     * at the end of the SVG — on top of every later shape — and re-emitted
-     * them grouped by command type rather than in document order, so a correct
-     * diagram silently reordered itself the first time the pointer crossed it.
-     */
-    let layer: any = null;
-    function drawLayer(coords: number[] | null): void {
-      if (layer) layer.remove();
-      layer = svg.append('svg:g').attr('class', 'pspicture-layer');
-      const variables = coords ? readVariables(coords) : {};
+    // ---- dependency graph ------------------------------------------------
 
-      if (elements && elements.length) {
-        elements.forEach((item: any) => {
-          if (!item || !item.name || item.name.match(/rput/)) return;
-          if (!psgraph.hasOwnProperty(item.name)) return;
-          const data = resolveData(item, coords, variables);
-          data.global = env;
-          psgraph[item.name].call(data, layer);
+    /**
+     * The variables an algebraic expression reads, minus the pointer/sampling
+     * names x and y that every evaluation scope supplies. Parsed with the same
+     * compiler the plot sampler uses, so function names and math constants
+     * never count as dependencies.
+     */
+    function expressionVariables(expr: string): string[] {
+      const src = String(expr).replace(/^\{/, '').replace(/\}$/, '');
+      try {
+        return parseExpression(src)
+          .variables()
+          .filter((n: string) => n !== 'x' && n !== 'y');
+      } catch {
+        return [];
+      }
+    }
+
+    /**
+     * What an element's output depends on, derived from the element's own data
+     * and match rather than from a list of command names:
+     *
+     *  - a data field whose value is a function — userline's userx/usery/…
+     *    — is evaluated against the pointer on every move: the pointer dependency;
+     *  - every expression string the element carries (uservariable's func,
+     *    userline's head and tail, psplot's sampled function and its range)
+     *    names the variables it reads.
+     *
+     * Anything else is static: the parser has already resolved its geometry.
+     */
+    const depsCache = new Map<any, { pointer: boolean; variables: string[] }>();
+    function depsFor(item: any): { pointer: boolean; variables: string[] } {
+      const cached = depsCache.get(item);
+      if (cached) return cached;
+      const data = item && item.data;
+      const vars = new Set<string>();
+      let pointer = false;
+      if (data) {
+        pointer = Object.values(data).some((v: any) => typeof v === 'function');
+        for (const k of ['func', 'xExp', 'yExp', 'xExp2', 'yExp2']) {
+          const expr = data[k];
+          if (typeof expr === 'string' && expr) {
+            expressionVariables(expr).forEach((n) => vars.add(n));
+          }
+        }
+      }
+      // psplot's sampled function and its sample range live in the parser's
+      // match record, not in the resolved data.
+      if (item && item.match) {
+        for (const g of [2, 3, 4]) {
+          const expr = item.match[g];
+          if (typeof expr === 'string' && expr) {
+            expressionVariables(expr).forEach((n) => vars.add(n));
+          }
+        }
+      }
+      const deps = { pointer, variables: [...vars] };
+      depsCache.set(item, deps);
+      return deps;
+    }
+
+    // ---- incremental reconciliation --------------------------------------
+
+    let layer: any = null; // SVGSelection over the picture layer
+    let layerNode: Element | null = null;
+    // A group per renderable element, tracked by the element itself so a
+    // group follows its element when the list grows or shrinks; the group's
+    // `data-key` attribute carries the element's current index in document
+    // order, which is what keeps the reconciliation ordered.
+    const groups = new Map<any, Element>();
+    const drawn = new Set<any>(); // elements whose group holds output
+    let lastCoords: number[] | null = null;
+    let lastVariables: { [name: string]: any } = {};
+
+    /** Drops the layer and everything reconciled into it. */
+    function clearLayer(): void {
+      if (layer) layer.remove();
+      groups.clear();
+      drawn.clear();
+      layer = svg.append('svg:g').attr('class', 'pspicture-layer');
+      layerNode = layer.node();
+    }
+
+    /**
+     * Draws the picture, reconciling against what is already on screen.
+     *
+     * Every renderable element gets its own <g>, keyed by the element and
+     * placed in document order, so reusing the node in place is what keeps
+     * painting order faithful to the source. The full-redraw alternative
+     * could not: removing just the interactive elements and appending them
+     * again put them at the end of the SVG, on top of every later shape, and
+     * re-emitted them grouped by command type rather than in document order,
+     * so a correct diagram silently reordered itself the first time the
+     * pointer crossed it.
+     *
+     * An element is only re-rendered when something it depends on actually
+     * changed: the pointer (userline), or one of the variables its expressions
+     * name — a psplot re-runs only when a referenced \uservariable or slider
+     * variable moved. Static elements keep their nodes untouched.
+     */
+    function drawLayer(coords: number[] | null, opts?: RedrawOptions): void {
+      opts = opts || {};
+
+      // Legacy data without an ordered element list cannot express author
+      // order at all, so it keeps the wholesale rebuild: there is no order to
+      // preserve and no per-element state worth reconciling.
+      if (!elements || !elements.length) {
+        clearLayer();
+        const variables = coords ? readVariables(coords) : {};
+        Object.keys(plots).forEach((key) => {
+          if (key === 'rput') return;
+          if (!psgraph.hasOwnProperty(key)) return;
+          plots[key].forEach((entry: any) => {
+            const item = { name: key, data: entry.data, match: entry.match, fn: entry.fn };
+            const data = resolveData(item, coords, variables);
+            data.global = env;
+            psgraph[key].call(data, layer);
+          });
         });
         return;
       }
 
-      // Legacy data without an ordered element list: fall back to the
-      // type-grouped iteration, which cannot express author order.
-      Object.keys(plots).forEach((key) => {
-        if (key.match(/rput/)) return;
-        if (!psgraph.hasOwnProperty(key)) return;
-        plots[key].forEach((entry: any) => {
-          const item = { name: key, data: entry.data, match: entry.match, fn: entry.fn };
-          const data = resolveData(item, coords, variables);
-          data.global = env;
-          psgraph[key].call(data, layer);
+      if (opts.force) clearLayer();
+      if (!layerNode) clearLayer();
+
+      const variables = coords ? readVariables(coords) : {};
+      const changed = new Set(opts.changed || []);
+      if (coords) {
+        // The \uservariable values that moved with the pointer — the only way
+        // a plot's data can differ between two pointer positions.
+        Object.entries(variables).forEach(([name, value]) => {
+          if (!(name in lastVariables) || lastVariables[name] !== value) changed.add(name);
         });
+        lastVariables = variables;
+        lastCoords = coords;
+      }
+      const pointerMoved = !!coords && !!opts.pointer;
+
+      let prevGroup: Element | null = null;
+      const touched = new Set<any>();
+
+      for (let i = 0; i < elements.length; i++) {
+        const item = elements[i];
+        // Exact, not a pattern: `rputgroup` is the graphics form of rput and
+        // must be drawn here. Only the label form goes through the DOM pass.
+        if (!item || !item.name || item.name === 'rput') continue;
+        if (!psgraph.hasOwnProperty(item.name)) continue;
+        touched.add(item);
+
+        const deps = depsFor(item);
+        const needs =
+          opts.force ||
+          !drawn.has(item) ||
+          (deps.pointer && pointerMoved) ||
+          deps.variables.some((n) => changed.has(n));
+
+        // A group that is not re-rendered still needs its key brought up to
+        // date: when a neighbouring element left the picture, every later
+        // element's index shifted.
+        const key = (g: Element) => {
+          if (g.getAttribute('data-key') !== String(i)) g.setAttribute('data-key', String(i));
+        };
+        if (!needs) {
+          const group = groups.get(item);
+          if (group) {
+            key(group);
+            prevGroup = group;
+          }
+          continue;
+        }
+
+        let data: any;
+        if (coords || opts.force) {
+          data = resolveData(item, coords, variables);
+        } else if (item.name === 'psplot') {
+          // A slider-only re-render still has to re-run the plot's function:
+          // resolveData would hand back the parse-time data and swallow the
+          // move, because the new value lives in env.variables, not the
+          // pointer. userline geometry is pointer-driven, so in this case it
+          // keeps its last drawn state.
+          data = resolveDynamic(item, coords, variables);
+        } else {
+          data = item.data;
+        }
+
+        // A coordinate that could not be computed arrives as NaN. Drawing it
+        // anyway is the trap: SVG treats an invalid geometry attribute as
+        // absent and falls back to its default, so the shape reappears at the
+        // origin looking deliberate. Nothing is the honest output.
+        if (!drawable(data)) {
+          const stale = groups.get(item);
+          if (stale) {
+            stale.remove();
+            groups.delete(item);
+          }
+          drawn.delete(item);
+          continue;
+        }
+
+        let group = groups.get(item);
+        if (!group) {
+          group = document.createElementNS(SVG_NS, 'g');
+          group.setAttribute('data-key', String(i));
+          if (prevGroup && prevGroup.nextSibling) {
+            layerNode!.insertBefore(group, prevGroup.nextSibling);
+          } else {
+            layerNode!.appendChild(group);
+          }
+          groups.set(item, group);
+        } else {
+          key(group);
+        }
+        prevGroup = group;
+
+        data.global = env;
+        const sel = new PatchSelection(group);
+        psgraph[item.name].call(data, sel);
+        if (sel.slot === 0) {
+          // The renderer drew nothing (a curve with too few points, say): an
+          // earlier frame's shapes must not linger under the new data.
+          while (group.firstChild) group.removeChild(group.firstChild);
+          drawn.delete(item);
+        } else {
+          sel.prune();
+          drawn.add(item);
+        }
+      }
+
+      // Elements that left the picture (or whose geometry went bad) drop
+      // their group; the rest stay exactly where they were.
+      groups.forEach((group, item) => {
+        if (!touched.has(item)) {
+          group.remove();
+          groups.delete(item);
+          drawn.delete(item);
+        }
       });
     }
 
-    drawLayer(null);
+    // The first frame is a full redraw: nothing is on screen yet.
+    drawLayer(null, { force: true });
+
+    // Expose the incremental renderer so the slider component and the tests
+    // can drive re-renders the way pointer events do.
+    (this as any).redraw = (arg?: number[] | null | RedrawOptions) => {
+      if (Array.isArray(arg) || arg === null || arg === undefined) {
+        drawLayer(arg === undefined ? lastCoords : arg, { pointer: true });
+      } else {
+        drawLayer(arg.coords !== undefined ? arg.coords : lastCoords, arg);
+      }
+    };
 
     svg.on(
       'touchmove',
@@ -967,7 +1553,7 @@ const psgraph: any = {
         var touch = event.touches ? event.touches[0] : null;
         var rect = event.target.getBoundingClientRect();
         var touchcoords = touch ? [touch.clientX - rect.left, touch.clientY - rect.top] : [0, 0];
-        drawLayer(touchcoords);
+        drawLayer(touchcoords, { pointer: true });
       }
     );
 
@@ -975,7 +1561,7 @@ const psgraph: any = {
       'mousemove',
       function (this: any, event: any) {
         var coords = [event.offsetX || 0, event.offsetY || 0];
-        drawLayer(coords);
+        drawLayer(coords, { pointer: true });
       }
     );
 
@@ -989,7 +1575,7 @@ const psgraph: any = {
         .append('svg:circle')
         .attr('cx', this.data[i])
         .attr('cy', this.data[i + 1])
-        .attr('r', this.dotsize)
+        .attr('r', dotRadius(this))
         .style('fill', this.linecolor)
         .style('stroke', 'none');
     }
@@ -1041,13 +1627,16 @@ const psgraph: any = {
     for (const x of xs) rule(x, y0, x, y1, gridcolor, gridwidth);
     for (const y of ys) rule(x0, y, x1, y, gridcolor, gridwidth);
 
-    // Grid numbers are off unless asked for. PSTricks draws them outside the
-    // grid on an unbounded page; an SVG is sized to the picture's declared
-    // bounds, so on a grid that reaches the edge — the common case — they would
-    // land outside the viewport and be clipped away. A default nobody can see
-    // is worse than no default, so they are opt-in and clamped inside.
-    if (!this.gridlabels || this.gridlabels === 'none' || this.gridlabels === '0') return;
-    const size = dimension(this.gridlabels, 10);
+    // Grid numbers are drawn by default, as PSTricks draws them: `gridlabels`
+    // defaults to 10pt and only a zero or `none` turns them off. They were
+    // opt-in here on the grounds that PSTricks numbers an unbounded page while
+    // an SVG is clipped to the picture, so a grid flush with the edge would
+    // push them out of the viewport. That is true — the reference renders show
+    // PSTricks itself running off the page — but it is an argument for the
+    // clamping below, not for silently dropping a default the author expects.
+    const labels = this.gridlabels ?? 10;
+    if (labels === 'none' || Number(labels) === 0) return;
+    const size = dimension(labels, 10);
     const labelcolor = this.gridlabelcolor ?? 'black';
     const text = (s: string, x: number, y: number, anchor: string) => {
       svg
@@ -1077,34 +1666,43 @@ const psgraph: any = {
       .attr('cy', this.cy)
       .attr('rx', this.rx)
       .attr('ry', this.ry)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },
 
   psbezier(svg: any): void {
+    // The path stays open even when filled: PSTricks bounds the region with the
+    // chord back to the start but does not draw that chord, and SVG fills an
+    // open subpath as if closed while stroking only what was written. Closing
+    // it with Z would fill identically but paint a line along the chord.
+    const d =
+      'M ' + this.x1 + ' ' + this.y1 +
+      ' C ' + this.x2 + ' ' + this.y2 + ', ' + this.x3 + ' ' + this.y3 + ', ' + this.x4 + ' ' + this.y4;
     svg
       .append('svg:path')
-      .attr(
-        'd',
-        'M ' + this.x1 + ' ' + this.y1 +
-        ' C ' + this.x2 + ' ' + this.y2 + ', ' + this.x3 + ' ' + this.y3 + ', ' + this.x4 + ' ' + this.y4
-      )
+      .attr('d', d)
       .style('stroke-width', this.linewidth)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1)
-      .style('fill', 'none');
+      .style('fill', resolveFill(this, svg));
   },
 
   pscurve(svg: any): void {
-    const d = buildCurvePath(this.data, !!this.closed);
+    const d = buildCurvePath(this.data, this.endpoints ? 'endpoints' : this.closed ? 'closed' : 'open', this);
     if (!d) return;
     svg
       .append('svg:path')
       .attr('d', d)
       .style('stroke-width', this.linewidth)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },
@@ -1113,8 +1711,8 @@ const psgraph: any = {
   psccurve: curveRenderer,
 
   pswedge(svg: any): void {
-    const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
-    const d = delta === 0
+    const { delta, large, sweep, full } = arcFlags(this.angleA, this.angleB);
+    const d = full || delta === 0
       ? fullCirclePath(this.cx, this.cy, this.r)
       : 'M ' + this.cx + ' ' + this.cy +
         ' L ' + this.A.x + ' ' + this.A.y +
@@ -1124,7 +1722,9 @@ const psgraph: any = {
       .append('svg:path')
       .attr('d', d)
       .style('stroke-width', this.linewidth)
-      .style('stroke', this.linecolor)
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },
@@ -1136,14 +1736,45 @@ const psgraph: any = {
     (this.commands || []).forEach((cmd: any) => {
       const data = cmd.data;
       if (!data) return;
+      // The canonical path vocabulary. These describe the path directly rather
+      // than contributing a shape, so they come first.
+      if (cmd.key === 'moveto') {
+        d += ' M ' + data.x + ' ' + data.y;
+        started = true;
+        return;
+      }
+      if (cmd.key === 'lineto') {
+        if (!started) { d += 'M ' + data.x + ' ' + data.y; started = true; return; }
+        d += ' L ' + data.x + ' ' + data.y;
+        return;
+      }
+      if (cmd.key === 'curveto') {
+        if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
+        d += ' C ' + data.x1 + ' ' + data.y1 + ', ' + data.x2 + ' ' + data.y2 +
+          ', ' + data.x + ' ' + data.y;
+        return;
+      }
+      if (cmd.key === 'closepath') {
+        if (started) d += ' Z';
+        return;
+      }
       if (cmd.key === 'psline' || cmd.key === 'userline' || cmd.key === 'psbezier') {
         if (cmd.key === 'psbezier') {
           if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
           d += ' C ' + data.x2 + ' ' + data.y2 + ', ' + data.x3 + ' ' + data.y3 + ', ' + data.x4 + ' ' + data.y4;
           return;
         }
-        if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
-        d += ' L ' + data.x2 + ' ' + data.y2;
+        // Every point, not just the endpoint. A \psline inside a \pscustom
+        // continues the path through all of its coordinates; taking x2 alone
+        // dropped the intermediate ones — and, when the path was already open,
+        // dropped the line's own starting point as well, so a four-point
+        // zigzag came out as two segments through the wrong corners.
+        const pts = data.points && data.points.length >= 2
+          ? data.points
+          : [[data.x1, data.y1], [data.x2, data.y2]];
+        let from = 0;
+        if (!started) { d += 'M ' + pts[0][0] + ' ' + pts[0][1]; started = true; from = 1; }
+        for (let i = from; i < pts.length; i++) d += ' L ' + pts[i][0] + ' ' + pts[i][1];
       } else if (cmd.key === 'psframe') {
         if (!started) { d += 'M ' + data.x1 + ' ' + data.y1; started = true; }
         d += ' L ' + data.x2 + ' ' + data.y1 +
@@ -1163,7 +1794,11 @@ const psgraph: any = {
       .append('svg:path')
       .attr('d', d)
       .style('stroke-width', this.linewidth)
-      .style('stroke', this.linestyle === 'none' ? 'none' : this.linecolor)
+      // Spelled inline here rather than through the resolver, which is how this
+      // one site kept missing the sweeps that fixed the others.
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },

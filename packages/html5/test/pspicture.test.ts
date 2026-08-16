@@ -1,4 +1,5 @@
 /** @jest-environment jsdom */
+import { resolveColor } from '@latex2js/utils';
 import LaTeX2JS from 'latex2js';
 import pspicture from '../src/components/pspicture';
 import math from '../src/components/math';
@@ -81,8 +82,23 @@ describe('pspicture component (SVG rendering)', () => {
     document.body.appendChild(div);
 
     const path = div.querySelector('svg path')!;
-    expect(path.style.strokeDasharray).toBe('9,5');
-    expect(path.style.stroke).toBe('red');
+    // PSTricks' default dash is `5pt 3pt`; this used to be a hardcoded `9,5`
+    // that ignored the setting and made dotted lines look dashed too.
+    const [on, off] = path.style.strokeDasharray.split(',').map(Number);
+    expect(on / off).toBeCloseTo(5 / 3, 3);
+    expect(path.style.stroke).toBe(resolveColor('red'));
+  });
+
+  it('draws a dotted line differently from a dashed one', () => {
+    const dash = (style: string) => {
+      const div = pspicture(parsePspicture(
+        `\\begin{pspicture}(0,0)(4,4)\n\\psline[linestyle=${style}](0,0)(1,1)\n\\end{pspicture}`
+      ));
+      document.body.appendChild(div);
+      return div.querySelector('svg path')!.style.strokeDasharray;
+    };
+    expect(dash('dotted')).not.toBe(dash('dashed'));
+    expect(dash('dotted')).toMatch(/^0,/);
   });
 
   it('re-renders psplot when a slider changes', () => {
@@ -187,6 +203,23 @@ describe('pspicture component (SVG rendering)', () => {
     expect(div.querySelectorAll('svg line').length).toBeGreaterThanOrEqual(8);
   });
 
+  it('numbers the grid by default, as PSTricks does', () => {
+    // gridlabels defaults to 10pt. These were opt-in, so a plain \psgrid came
+    // out unnumbered where the reference numbers both edges.
+    const grid = (opts: string) => {
+      const div = pspicture(parsePspicture(
+        `\\begin{pspicture}(0,0)(4,4)\n\\psgrid${opts}\n\\end{pspicture}`
+      ));
+      document.body.appendChild(div);
+      return Array.from(div.querySelectorAll('svg text')).map((t) => t.textContent);
+    };
+    expect(grid('').length).toBeGreaterThan(0);
+    expect(grid('')).toContain('2');
+    // ...and only an explicit zero or none turns them off.
+    expect(grid('[gridlabels=0]')).toHaveLength(0);
+    expect(grid('[gridlabels=none]')).toHaveLength(0);
+  });
+
   it('renders psellipse as an SVG ellipse', () => {
     const env = parsePspicture(`
 \\begin{pspicture}(0,0)(4,4)
@@ -251,6 +284,26 @@ describe('pspicture component (SVG rendering)', () => {
     expect(d.endsWith('Z')).toBe(true);
   });
 
+  // A starred shape fills with the colour the author wrote, in either dialect.
+  // PSTricks fills them with linecolor instead; that is reported rather than
+  // applied, so adding or removing the flag never changes a drawing.
+  const starredFill = (dialect?: 'pstricks' | 'latex2js') => {
+    const latex = new LaTeX2JS();
+    if (dialect) (latex as any).dialect = dialect;
+    const parsed = latex.parse(`
+\\begin{pspicture}(0,0)(4,4)
+\\psframe*[linecolor=blue,fillcolor=red](1,1)(2,2)
+\\end{pspicture}
+    `);
+    const div = pspicture(parsed.find((e: any) => e.type === 'pspicture'));
+    document.body.appendChild(div);
+    return (div.querySelector('svg rect')! as HTMLElement).style.fill;
+  };
+
+  it.each(['pstricks', 'latex2js'] as const)('fills a starred shape with fillcolor under %s', (d) => {
+    expect(starredFill(d)).toBe(resolveColor('red'));
+  });
+
   it('fills star-variant primitives', () => {
     const env = parsePspicture(`
 \\begin{pspicture}(0,0)(4,4)
@@ -263,7 +316,7 @@ describe('pspicture component (SVG rendering)', () => {
     const circle = div.querySelector('svg circle')!;
     expect(circle.style.fill).toBe('black'); // default fillcolor
     const rect = div.querySelector('svg rect')!;
-    expect(rect.style.fill).toBe('red');
+    expect(rect.style.fill).toBe(resolveColor('red'));
   });
 
   it('renders multido-expanded commands', () => {
