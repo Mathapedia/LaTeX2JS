@@ -1,4 +1,4 @@
-import { Y } from '@latex2js/utils';
+import { Y, parseExpression } from '@latex2js/utils';
 
 function arrow(x1: number, y1: number, x2: number, y2: number, arrowscale?: number | string) {
   var t = Math.PI / 6;
@@ -450,6 +450,93 @@ function curveRenderer(this: any, svg: any): void {
     .style('stroke-linecap', dashCap(this))
     .style('stroke-opacity', 1)
     .style('fill', resolveFill(this, svg));
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** Options for a re-render of the picture. */
+interface RedrawOptions {
+  /** Pointer position in device coordinates; omitted keeps the last one. */
+  coords?: number[] | null;
+  /** Variable names declared to have changed, e.g. a slider that moved. */
+  changed?: string[];
+  /** Rebuild the whole picture from scratch (first frame, forced redraws). */
+  force?: boolean;
+  /** This render is driven by a pointer event, not by a variable change. */
+  pointer?: boolean;
+}
+
+/**
+ * A selection-like wrapper that patches nodes in place instead of appending.
+ *
+ * Renderers call `svg.append('svg:path').attr(...).style(...)` and never
+ * inspect what they built, so this shim satisfies the same interface while
+ * reconciling: `append` reuses the child that occupied the same slot last
+ * time when its tag still matches, and `attr`/`style`/`text` skip writes
+ * whose value is already there. Appending past the previous child count
+ * creates nodes; children left over from a bigger previous frame are dropped
+ * by {@link PatchSelection#prune}.
+ *
+ * Keying children by position inside an element is what lets a renderer that
+ * emits a variable number of nodes — psgrid at a new subdivision, psline with
+ * a different point count — still patch in place and shed its leftovers.
+ */
+class PatchSelection {
+  /** Number of appends this pass; public so the caller can prune by it. */
+  slot = 0;
+  private readonly node: Element | null;
+
+  constructor(node: Element | null) {
+    this.node = node;
+  }
+
+  append(tagName: string): PatchSelection {
+    const node = this.node;
+    if (!node) return new PatchSelection(null);
+    const tag = tagName.startsWith('svg:') ? tagName.slice(4) : tagName;
+    const existing = node.children[this.slot] as Element | undefined;
+    let child: Element;
+    if (existing && existing.localName === tag) {
+      child = existing;
+    } else {
+      child = document.createElementNS(SVG_NS, tag);
+      if (existing) node.replaceChild(child, existing);
+      else node.appendChild(child);
+    }
+    this.slot++;
+    return new PatchSelection(child);
+  }
+
+  attr(name: string, value: string | number): this {
+    if (this.node) {
+      const v = String(value);
+      if (this.node.getAttribute(name) !== v) this.node.setAttribute(name, v);
+    }
+    return this;
+  }
+
+  style(name: string, value: string | number): this {
+    if (this.node instanceof SVGElement) {
+      const v = String(value);
+      const styles = this.node.style as any;
+      if (styles[name] !== v) styles[name] = v;
+    }
+    return this;
+  }
+
+  text(content: string): this {
+    if (this.node && this.node.textContent !== content) this.node.textContent = content;
+    return this;
+  }
+
+  /** Removes children past the last slot written this pass. */
+  prune(): void {
+    const node = this.node;
+    if (!node) return;
+    while (node.children.length > this.slot) {
+      node.removeChild(node.children[node.children.length - 1]);
+    }
+  }
 }
 
 const psgraph: any = {
@@ -1134,12 +1221,15 @@ const psgraph: any = {
     const elements = env && env.elements;
 
     /**
-     * Recomputes an interactive element against the pointer position. Static
-     * elements keep the data the parser produced.
+     * Recomputes an interactive element against the pointer position and the
+     * current variable values.
+     *
+     * Only elements whose data is derived from something that moves can change:
+     * a psplot re-runs its sampled function against the variables it names, and
+     * a userline re-evaluates its head/tail expressions at the pointer. Anything
+     * else keeps the geometry the parser produced.
      */
-    function resolveData(item: any, coords: number[] | null, variables: any): any {
-      if (!coords || !item.fn) return item.data;
-
+    function resolveDynamic(item: any, coords: number[] | null, variables: any): any {
       if (item.name === 'psplot') {
         Object.entries(variables || {}).forEach(([name, value]: [string, any]) => {
           env.variables[name] = value;
@@ -1150,6 +1240,9 @@ const psgraph: any = {
       }
 
       if (item.name === 'userline') {
+        // The head/tail expressions can only be evaluated against a pointer;
+        // without one the element keeps the geometry it was parsed with.
+        if (!coords) return item.data;
         const d = item.fn.call(env, item.match);
         env.x2 = coords[0];
         env.y2 = coords[1];
@@ -1178,6 +1271,17 @@ const psgraph: any = {
       return item.data;
     }
 
+    /**
+     * The entry the first frame uses: without a pointer position the parser's
+     * own data is the contract. Re-running a plot's function here would resolve
+     * variables that appear later in the document, which the parse-time data
+     * deliberately does not see.
+     */
+    function resolveData(item: any, coords: number[] | null, variables: any): any {
+      if (!coords || !item.fn) return item.data;
+      return resolveDynamic(item, coords, variables);
+    }
+
     /** Evaluates every \uservariable at the pointer position, in source order. */
     function readVariables(coords: number[]): { [name: string]: any } {
       const variables: { [name: string]: any } = {};
@@ -1193,54 +1297,258 @@ const psgraph: any = {
       return variables;
     }
 
-    /**
-     * Draws the whole picture into a fresh layer.
-     *
-     * Redrawing everything is what keeps interaction faithful to the source.
-     * Removing just the interactive elements and appending them again put them
-     * at the end of the SVG — on top of every later shape — and re-emitted
-     * them grouped by command type rather than in document order, so a correct
-     * diagram silently reordered itself the first time the pointer crossed it.
-     */
-    let layer: any = null;
-    function drawLayer(coords: number[] | null): void {
-      if (layer) layer.remove();
-      layer = svg.append('svg:g').attr('class', 'pspicture-layer');
-      const variables = coords ? readVariables(coords) : {};
+    // ---- dependency graph ------------------------------------------------
 
-      if (elements && elements.length) {
-        elements.forEach((item: any) => {
-          // Exact, not a pattern: `rputgroup` is the graphics form of rput and
-          // must be drawn here. Only the label form goes through the DOM pass.
-          if (!item || !item.name || item.name === 'rput') return;
-          if (!psgraph.hasOwnProperty(item.name)) return;
-          const data = resolveData(item, coords, variables);
-          // A coordinate that could not be computed arrives as NaN. Drawing it
-          // anyway is the trap: SVG treats an invalid geometry attribute as
-          // absent and falls back to its default, so the shape reappears at the
-          // origin looking deliberate. Nothing is the honest output.
-          if (!drawable(data)) return;
-          data.global = env;
-          psgraph[item.name].call(data, layer);
+    /**
+     * The variables an algebraic expression reads, minus the pointer/sampling
+     * names x and y that every evaluation scope supplies. Parsed with the same
+     * compiler the plot sampler uses, so function names and math constants
+     * never count as dependencies.
+     */
+    function expressionVariables(expr: string): string[] {
+      const src = String(expr).replace(/^\{/, '').replace(/\}$/, '');
+      try {
+        return parseExpression(src)
+          .variables()
+          .filter((n: string) => n !== 'x' && n !== 'y');
+      } catch {
+        return [];
+      }
+    }
+
+    /**
+     * What an element's output depends on, derived from the element's own data
+     * and match rather than from a list of command names:
+     *
+     *  - a data field whose value is a function — userline's userx/usery/…
+     *    — is evaluated against the pointer on every move: the pointer dependency;
+     *  - every expression string the element carries (uservariable's func,
+     *    userline's head and tail, psplot's sampled function and its range)
+     *    names the variables it reads.
+     *
+     * Anything else is static: the parser has already resolved its geometry.
+     */
+    const depsCache = new Map<any, { pointer: boolean; variables: string[] }>();
+    function depsFor(item: any): { pointer: boolean; variables: string[] } {
+      const cached = depsCache.get(item);
+      if (cached) return cached;
+      const data = item && item.data;
+      const vars = new Set<string>();
+      let pointer = false;
+      if (data) {
+        pointer = Object.values(data).some((v: any) => typeof v === 'function');
+        for (const k of ['func', 'xExp', 'yExp', 'xExp2', 'yExp2']) {
+          const expr = data[k];
+          if (typeof expr === 'string' && expr) {
+            expressionVariables(expr).forEach((n) => vars.add(n));
+          }
+        }
+      }
+      // psplot's sampled function and its sample range live in the parser's
+      // match record, not in the resolved data.
+      if (item && item.match) {
+        for (const g of [2, 3, 4]) {
+          const expr = item.match[g];
+          if (typeof expr === 'string' && expr) {
+            expressionVariables(expr).forEach((n) => vars.add(n));
+          }
+        }
+      }
+      const deps = { pointer, variables: [...vars] };
+      depsCache.set(item, deps);
+      return deps;
+    }
+
+    // ---- incremental reconciliation --------------------------------------
+
+    let layer: any = null; // SVGSelection over the picture layer
+    let layerNode: Element | null = null;
+    // A group per renderable element, tracked by the element itself so a
+    // group follows its element when the list grows or shrinks; the group's
+    // `data-key` attribute carries the element's current index in document
+    // order, which is what keeps the reconciliation ordered.
+    const groups = new Map<any, Element>();
+    const drawn = new Set<any>(); // elements whose group holds output
+    let lastCoords: number[] | null = null;
+    let lastVariables: { [name: string]: any } = {};
+
+    /** Drops the layer and everything reconciled into it. */
+    function clearLayer(): void {
+      if (layer) layer.remove();
+      groups.clear();
+      drawn.clear();
+      layer = svg.append('svg:g').attr('class', 'pspicture-layer');
+      layerNode = layer.node();
+    }
+
+    /**
+     * Draws the picture, reconciling against what is already on screen.
+     *
+     * Every renderable element gets its own <g>, keyed by the element and
+     * placed in document order, so reusing the node in place is what keeps
+     * painting order faithful to the source. The full-redraw alternative
+     * could not: removing just the interactive elements and appending them
+     * again put them at the end of the SVG, on top of every later shape, and
+     * re-emitted them grouped by command type rather than in document order,
+     * so a correct diagram silently reordered itself the first time the
+     * pointer crossed it.
+     *
+     * An element is only re-rendered when something it depends on actually
+     * changed: the pointer (userline), or one of the variables its expressions
+     * name — a psplot re-runs only when a referenced \uservariable or slider
+     * variable moved. Static elements keep their nodes untouched.
+     */
+    function drawLayer(coords: number[] | null, opts?: RedrawOptions): void {
+      opts = opts || {};
+
+      // Legacy data without an ordered element list cannot express author
+      // order at all, so it keeps the wholesale rebuild: there is no order to
+      // preserve and no per-element state worth reconciling.
+      if (!elements || !elements.length) {
+        clearLayer();
+        const variables = coords ? readVariables(coords) : {};
+        Object.keys(plots).forEach((key) => {
+          if (key === 'rput') return;
+          if (!psgraph.hasOwnProperty(key)) return;
+          plots[key].forEach((entry: any) => {
+            const item = { name: key, data: entry.data, match: entry.match, fn: entry.fn };
+            const data = resolveData(item, coords, variables);
+            data.global = env;
+            psgraph[key].call(data, layer);
+          });
         });
         return;
       }
 
-      // Legacy data without an ordered element list: fall back to the
-      // type-grouped iteration, which cannot express author order.
-      Object.keys(plots).forEach((key) => {
-        if (key === 'rput') return;
-        if (!psgraph.hasOwnProperty(key)) return;
-        plots[key].forEach((entry: any) => {
-          const item = { name: key, data: entry.data, match: entry.match, fn: entry.fn };
-          const data = resolveData(item, coords, variables);
-          data.global = env;
-          psgraph[key].call(data, layer);
+      if (opts.force) clearLayer();
+      if (!layerNode) clearLayer();
+
+      const variables = coords ? readVariables(coords) : {};
+      const changed = new Set(opts.changed || []);
+      if (coords) {
+        // The \uservariable values that moved with the pointer — the only way
+        // a plot's data can differ between two pointer positions.
+        Object.entries(variables).forEach(([name, value]) => {
+          if (!(name in lastVariables) || lastVariables[name] !== value) changed.add(name);
         });
+        lastVariables = variables;
+        lastCoords = coords;
+      }
+      const pointerMoved = !!coords && !!opts.pointer;
+
+      let prevGroup: Element | null = null;
+      const touched = new Set<any>();
+
+      for (let i = 0; i < elements.length; i++) {
+        const item = elements[i];
+        // Exact, not a pattern: `rputgroup` is the graphics form of rput and
+        // must be drawn here. Only the label form goes through the DOM pass.
+        if (!item || !item.name || item.name === 'rput') continue;
+        if (!psgraph.hasOwnProperty(item.name)) continue;
+        touched.add(item);
+
+        const deps = depsFor(item);
+        const needs =
+          opts.force ||
+          !drawn.has(item) ||
+          (deps.pointer && pointerMoved) ||
+          deps.variables.some((n) => changed.has(n));
+
+        // A group that is not re-rendered still needs its key brought up to
+        // date: when a neighbouring element left the picture, every later
+        // element's index shifted.
+        const key = (g: Element) => {
+          if (g.getAttribute('data-key') !== String(i)) g.setAttribute('data-key', String(i));
+        };
+        if (!needs) {
+          const group = groups.get(item);
+          if (group) {
+            key(group);
+            prevGroup = group;
+          }
+          continue;
+        }
+
+        let data: any;
+        if (coords || opts.force) {
+          data = resolveData(item, coords, variables);
+        } else if (item.name === 'psplot') {
+          // A slider-only re-render still has to re-run the plot's function:
+          // resolveData would hand back the parse-time data and swallow the
+          // move, because the new value lives in env.variables, not the
+          // pointer. userline geometry is pointer-driven, so in this case it
+          // keeps its last drawn state.
+          data = resolveDynamic(item, coords, variables);
+        } else {
+          data = item.data;
+        }
+
+        // A coordinate that could not be computed arrives as NaN. Drawing it
+        // anyway is the trap: SVG treats an invalid geometry attribute as
+        // absent and falls back to its default, so the shape reappears at the
+        // origin looking deliberate. Nothing is the honest output.
+        if (!drawable(data)) {
+          const stale = groups.get(item);
+          if (stale) {
+            stale.remove();
+            groups.delete(item);
+          }
+          drawn.delete(item);
+          continue;
+        }
+
+        let group = groups.get(item);
+        if (!group) {
+          group = document.createElementNS(SVG_NS, 'g');
+          group.setAttribute('data-key', String(i));
+          if (prevGroup && prevGroup.nextSibling) {
+            layerNode!.insertBefore(group, prevGroup.nextSibling);
+          } else {
+            layerNode!.appendChild(group);
+          }
+          groups.set(item, group);
+        } else {
+          key(group);
+        }
+        prevGroup = group;
+
+        data.global = env;
+        const sel = new PatchSelection(group);
+        psgraph[item.name].call(data, sel);
+        if (sel.slot === 0) {
+          // The renderer drew nothing (a curve with too few points, say): an
+          // earlier frame's shapes must not linger under the new data.
+          while (group.firstChild) group.removeChild(group.firstChild);
+          drawn.delete(item);
+        } else {
+          sel.prune();
+          drawn.add(item);
+        }
+      }
+
+      // Elements that left the picture (or whose geometry went bad) drop
+      // their group; the rest stay exactly where they were.
+      groups.forEach((group, item) => {
+        if (!touched.has(item)) {
+          group.remove();
+          groups.delete(item);
+          drawn.delete(item);
+        }
       });
     }
 
-    drawLayer(null);
+    // The first frame is a full redraw: nothing is on screen yet.
+    drawLayer(null, { force: true });
+
+    // Expose the incremental renderer so the slider component and the tests
+    // can drive re-renders the way pointer events do.
+    (this as any).redraw = (arg?: number[] | null | RedrawOptions) => {
+      if (Array.isArray(arg) || arg === null || arg === undefined) {
+        drawLayer(arg === undefined ? lastCoords : arg, { pointer: true });
+      } else {
+        drawLayer(arg.coords !== undefined ? arg.coords : lastCoords, arg);
+      }
+    };
 
     svg.on(
       'touchmove',
@@ -1249,7 +1557,7 @@ const psgraph: any = {
         var touch = event.touches ? event.touches[0] : null;
         var rect = event.target.getBoundingClientRect();
         var touchcoords = touch ? [touch.clientX - rect.left, touch.clientY - rect.top] : [0, 0];
-        drawLayer(touchcoords);
+        drawLayer(touchcoords, { pointer: true });
       }
     );
 
@@ -1257,7 +1565,7 @@ const psgraph: any = {
       'mousemove',
       function (this: any, event: any) {
         var coords = [event.offsetX || 0, event.offsetY || 0];
-        drawLayer(coords);
+        drawLayer(coords, { pointer: true });
       }
     );
 
