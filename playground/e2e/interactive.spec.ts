@@ -72,6 +72,8 @@ test('MathJax typesets inline and display math', async ({ page }) => {
   // MathJax v3 output lives in <mjx-container> elements
   const mjx = page.locator('mjx-container').first();
   await expect(mjx).toBeVisible();
-  // theorem header was transformed by the headers pass
-  await expect(page.getByText('Theorem', { exact: true })).toBeVisible();
+  // The headers pass sets a run-in heading and numbers it, so the text is
+  // "Theorem 1" — an exact match on the bare word passed only while theorem
+  // environments went unnumbered.
+  await expect(page.locator('h4.theorem-head').filter({ hasText: /^Theorem 1$/ })).toBeVisible();
 });
