@@ -247,3 +247,75 @@ describe('incremental re-render', () => {
     expect(plotGroup.querySelector('path.psplot')!.getAttribute('d')).not.toBe(before);
   });
 });
+
+/**
+ * The two mechanisms here — the dependency graph that decides an element
+ * cannot have changed, and the reconciliation that patches a node in place
+ * rather than replacing it — both preserve DOM node identity, so a test that
+ * only asserts identity passes when either one works. Verified by mutation:
+ * breaking either alone leaves every test above green, and only breaking both
+ * turns them red.
+ *
+ * The dependency graph is the one that carries the performance claim, because
+ * it is what stops the work from happening at all rather than making the work
+ * cheaper. These isolate it by counting renderer calls.
+ */
+describe('the dependency graph decides what runs, not just what is replaced', () => {
+  /** Counts calls to one renderer for the duration of a block. */
+  function countingRenderer<T>(name: string, body: (count: () => number) => T): T {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const psgraph = require('@latex2js/pstricks').psgraph || require('@latex2js/pstricks').default;
+    const original = psgraph[name];
+    let calls = 0;
+    psgraph[name] = function (this: any, ...args: any[]) {
+      calls++;
+      return original.apply(this, args);
+    };
+    try {
+      return body(() => calls);
+    } finally {
+      psgraph[name] = original;
+    }
+  }
+
+  it('does not run a static element renderer on a pointer move', () => {
+    const env = parsePspicture(`
+\\begin{pspicture}(-3,-2)(3,2)
+\\psgrid(-2,-2)(2,2)
+\\uservariable{a}(0.01,0){x}
+\\psplot[algebraic,plotpoints=20]{-2}{2}{a*x}
+\\end{pspicture}
+    `);
+    countingRenderer('psgrid', (count) => {
+      const div = pspicture(env);
+      document.body.appendChild(div);
+      expect(count()).toBe(1); // the first frame draws it once
+
+      env.redraw([10, 20]);
+      env.redraw([40, 20]);
+      env.redraw([80, 60]);
+      // The grid cannot depend on the pointer, so it must not be drawn again.
+      expect(count()).toBe(1);
+    });
+  });
+
+  it('does run the renderer of an element that depends on the pointer', () => {
+    const env = parsePspicture(`
+\\begin{pspicture}(-3,-2)(3,2)
+\\psgrid(-2,-2)(2,2)
+\\uservariable{a}(0.01,0){x}
+\\psplot[algebraic,plotpoints=20]{-2}{2}{a*x}
+\\end{pspicture}
+    `);
+    countingRenderer('psplot', (count) => {
+      const div = pspicture(env);
+      document.body.appendChild(div);
+      const first = count();
+      env.redraw([10, 20]);
+      env.redraw([90, 20]);
+      // The plot reads a uservariable driven by the pointer's x, so both moves
+      // change it and both must redraw.
+      expect(count()).toBeGreaterThan(first);
+    });
+  });
+});
