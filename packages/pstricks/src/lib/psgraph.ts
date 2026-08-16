@@ -1,8 +1,11 @@
 import { Y } from '@latex2js/utils';
 
-function arrow(x1: number, y1: number, x2: number, y2: number) {
+function arrow(x1: number, y1: number, x2: number, y2: number, arrowscale?: number | string) {
   var t = Math.PI / 6;
-  var d = 8;
+  // arrowscale is a multiplier on the 8px default head size; anything that
+  // is not a positive number falls back to 1 (the PSTricks default).
+  var scale = Number(arrowscale);
+  var d = 8 * (scale > 0 ? scale : 1);
   var dx = x2 - x1,
     dy = y2 - y1;
   var l = Math.sqrt(dx * dx + dy * dy);
@@ -497,13 +500,13 @@ const psgraph: any = {
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(xaxis[1], origin[1], xaxis[0], origin[1]))
+        .attr('d', arrow(xaxis[1], origin[1], xaxis[0], origin[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
 
       svg
         .append('path')
-        .attr('d', arrow(origin[0], yaxis[1], origin[0], yaxis[0]))
+        .attr('d', arrow(origin[0], yaxis[1], origin[0], yaxis[0], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
     }
@@ -511,13 +514,13 @@ const psgraph: any = {
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(xaxis[0], origin[1], xaxis[1], origin[1]))
+        .attr('d', arrow(xaxis[0], origin[1], xaxis[1], origin[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
 
       svg
         .append('path')
-        .attr('d', arrow(origin[0], yaxis[0], origin[0], yaxis[1]))
+        .attr('d', arrow(origin[0], yaxis[0], origin[0], yaxis[1], this.arrowscale))
         .style('fill', 'black')
         .style('stroke', 'black');
     }
@@ -596,7 +599,7 @@ const psgraph: any = {
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(x2, y2, x1, y1))
+        .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
         .style('fill', this.linecolor)
         .style('stroke', this.linecolor);
     }
@@ -604,7 +607,7 @@ const psgraph: any = {
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(x1, y1, x2, y2))
+        .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
         .style('fill', this.linecolor)
         .style('stroke', this.linecolor);
     }
@@ -688,7 +691,7 @@ const psgraph: any = {
     if (this.arrows[0]) {
       svg
         .append('path')
-        .attr('d', arrow(x2, y2, x1, y1))
+        .attr('d', arrow(x2, y2, x1, y1, this.arrowscale))
         .attr('class', 'userline')
         .style('fill', this.linecolor)
         .style('stroke', this.linecolor);
@@ -697,7 +700,7 @@ const psgraph: any = {
     if (this.arrows[1]) {
       svg
         .append('path')
-        .attr('d', arrow(x1, y1, x2, y2))
+        .attr('d', arrow(x1, y1, x2, y2, this.arrowscale))
         .attr('class', 'userline')
         .style('fill', this.linecolor)
         .style('stroke', this.linecolor);
