@@ -1,5 +1,5 @@
 /** 默认 MathJax 脚本地址，可由用户通过 config.scriptURL 覆盖 */
-export const DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+export const DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js';
 
 export const DEFAULT_CONFIG = {
   tex: {
