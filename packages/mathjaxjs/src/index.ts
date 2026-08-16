@@ -24,10 +24,29 @@ export const DEFAULT_CONFIG = {
   }
 };
 
-/** 扩展配置：可传入 scriptURL 自定义加载地址 */
-export interface LoadMathJaxConfig extends Record<string, unknown> {
+/**
+ * Extended configuration: `scriptURL` overrides where MathJax is loaded from.
+ */
+export interface LoadMathJaxConfig {
   scriptURL?: string;
 }
+
+/** Recursively optional, so callers can override just the keys they want. */
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends (infer U)[]
+    ? Array<DeepPartial<U>>
+    : T[K] extends (...args: any[]) => any
+      ? T[K]
+      : T[K] extends object
+        ? DeepPartial<T[K]>
+        : T[K];
+};
+
+/**
+ * A MathJax configuration that may override any subset of DEFAULT_CONFIG and
+ * optionally point at a custom script URL.
+ */
+export type MathJaxConfig = DeepPartial<typeof DEFAULT_CONFIG> & LoadMathJaxConfig;
 
 let mathJaxInstance: any = null;
 
@@ -35,7 +54,7 @@ export const getMathJax = () => mathJaxInstance || (globalThis as any).MathJax;
 
 export const loadMathJax = async (
   callback = () => { },
-  config: typeof DEFAULT_CONFIG & LoadMathJaxConfig = DEFAULT_CONFIG
+  config: MathJaxConfig = DEFAULT_CONFIG
 ) => {
   if (typeof window === 'undefined') {
     callback();
@@ -48,18 +67,31 @@ export const loadMathJax = async (
     return;
   }
 
-  const scriptURL = config.scriptURL ?? DEFAULT_SCRIPT_URL;
+  // scriptURL is a loader concern, not a MathJax one: keep it out of the
+  // config object that is handed to MathJax itself.
+  const { scriptURL = DEFAULT_SCRIPT_URL, ...mathjaxConfig } = config;
+
+  // A partial config overrides DEFAULT_CONFIG key by key; without this a
+  // caller passing only { scriptURL } would drop the tex setup (ams, tags,
+  // equation numbering) entirely.
+  const merged = {
+    ...DEFAULT_CONFIG,
+    ...mathjaxConfig,
+    tex: { ...DEFAULT_CONFIG.tex, ...mathjaxConfig.tex },
+    chtml: { ...DEFAULT_CONFIG.chtml, ...mathjaxConfig.chtml },
+    startup: { ...DEFAULT_CONFIG.startup, ...mathjaxConfig.startup }
+  };
 
   try {
     (globalThis as any).MathJax = {
-      ...config,
+      ...merged,
       startup: {
-        ...config.startup,
+        ...merged.startup,
         ready: () => {
           (globalThis as any).MathJax.startup.defaultReady();
           mathJaxInstance = (globalThis as any).MathJax;
-          if (config.startup?.ready) {
-            config.startup.ready();
+          if (merged.startup.ready) {
+            merged.startup.ready();
           }
           callback();
         }

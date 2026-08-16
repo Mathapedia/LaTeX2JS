@@ -193,10 +193,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = exports.macros = exports.math = exports.verbatim = exports.list = exports.enumerate = exports.nicebox = exports.pspicture = void 0;
+exports.init = exports.DEFAULT_CONFIG = exports.macros = exports.math = exports.verbatim = exports.list = exports.enumerate = exports.nicebox = exports.pspicture = void 0;
 exports.default = render;
 const latex2js_1 = __importDefault(require("latex2js"));
 const mathjaxjs_1 = require("mathjaxjs");
+Object.defineProperty(exports, "DEFAULT_CONFIG", { enumerable: true, get: function () { return mathjaxjs_1.DEFAULT_CONFIG; } });
 const pspicture_js_1 = __importDefault(require("./components/pspicture.js"));
 exports.pspicture = pspicture_js_1.default;
 const nicebox_js_1 = __importDefault(require("./components/nicebox.js"));
@@ -212,7 +213,7 @@ exports.math = math_js_1.default;
 const macros_1 = __importDefault(require("./components/macros"));
 exports.macros = macros_1.default;
 const ELEMENTS = { pspicture: pspicture_js_1.default, nicebox: nicebox_js_1.default, enumerate: enumerate_js_1.default, itemize: list_js_1.default, description: list_js_1.default, verbatim: verbatim_js_1.default, math: math_js_1.default, macros: macros_1.default };
-function render(tex, resolve) {
+function render(tex, resolve, config) {
     const done = () => {
         const latex = new latex2js_1.default();
         const parsed = latex.parse(tex);
@@ -231,16 +232,16 @@ function render(tex, resolve) {
     if ((0, mathjaxjs_1.getMathJax)()) {
         return done();
     }
-    (0, mathjaxjs_1.loadMathJax)(done);
+    (0, mathjaxjs_1.loadMathJax)(done, config);
 }
-const init = () => {
-    (0, mathjaxjs_1.loadMathJax)();
+const init = (config) => {
+    (0, mathjaxjs_1.loadMathJax)(undefined, config);
     document.querySelectorAll('script[type="text/latex"]').forEach((el) => {
         render(el.innerHTML, (div) => {
             if (el.parentNode) {
                 el.parentNode.insertBefore(div, el.nextSibling);
             }
-        });
+        }, config);
     });
 };
 exports.init = init;
@@ -3314,7 +3315,9 @@ exports.default = String.raw `
 },{}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadMathJax = exports.getMathJax = exports.DEFAULT_CONFIG = void 0;
+exports.loadMathJax = exports.getMathJax = exports.DEFAULT_CONFIG = exports.DEFAULT_SCRIPT_URL = void 0;
+/** 默认 MathJax 脚本地址，可由用户通过 config.scriptURL 覆盖 */
+exports.DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
 exports.DEFAULT_CONFIG = {
     tex: {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
@@ -3350,23 +3353,36 @@ const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG
         callback();
         return;
     }
+    // scriptURL is a loader concern, not a MathJax one: keep it out of the
+    // config object that is handed to MathJax itself.
+    const { scriptURL = exports.DEFAULT_SCRIPT_URL, ...mathjaxConfig } = config;
+    // A partial config overrides DEFAULT_CONFIG key by key; without this a
+    // caller passing only { scriptURL } would drop the tex setup (ams, tags,
+    // equation numbering) entirely.
+    const merged = {
+        ...exports.DEFAULT_CONFIG,
+        ...mathjaxConfig,
+        tex: { ...exports.DEFAULT_CONFIG.tex, ...mathjaxConfig.tex },
+        chtml: { ...exports.DEFAULT_CONFIG.chtml, ...mathjaxConfig.chtml },
+        startup: { ...exports.DEFAULT_CONFIG.startup, ...mathjaxConfig.startup }
+    };
     try {
         globalThis.MathJax = {
-            ...config,
+            ...merged,
             startup: {
-                ...config.startup,
+                ...merged.startup,
                 ready: () => {
                     globalThis.MathJax.startup.defaultReady();
                     mathJaxInstance = globalThis.MathJax;
-                    if (config.startup?.ready) {
-                        config.startup.ready();
+                    if (merged.startup.ready) {
+                        merged.startup.ready();
                     }
                     callback();
                 }
             }
         };
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
+        script.src = scriptURL;
         script.async = true;
         script.id = 'MathJax-script';
         script.onload = () => {

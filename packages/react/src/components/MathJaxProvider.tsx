@@ -1,4 +1,5 @@
 import React, { useEffect, useState, ReactNode } from 'react';
+import { DEFAULT_SCRIPT_URL } from 'mathjaxjs';
 
 declare global {
   interface Window {
@@ -18,8 +19,6 @@ interface MathJaxConfig {
     fontURL?: string;
   };
 }
-
-const DEFAULT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js';
 
 interface MathJaxProviderProps {
   children: ReactNode;
