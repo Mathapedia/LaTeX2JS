@@ -2174,6 +2174,14 @@ const counters_1 = require("./counters");
  */
 const PSSET_NON_STYLE = new Set(['unit', 'runit', 'xunit', 'yunit', 'dialect']);
 /**
+ * `\definecolor{name}{model}{spec}`.
+ *
+ * A preamble declaration rather than content, so it is intercepted where
+ * \psset is: the grammar delivers a command inside the line that holds it,
+ * not as a node of its own, and anything not intercepted is rendered as text.
+ */
+const DEFINECOLOR_RE = /\\definecolor\s*\{([^}]*)\}\s*\{([^}]*)\}\s*\{([^}]*)\}/;
+/**
  * The style defaults out of a parsed `\psset`.
  *
  * Kept apart from `settings`, which is not purely psset state: the pspicture
@@ -2389,8 +2397,10 @@ class Parser {
     parse(text) {
         this.diagnostics = [];
         // A parser instance is reused across documents; without this the second
-        // would continue the first one's numbering.
+        // would continue the first one's numbering, and inherit any colour the
+        // first defined for itself.
         this.counters.reset();
+        (0, utils_1.resetDefinedColors)();
         if (!text)
             return [];
         const tree = this.parseTree(text);
@@ -2638,6 +2648,10 @@ class Parser {
             this.parseUnits(text);
             return;
         }
+        if (DEFINECOLOR_RE.test(text)) {
+            this.parseDefineColor(text);
+            return;
+        }
         const processed = this.parseText(text);
         if (processed.trim().length)
             this.environment.lines.push(processed);
@@ -2654,6 +2668,9 @@ class Parser {
         if (add && typeof line === 'string' && line.trim().length) {
             if (this.PSTricks.Expressions.psset.test(line)) {
                 this.parseUnits(line);
+            }
+            else if (DEFINECOLOR_RE.test(line)) {
+                this.parseDefineColor(line);
             }
             else {
                 this.environment.lines.push(line);
@@ -2707,6 +2724,23 @@ class Parser {
             type: type,
             lines: []
         };
+    }
+    /**
+     * Records a `\definecolor{name}{model}{spec}`.
+     *
+     * xcolor lets a document define its own colours, and a document that wants a
+     * shade xcolor does not name — a browser colour such as `lightblue`, say —
+     * can define it rather than rely on the renderer guessing. That is what makes
+     * such a page valid LaTeX instead of only valid here.
+     */
+    parseDefineColor(text, loc) {
+        const m = String(text || '').match(DEFINECOLOR_RE);
+        if (!m)
+            return;
+        if (!(0, utils_1.defineColor)(m[1], m[2], m[3])) {
+            this.diagnose('warning', `\\definecolor{${m[1]}}: the ${JSON.stringify(m[2])} model with ` +
+                `${JSON.stringify(m[3])} is not one this understands; the colour is left undefined`, loc);
+        }
     }
     parseUnits(line) {
         var m = line.replace(/\n/g, ' ').match(this.PSTricks.Expressions.psset);
@@ -6557,7 +6591,7 @@ function parseExpression(source) {
 },{}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MATH_CONSTANTS = exports.MATH_FUNCTIONS = exports.ExpressionError = exports.parseExpression = exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.normalizeArrows = exports.parseArrows = exports.parseOptions = exports.resolveColor = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
+exports.MATH_CONSTANTS = exports.MATH_FUNCTIONS = exports.ExpressionError = exports.parseExpression = exports.select = exports.SVGSelection = exports.dotType = exports.arrowType = exports.Yinv = exports.Y = exports.Xinv = exports.X = exports.evaluate = exports.normalizeArrows = exports.parseArrows = exports.parseOptions = exports.resolveColor = exports.defineColor = exports.resetDefinedColors = exports.RE = exports.convertUnits = exports.matchrepl = exports.simplerepl = void 0;
 const expression_1 = require("./expression");
 const simplerepl = function (regex, replace) {
     return function (_m, contents) {
@@ -6636,6 +6670,75 @@ const BASE_COLORS = {
     violet: [128, 0, 128], olive: [128, 128, 0],
 };
 /**
+ * Colours the document defined for itself with `\definecolor`.
+ *
+ * Kept apart from the xcolor base set so a document can shadow a built-in name
+ * — which is how a page written against browser colours can keep the exact
+ * shade it wants while staying valid LaTeX, instead of relying on a name
+ * xcolor never defined.
+ */
+const DEFINED_COLORS = {};
+/** Clears the document-defined colours. Called once per parse. */
+const resetDefinedColors = function () {
+    for (const name of Object.keys(DEFINED_COLORS))
+        delete DEFINED_COLORS[name];
+};
+exports.resetDefinedColors = resetDefinedColors;
+const clamp255 = (n) => Math.max(0, Math.min(255, Math.round(n)));
+/**
+ * Records a `\definecolor{name}{model}{spec}`.
+ *
+ * The models are xcolor's: `rgb` and `cmyk` take fractions, `RGB` takes
+ * 0-255, `gray` a single fraction, and `HTML` six hex digits.
+ *
+ * @param name - the colour's name
+ * @param model - the colour model the spec is written in
+ * @param spec - the model's components, comma separated
+ * @returns true when the definition was understood
+ */
+const defineColor = function (name, model, spec) {
+    const key = String(name ?? '').trim().toLowerCase();
+    if (!key)
+        return false;
+    const parts = String(spec ?? '').split(',').map((p) => Number(p.trim()));
+    const m = String(model ?? '').trim();
+    if (m === 'rgb' && parts.length >= 3 && parts.every(isFinite)) {
+        DEFINED_COLORS[key] = [clamp255(parts[0] * 255), clamp255(parts[1] * 255), clamp255(parts[2] * 255)];
+        return true;
+    }
+    if (m === 'RGB' && parts.length >= 3 && parts.every(isFinite)) {
+        DEFINED_COLORS[key] = [clamp255(parts[0]), clamp255(parts[1]), clamp255(parts[2])];
+        return true;
+    }
+    if (m === 'gray' && parts.length >= 1 && isFinite(parts[0])) {
+        const g = clamp255(parts[0] * 255);
+        DEFINED_COLORS[key] = [g, g, g];
+        return true;
+    }
+    if (m === 'cmyk' && parts.length >= 4 && parts.every(isFinite)) {
+        const [c, y2, y3, k] = parts;
+        DEFINED_COLORS[key] = [
+            clamp255(255 * (1 - Math.min(1, c + k))),
+            clamp255(255 * (1 - Math.min(1, y2 + k))),
+            clamp255(255 * (1 - Math.min(1, y3 + k))),
+        ];
+        return true;
+    }
+    if (m === 'HTML') {
+        const hex = String(spec ?? '').trim().replace(/^#/, '');
+        if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+            DEFINED_COLORS[key] = [
+                parseInt(hex.slice(0, 2), 16),
+                parseInt(hex.slice(2, 4), 16),
+                parseInt(hex.slice(4, 6), 16),
+            ];
+            return true;
+        }
+    }
+    return false;
+};
+exports.defineColor = defineColor;
+/**
  * Resolves an xcolor tint expression to a CSS colour.
  *
  * `gray!40` means forty percent gray against white, and `gray!40!red` mixes
@@ -6648,7 +6751,9 @@ const BASE_COLORS = {
  */
 const resolveColor = function (value) {
     const parts = String(value).split('!').map((p) => p.trim());
-    const rgb = (name) => BASE_COLORS[name.toLowerCase()] ?? null;
+    // A document's own \definecolor wins over the built-in of the same name,
+    // as it does in xcolor.
+    const rgb = (name) => DEFINED_COLORS[name.toLowerCase()] ?? BASE_COLORS[name.toLowerCase()] ?? null;
     // A plain name resolves too. Nine of xcolor's base colours name a different
     // colour in CSS, so handing `green` straight to the browser drew the dark
     // #008000 where the document asks for pure green.

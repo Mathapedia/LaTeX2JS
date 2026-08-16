@@ -1,7 +1,7 @@
 import * as pegParser from '../grammar/parser.js';
 import { dialectUses } from './dialect';
 import { normalizeDialect } from '@latex2js/settings';
-import { normalizeArrows } from '@latex2js/utils';
+import { normalizeArrows, defineColor, resetDefinedColors } from '@latex2js/utils';
 import { Counters, SectionLevel } from './counters';
 
 export interface Diagnostic {
@@ -60,6 +60,15 @@ type Segment =
  * property, not a drawing option.
  */
 const PSSET_NON_STYLE = new Set(['unit', 'runit', 'xunit', 'yunit', 'dialect']);
+
+/**
+ * `\definecolor{name}{model}{spec}`.
+ *
+ * A preamble declaration rather than content, so it is intercepted where
+ * \psset is: the grammar delivers a command inside the line that holds it,
+ * not as a node of its own, and anything not intercepted is rendered as text.
+ */
+const DEFINECOLOR_RE = /\\definecolor\s*\{([^}]*)\}\s*\{([^}]*)\}\s*\{([^}]*)\}/;
 
 /**
  * The style defaults out of a parsed `\psset`.
@@ -287,8 +296,10 @@ class Parser {
   parse(text: string): any[] {
     this.diagnostics = [];
     // A parser instance is reused across documents; without this the second
-    // would continue the first one's numbering.
+    // would continue the first one's numbering, and inherit any colour the
+    // first defined for itself.
     this.counters.reset();
+    resetDefinedColors();
     if (!text) return [];
     const tree = this.parseTree(text);
     this.walk(tree);
@@ -542,6 +553,10 @@ class Parser {
       this.parseUnits(text);
       return;
     }
+    if (DEFINECOLOR_RE.test(text)) {
+      this.parseDefineColor(text);
+      return;
+    }
     const processed = this.parseText(text);
     if (processed.trim().length) this.environment.lines.push(processed);
   }
@@ -558,6 +573,8 @@ class Parser {
     if (add && typeof line === 'string' && line.trim().length) {
       if (this.PSTricks.Expressions.psset.test(line)) {
         this.parseUnits(line);
+      } else if (DEFINECOLOR_RE.test(line)) {
+        this.parseDefineColor(line);
       } else {
         this.environment.lines.push(line);
       }
@@ -611,6 +628,27 @@ class Parser {
       type: type,
       lines: []
     };
+  }
+
+  /**
+   * Records a `\definecolor{name}{model}{spec}`.
+   *
+   * xcolor lets a document define its own colours, and a document that wants a
+   * shade xcolor does not name — a browser colour such as `lightblue`, say —
+   * can define it rather than rely on the renderer guessing. That is what makes
+   * such a page valid LaTeX instead of only valid here.
+   */
+  parseDefineColor(text: string, loc?: any): void {
+    const m = String(text || '').match(DEFINECOLOR_RE);
+    if (!m) return;
+    if (!defineColor(m[1], m[2], m[3])) {
+      this.diagnose(
+        'warning',
+        `\\definecolor{${m[1]}}: the ${JSON.stringify(m[2])} model with ` +
+          `${JSON.stringify(m[3])} is not one this understands; the colour is left undefined`,
+        loc
+      );
+    }
   }
 
   parseUnits(line: string): void {
