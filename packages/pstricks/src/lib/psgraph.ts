@@ -38,8 +38,80 @@ function arrow(x1: number, y1: number, x2: number, y2: number, arrowscale?: numb
   return context.join(' ');
 }
 
+/** PSTricks' `curvature=a b c` default. */
+const CURVATURE_DEFAULT = { a: 1, b: 0.1, c: 0 };
+
 /**
- * Catmull-Rom → cubic Bézier path for a flat [x0,y0,x1,y1,...] point list.
+ * The control-point scaling PSTricks itself uses, transcribed from the `CC`
+ * and `IC` procedures in its PostScript prologue (pstricks.pro).
+ *
+ * This is not a Catmull-Rom spline, which is what stood here. The difference
+ * is where the control offset gets its length: Catmull-Rom takes it from the
+ * chord between a point's two neighbours, so at a sharp turn — where that
+ * chord collapses — the curve pinches into a cusp. PSTricks takes it from the
+ * length of the segment being drawn, which stays large through the turn, so
+ * the curve rounds outward instead. Every psccurve and psecurve in the corpus
+ * drew with corners the reference does not have.
+ *
+ * @param prev - the point before this one
+ * @param cur - the point the tangent is taken at
+ * @param next - the point after this one
+ * @param p - effective curvature parameters, already through `IC`
+ * @returns the control points just before and just after `cur`
+ */
+function curveControls(
+  prev: [number, number],
+  cur: [number, number],
+  next: [number, number],
+  p: { a: number; b: number; c: number }
+): { before: [number, number]; after: [number, number] } {
+  const d0x = cur[0] - prev[0];
+  const d0y = cur[1] - prev[1];
+  const d1x = next[0] - cur[0];
+  const d1y = next[1] - cur[1];
+  const l0 = Math.hypot(d0x, d0y);
+  const l1 = Math.hypot(d1x, d1y);
+
+  // The tangent leans toward whichever neighbouring segment is longer, by
+  // `c` — which IC has already shifted by one, so the default 0 means 1.
+  const w0 = Math.pow(l1, p.c);
+  const w1 = Math.pow(l0, p.c);
+  const tx = d0x * w0 + d1x * w1;
+  const ty = d0y * w0 + d1y * w1;
+  const tlen = Math.hypot(tx, ty);
+  if (!tlen || !isFinite(tlen)) return { before: [...cur], after: [...cur] };
+
+  // Sharper turns pull the control points in. With the default b of 0.1 this
+  // is a very weak effect until the path nearly doubles back on itself.
+  const turn = Math.atan2(d0y, d0x) - Math.atan2(d1y, d1x);
+  const m = (p.a * Math.pow(Math.abs(Math.cos(turn / 2)), p.b)) / tlen / 2;
+
+  return {
+    before: [cur[0] - l0 * tx * m, cur[1] - l0 * ty * m],
+    after: [cur[0] + l1 * tx * m, cur[1] + l1 * ty * m],
+  };
+}
+
+/**
+ * Reads `curvature` and applies the rescaling PSTricks' `IC` does once before
+ * a curve is drawn: c is shifted up by one and clamped, and a is folded
+ * together with the b exponent.
+ */
+function curvatureParams(ctx: any): { a: number; b: number; c: number } {
+  const raw = String((ctx && ctx.curvature) ?? '').trim();
+  const parts = raw ? raw.split(/[\s,]+/).map(Number) : [];
+  const a = isFinite(parts[0]) ? parts[0] : CURVATURE_DEFAULT.a;
+  const b = isFinite(parts[1]) ? parts[1] : CURVATURE_DEFAULT.b;
+  const c = isFinite(parts[2]) ? parts[2] : CURVATURE_DEFAULT.c;
+  return {
+    a: ((a * 2) / 3) / Math.pow(Math.cos(Math.PI / 4), b),
+    b,
+    c: Math.min(3, Math.max(0, c + 1)),
+  };
+}
+
+/**
+ * Cubic Bézier path through a flat [x0,y0,x1,y1,...] point list.
  *
  * The three PSTricks curve commands are three different shapes, not one:
  * `\pscurve` runs through every point, `\psccurve` wraps back to the start, and
@@ -49,55 +121,55 @@ function arrow(x1: number, y1: number, x2: number, y2: number, arrowscale?: numb
  *
  * @param data - flat coordinate pairs
  * @param mode - which of the three curves to build
+ * @param ctx - the shape's parsed data, read for `curvature`
  * @returns an SVG path, empty when there are too few points for the mode
  */
-function buildCurvePath(data: number[], mode: 'open' | 'closed' | 'endpoints'): string {
+function buildCurvePath(
+  data: number[],
+  mode: 'open' | 'closed' | 'endpoints',
+  ctx?: any
+): string {
   const pts: Array<[number, number]> = [];
   for (let i = 0; i < data.length; i += 2) pts.push([data[i], data[i + 1]]);
   const n = pts.length;
-  const closed = mode === 'closed';
-  if (n < 2) return '';
-  // The outer points of an endpoints curve are tangent controls, so four are
-  // needed before there is any span left to draw.
+  const p = curvatureParams(ctx);
+  const seg = (from: [number, number], c1: [number, number], c2: [number, number], to: [number, number]) =>
+    ' C ' + c1[0] + ' ' + c1[1] + ', ' + c2[0] + ' ' + c2[1] + ', ' + to[0] + ' ' + to[1];
+
+  if (mode === 'closed') {
+    // ClosedCurve wraps the neighbour lookup; PSTricks copies the first three
+    // points onto the end of the stack to the same effect.
+    if (n < 3) return '';
+    const at = (i: number) => pts[((i % n) + n) % n];
+    const ctrl = pts.map((_, i) => curveControls(at(i - 1), at(i), at(i + 1), p));
+    let d = 'M ' + pts[0][0] + ' ' + pts[0][1];
+    for (let i = 0; i < n; i++) {
+      d += seg(at(i), ctrl[i].after, ctrl[(i + 1) % n].before, at(i + 1));
+    }
+    return d + ' Z';
+  }
+
   if (mode === 'endpoints') {
+    // AltCurve draws P1..Pn-2; the outer points only feed the tangents.
     if (n < 4) return '';
     let d = 'M ' + pts[1][0] + ' ' + pts[1][1];
     for (let i = 1; i < n - 2; i++) {
-      const p0 = pts[i - 1];
-      const p1 = pts[i];
-      const p2 = pts[i + 1];
-      const p3 = pts[i + 2];
-      const c1x = p1[0] + (p2[0] - p0[0]) / 6;
-      const c1y = p1[1] + (p2[1] - p0[1]) / 6;
-      const c2x = p2[0] - (p3[0] - p1[0]) / 6;
-      const c2y = p2[1] - (p3[1] - p1[1]) / 6;
-      d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p2[0] + ' ' + p2[1];
+      const after = curveControls(pts[i - 1], pts[i], pts[i + 1], p).after;
+      const before = curveControls(pts[i], pts[i + 1], pts[i + 2], p).before;
+      d += seg(pts[i], after, before, pts[i + 1]);
     }
     return d;
   }
-  const at = (i: number) => pts[((i % n) + n) % n];
+
+  // OpenCurve. IC starts with a zero tangent and EOC ends with one, so the
+  // outermost control point of each end sits on the endpoint itself.
+  if (n < 3) return '';
   let d = 'M ' + pts[0][0] + ' ' + pts[0][1];
   for (let i = 0; i < n - 1; i++) {
-    const p0 = closed ? at(i - 1) : i === 0 ? pts[0] : pts[i - 1];
-    const p1 = pts[i];
-    const p2 = pts[i + 1];
-    const p3 = closed ? at(i + 2) : i + 2 < n ? pts[i + 2] : pts[i + 1];
-    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
-    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
-    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
-    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
-    d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p2[0] + ' ' + p2[1];
-  }
-  if (closed) {
-    const pn1 = pts[n - 1];
-    const p0 = pts[0];
-    const pn2 = pts[n - 2];
-    const p1 = pts[1];
-    const c1x = pn1[0] + (p0[0] - pn2[0]) / 6;
-    const c1y = pn1[1] + (p0[1] - pn2[1]) / 6;
-    const c2x = p0[0] - (p1[0] - pn1[0]) / 6;
-    const c2y = p0[1] - (p1[1] - pn1[1]) / 6;
-    d += ' C ' + c1x + ' ' + c1y + ', ' + c2x + ' ' + c2y + ', ' + p0[0] + ' ' + p0[1] + ' Z';
+    const after = i === 0 ? pts[0] : curveControls(pts[i - 1], pts[i], pts[i + 1], p).after;
+    const before =
+      i + 1 === n - 1 ? pts[n - 1] : curveControls(pts[i], pts[i + 1], pts[i + 2], p).before;
+    d += seg(pts[i], after, before, pts[i + 1]);
   }
   return d;
 }
@@ -326,7 +398,7 @@ function fullCirclePath(cx: number, cy: number, r: number): string {
 
 function curveRenderer(this: any, svg: any): void {
   const mode = this.endpoints ? 'endpoints' : this.closed ? 'closed' : 'open';
-  const d = buildCurvePath(this.data, mode);
+  const d = buildCurvePath(this.data, mode, this);
   if (!d) return;
   svg
     .append('svg:path')
@@ -1251,7 +1323,7 @@ const psgraph: any = {
   },
 
   pscurve(svg: any): void {
-    const d = buildCurvePath(this.data, this.endpoints ? 'endpoints' : this.closed ? 'closed' : 'open');
+    const d = buildCurvePath(this.data, this.endpoints ? 'endpoints' : this.closed ? 'closed' : 'open', this);
     if (!d) return;
     svg
       .append('svg:path')
