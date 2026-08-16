@@ -44,6 +44,32 @@ type Segment =
   | { kind: 'raw'; text: string };
 
 /**
+ * Names the numeric fields of a parsed command that came out non-finite.
+ *
+ * `X` and `Y` return NaN for a coordinate they cannot compute rather than
+ * inventing one at the origin, so this is where that shows up: a command whose
+ * geometry is unusable is reported against its own source location instead of
+ * drawing a plausible shape in the wrong place.
+ *
+ * @param value - a parsed command's data
+ * @returns the paths of the offending fields, empty when everything is usable
+ */
+function nonFiniteFields(value: any, path = '', depth = 0): string[] {
+  if (depth > 4 || value === null || value === undefined) return [];
+  if (typeof value === 'number') return isFinite(value) ? [] : [path || 'value'];
+  if (Array.isArray(value)) {
+    return value.flatMap((v, i) =>
+      typeof v === 'number' && !isFinite(v) ? [`${path}[${i}]`] : nonFiniteFields(v, `${path}[${i}]`, depth + 1)
+    );
+  }
+  if (typeof value !== 'object') return [];
+  // `global` is the shared environment, not this command's own geometry.
+  return Object.entries(value)
+    .filter(([k]) => k !== 'global' && k !== 'env')
+    .flatMap(([k, v]) => nonFiniteFields(v, path ? `${path}.${k}` : k, depth + 1));
+}
+
+/**
  * Parser: turns a LaTeX-ish document into the flat environment objects the
  * components consume ({type, lines, env, plot}) — but driven by the Peggy
  * grammar in src/grammar instead of per-line regular expressions.
@@ -502,6 +528,15 @@ class Parser {
       }
 
       plot[k].push({ data: data, env: env, match: m, fn: this.PSTricks.Functions[k] });
+      const bad = nonFiniteFields(data);
+      if (bad.length) {
+        this.diagnose(
+          'warning',
+          `\\${k} produced no usable value for ${bad.join(', ')}; it will not be drawn`,
+          node.loc
+        );
+      }
+
       elements.push({ name: k, data: data, match: m, fn: this.PSTricks.Functions[k], loc: node.loc });
 
       // side effects preserved from the old parser:

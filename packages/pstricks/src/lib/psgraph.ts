@@ -169,6 +169,29 @@ function resolveFill(ctx: any, svg: any): string {
 }
 
 /**
+ * Whether a command's geometry can be drawn.
+ *
+ * `X` and `Y` return NaN for a coordinate they cannot compute. Handing that to
+ * SVG does not fail visibly: an invalid geometry attribute is treated as absent
+ * and the element falls back to its default, so a broken shape reappears at the
+ * origin looking intentional. Skipping it is the honest result, and the parser
+ * has already reported the reason against the source line.
+ *
+ * @param ctx - a command's parsed data
+ * @returns false when any of its own numeric fields is non-finite
+ */
+function drawable(ctx: any, depth = 0): boolean {
+  if (depth > 4 || ctx === null || ctx === undefined) return true;
+  if (typeof ctx === 'number') return isFinite(ctx);
+  if (Array.isArray(ctx)) return ctx.every((v) => drawable(v, depth + 1));
+  if (typeof ctx !== 'object') return true;
+  return Object.entries(ctx).every(
+    // `global` is the shared environment, not this command's geometry.
+    ([k, v]) => k === 'global' || k === 'env' || drawable(v, depth + 1)
+  );
+}
+
+/**
  * SVG arc flags for a PSTricks arc running from `angleA` to `angleB`.
  *
  * PSTricks always sweeps counter-clockwise in its own coordinates, taking the
@@ -938,6 +961,11 @@ const psgraph: any = {
           if (!item || !item.name || item.name.match(/rput/)) return;
           if (!psgraph.hasOwnProperty(item.name)) return;
           const data = resolveData(item, coords, variables);
+          // A coordinate that could not be computed arrives as NaN. Drawing it
+          // anyway is the trap: SVG treats an invalid geometry attribute as
+          // absent and falls back to its default, so the shape reappears at the
+          // origin looking deliberate. Nothing is the honest output.
+          if (!drawable(data)) return;
           data.global = env;
           psgraph[item.name].call(data, layer);
         });

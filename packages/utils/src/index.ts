@@ -196,41 +196,27 @@ function getCompiled(exp: string): CompiledExpression {
 }
 
 
+/**
+ * Picture x to device x.
+ *
+ * Returns NaN for input it cannot transform. Returning 0 instead — as this did
+ * — invents a real coordinate at the origin, so a command with one bad value
+ * drew a plausible shape in the wrong place rather than failing. Callers detect
+ * the non-finite result and skip the element; see `pspicture` in dsh-psgraph.
+ *
+ * @param v - the coordinate in picture units
+ * @returns the device coordinate, or NaN when it cannot be computed
+ */
 export const X = function (this: any, v: number | string) {
-  // Enhanced validation for coordinate transformation
   const numV = typeof v === 'string' ? parseFloat(v) : v;
-  
-  if (isNaN(numV)) {
-    console.warn('X function: Invalid input value', { input: v, parsed: numV });
-    return 0;
-  }
-  
-  if (isNaN(this.w) || isNaN(this.x1) || isNaN(this.xunit)) {
-    console.warn('X function: NaN detected in context properties', { w: this.w, x1: this.x1, xunit: this.xunit });
-    return 0;
-  }
-  
-  // Validate context properties are reasonable
-  if (this.xunit <= 0) {
-    console.warn('X function: Invalid xunit value', { xunit: this.xunit });
-    return 0;
-  }
-  
-  // Use more precise calculation with proper parentheses
+
+  if (isNaN(numV)) return NaN;
+  if (isNaN(this.w) || isNaN(this.x1) || isNaN(this.xunit)) return NaN;
+  if (this.xunit <= 0) return NaN;
+
   const result = (this.w - (this.x1 - numV)) * this.xunit;
-  
-  // Validate result is finite
-  if (!isFinite(result)) {
-    console.warn('X function: Non-finite result', { 
-      input: numV, 
-      w: this.w, 
-      x1: this.x1, 
-      xunit: this.xunit, 
-      result 
-    });
-    return 0;
-  }
-  
+  if (!isFinite(result)) return NaN;
+
   return Math.round(result * 100) / 100; // Round to 2 decimal places for pixel precision
 };
 
@@ -238,40 +224,24 @@ export const Xinv = function (this: any, v: number | string) {
   return Number(v) / this.xunit - this.w + this.x1;
 };
 
+/**
+ * Picture y to device y, inverting the axis: SVG's y grows downward.
+ *
+ * Returns NaN for input it cannot transform, for the same reason as {@link X}.
+ *
+ * @param v - the coordinate in picture units
+ * @returns the device coordinate, or NaN when it cannot be computed
+ */
 export const Y = function (this: any, v: number | string) {
-  // Enhanced validation for coordinate transformation
   const numV = typeof v === 'string' ? parseFloat(v) : v;
-  
-  if (isNaN(numV)) {
-    console.warn('Y function: Invalid input value', { input: v, parsed: numV });
-    return 0;
-  }
-  
-  if (isNaN(this.y1) || isNaN(this.yunit)) {
-    console.warn('Y function: NaN detected in context properties', { y1: this.y1, yunit: this.yunit });
-    return 0;
-  }
-  
-  // Validate context properties are reasonable
-  if (this.yunit <= 0) {
-    console.warn('Y function: Invalid yunit value', { yunit: this.yunit });
-    return 0;
-  }
-  
-  // Use more precise calculation for Y coordinate inversion
+
+  if (isNaN(numV)) return NaN;
+  if (isNaN(this.y1) || isNaN(this.yunit)) return NaN;
+  if (this.yunit <= 0) return NaN;
+
   const result = (this.y1 - numV) * this.yunit;
-  
-  // Validate result is finite
-  if (!isFinite(result)) {
-    console.warn('Y function: Non-finite result', { 
-      input: numV, 
-      y1: this.y1, 
-      yunit: this.yunit, 
-      result 
-    });
-    return 0;
-  }
-  
+  if (!isFinite(result)) return NaN;
+
   return Math.round(result * 100) / 100; // Round to 2 decimal places for pixel precision
 };
 

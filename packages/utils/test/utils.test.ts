@@ -48,10 +48,27 @@ describe('utils', () => {
     expect(Yinv.call(ctx, Y.call(ctx, 2))).toBeCloseTo(2);
   });
 
-  it('X/Y guard against invalid input', () => {
+  it('X/Y report input they cannot transform instead of inventing a coordinate', () => {
+    // Returning 0 here is not a guard: 0 is a real position, so a command with
+    // one unusable value drew a plausible shape at the origin and reported
+    // nothing. NaN is not drawable, which is what lets callers skip it.
     const ctx: any = { x0: -5, y0: -5, x1: 5, y1: 5, w: 10, h: 10, xunit: 50, yunit: 50 };
-    expect(X.call(ctx, 'not-a-number')).toBe(0);
-    expect(Y.call(ctx, NaN)).toBe(0);
+    expect(X.call(ctx, 'not-a-number')).toBeNaN();
+    expect(Y.call(ctx, NaN)).toBeNaN();
+    expect(X.call(ctx, undefined as any)).toBeNaN();
+  });
+
+  it('X/Y report an unusable context', () => {
+    expect(X.call({ w: NaN, x1: 5, xunit: 50 } as any, 1)).toBeNaN();
+    expect(X.call({ w: 10, x1: 5, xunit: 0 } as any, 1)).toBeNaN();
+    expect(Y.call({ y1: 5, yunit: -1 } as any, 1)).toBeNaN();
+  });
+
+  it('X/Y still transform usable input', () => {
+    const ctx: any = { x0: -5, y0: -5, x1: 5, y1: 5, w: 10, h: 10, xunit: 50, yunit: 50 };
+    expect(X.call(ctx, 0)).toBe(250);
+    expect(X.call(ctx, '2')).toBe(350);
+    expect(Y.call(ctx, 0)).toBe(250);
   });
 
   it('evaluate evaluates math expressions with Math and variables', () => {
