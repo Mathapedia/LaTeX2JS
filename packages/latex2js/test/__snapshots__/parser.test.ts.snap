@@ -37,6 +37,16 @@ exports[`Parser parse 1`] = `
             "linecolor": "black",
             "linestyle": "solid",
             "linewidth": 2,
+            "points": [
+              [
+                250,
+                437.5,
+              ],
+              [
+                250,
+                62.5,
+              ],
+            ],
             "x1": 250,
             "x2": 250,
             "y1": 437.5,
@@ -56,6 +66,7 @@ exports[`Parser parse 1`] = `
             "(0,3.75)",
             "0",
             "3.75",
+            "",
           ],
           "name": "psline",
         },
@@ -75,6 +86,16 @@ exports[`Parser parse 1`] = `
             "linecolor": "black",
             "linestyle": "solid",
             "linewidth": 2,
+            "points": [
+              [
+                62.5,
+                250,
+              ],
+              [
+                437.5,
+                250,
+              ],
+            ],
             "x1": 62.5,
             "x2": 437.5,
             "y1": 250,
@@ -94,6 +115,7 @@ exports[`Parser parse 1`] = `
             "(3.75,0)",
             "3.75",
             "0",
+            "",
           ],
           "name": "psline",
         },
@@ -182,6 +204,16 @@ exports[`Parser parse 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      250,
+                      437.5,
+                    ],
+                    [
+                      250,
+                      62.5,
+                    ],
+                  ],
                   "x1": 250,
                   "x2": 250,
                   "y1": 437.5,
@@ -201,6 +233,7 @@ exports[`Parser parse 1`] = `
                   "(0,3.75)",
                   "0",
                   "3.75",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -220,6 +253,16 @@ exports[`Parser parse 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      62.5,
+                      250,
+                    ],
+                    [
+                      437.5,
+                      250,
+                    ],
+                  ],
                   "x1": 62.5,
                   "x2": 437.5,
                   "y1": 250,
@@ -239,6 +282,7 @@ exports[`Parser parse 1`] = `
                   "(3.75,0)",
                   "3.75",
                   "0",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -310,6 +354,16 @@ exports[`Parser parse 1`] = `
             "linecolor": "black",
             "linestyle": "solid",
             "linewidth": 2,
+            "points": [
+              [
+                250,
+                437.5,
+              ],
+              [
+                250,
+                62.5,
+              ],
+            ],
             "x1": 250,
             "x2": 250,
             "y1": 437.5,
@@ -334,6 +388,16 @@ exports[`Parser parse 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      250,
+                      437.5,
+                    ],
+                    [
+                      250,
+                      62.5,
+                    ],
+                  ],
                   "x1": 250,
                   "x2": 250,
                   "y1": 437.5,
@@ -353,6 +417,7 @@ exports[`Parser parse 1`] = `
                   "(0,3.75)",
                   "0",
                   "3.75",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -372,6 +437,16 @@ exports[`Parser parse 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      62.5,
+                      250,
+                    ],
+                    [
+                      437.5,
+                      250,
+                    ],
+                  ],
                   "x1": 62.5,
                   "x2": 437.5,
                   "y1": 250,
@@ -391,6 +466,7 @@ exports[`Parser parse 1`] = `
                   "(3.75,0)",
                   "3.75",
                   "0",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -439,6 +515,7 @@ exports[`Parser parse 1`] = `
             "(0,3.75)",
             "0",
             "3.75",
+            "",
           ],
         },
         {
@@ -457,6 +534,16 @@ exports[`Parser parse 1`] = `
             "linecolor": "black",
             "linestyle": "solid",
             "linewidth": 2,
+            "points": [
+              [
+                62.5,
+                250,
+              ],
+              [
+                437.5,
+                250,
+              ],
+            ],
             "x1": 62.5,
             "x2": 437.5,
             "y1": 250,
@@ -481,6 +568,16 @@ exports[`Parser parse 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      250,
+                      437.5,
+                    ],
+                    [
+                      250,
+                      62.5,
+                    ],
+                  ],
                   "x1": 250,
                   "x2": 250,
                   "y1": 437.5,
@@ -500,6 +597,7 @@ exports[`Parser parse 1`] = `
                   "(0,3.75)",
                   "0",
                   "3.75",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -519,6 +617,16 @@ exports[`Parser parse 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      62.5,
+                      250,
+                    ],
+                    [
+                      437.5,
+                      250,
+                    ],
+                  ],
                   "x1": 62.5,
                   "x2": 437.5,
                   "y1": 250,
@@ -538,6 +646,7 @@ exports[`Parser parse 1`] = `
                   "(3.75,0)",
                   "3.75",
                   "0",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -586,6 +695,7 @@ exports[`Parser parse 1`] = `
             "(3.75,0)",
             "3.75",
             "0",
+            "",
           ],
         },
       ],
@@ -724,6 +834,16 @@ exports[`Parser parser 1`] = `
             "linecolor": "black",
             "linestyle": "solid",
             "linewidth": 2,
+            "points": [
+              [
+                250,
+                437.5,
+              ],
+              [
+                250,
+                62.5,
+              ],
+            ],
             "x1": 250,
             "x2": 250,
             "y1": 437.5,
@@ -743,6 +863,7 @@ exports[`Parser parser 1`] = `
             "(0,3.75)",
             "0",
             "3.75",
+            "",
           ],
           "name": "psline",
         },
@@ -762,6 +883,16 @@ exports[`Parser parser 1`] = `
             "linecolor": "black",
             "linestyle": "solid",
             "linewidth": 2,
+            "points": [
+              [
+                62.5,
+                250,
+              ],
+              [
+                437.5,
+                250,
+              ],
+            ],
             "x1": 62.5,
             "x2": 437.5,
             "y1": 250,
@@ -781,6 +912,7 @@ exports[`Parser parser 1`] = `
             "(3.75,0)",
             "3.75",
             "0",
+            "",
           ],
           "name": "psline",
         },
@@ -869,6 +1001,16 @@ exports[`Parser parser 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      250,
+                      437.5,
+                    ],
+                    [
+                      250,
+                      62.5,
+                    ],
+                  ],
                   "x1": 250,
                   "x2": 250,
                   "y1": 437.5,
@@ -888,6 +1030,7 @@ exports[`Parser parser 1`] = `
                   "(0,3.75)",
                   "0",
                   "3.75",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -907,6 +1050,16 @@ exports[`Parser parser 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      62.5,
+                      250,
+                    ],
+                    [
+                      437.5,
+                      250,
+                    ],
+                  ],
                   "x1": 62.5,
                   "x2": 437.5,
                   "y1": 250,
@@ -926,6 +1079,7 @@ exports[`Parser parser 1`] = `
                   "(3.75,0)",
                   "3.75",
                   "0",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -997,6 +1151,16 @@ exports[`Parser parser 1`] = `
             "linecolor": "black",
             "linestyle": "solid",
             "linewidth": 2,
+            "points": [
+              [
+                250,
+                437.5,
+              ],
+              [
+                250,
+                62.5,
+              ],
+            ],
             "x1": 250,
             "x2": 250,
             "y1": 437.5,
@@ -1021,6 +1185,16 @@ exports[`Parser parser 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      250,
+                      437.5,
+                    ],
+                    [
+                      250,
+                      62.5,
+                    ],
+                  ],
                   "x1": 250,
                   "x2": 250,
                   "y1": 437.5,
@@ -1040,6 +1214,7 @@ exports[`Parser parser 1`] = `
                   "(0,3.75)",
                   "0",
                   "3.75",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -1059,6 +1234,16 @@ exports[`Parser parser 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      62.5,
+                      250,
+                    ],
+                    [
+                      437.5,
+                      250,
+                    ],
+                  ],
                   "x1": 62.5,
                   "x2": 437.5,
                   "y1": 250,
@@ -1078,6 +1263,7 @@ exports[`Parser parser 1`] = `
                   "(3.75,0)",
                   "3.75",
                   "0",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -1126,6 +1312,7 @@ exports[`Parser parser 1`] = `
             "(0,3.75)",
             "0",
             "3.75",
+            "",
           ],
         },
         {
@@ -1144,6 +1331,16 @@ exports[`Parser parser 1`] = `
             "linecolor": "black",
             "linestyle": "solid",
             "linewidth": 2,
+            "points": [
+              [
+                62.5,
+                250,
+              ],
+              [
+                437.5,
+                250,
+              ],
+            ],
             "x1": 62.5,
             "x2": 437.5,
             "y1": 250,
@@ -1168,6 +1365,16 @@ exports[`Parser parser 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      250,
+                      437.5,
+                    ],
+                    [
+                      250,
+                      62.5,
+                    ],
+                  ],
                   "x1": 250,
                   "x2": 250,
                   "y1": 437.5,
@@ -1187,6 +1394,7 @@ exports[`Parser parser 1`] = `
                   "(0,3.75)",
                   "0",
                   "3.75",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -1206,6 +1414,16 @@ exports[`Parser parser 1`] = `
                   "linecolor": "black",
                   "linestyle": "solid",
                   "linewidth": 2,
+                  "points": [
+                    [
+                      62.5,
+                      250,
+                    ],
+                    [
+                      437.5,
+                      250,
+                    ],
+                  ],
                   "x1": 62.5,
                   "x2": 437.5,
                   "y1": 250,
@@ -1225,6 +1443,7 @@ exports[`Parser parser 1`] = `
                   "(3.75,0)",
                   "3.75",
                   "0",
+                  "",
                 ],
                 "name": "psline",
               },
@@ -1273,6 +1492,7 @@ exports[`Parser parser 1`] = `
             "(3.75,0)",
             "3.75",
             "0",
+            "",
           ],
         },
       ],

@@ -90,7 +90,7 @@ export const Expressions = {
     RE.squiggle
   ),
   psline: new RegExp(
-    '\\\\psline\\*?' + RE.options + RE.type + RE.coords + RE.coordsOpt
+    '\\\\psline\\*?' + RE.options + RE.type + RE.coords + RE.coordsOpt + '((?:\\s*\\([^)]*\\))*)'
   ),
   userline: new RegExp(
     '\\\\userline' +
@@ -426,6 +426,15 @@ export const Functions = {
       obj.y1 = Y.call(this, 0);
       obj.x2 = X.call(this, m[3]);
       obj.y2 = Y.call(this, m[4]);
+    }
+    // \psline takes any number of points, not two. Everything past the second
+    // was dropped, so a polyline silently rendered as its first segment.
+    obj.points = [[obj.x1, obj.y1], [obj.x2, obj.y2]];
+    const extra = m[8];
+    if (extra) {
+      for (const pair of String(extra).matchAll(/\(\s*([^,()]*),([^,()]*)\s*\)/g)) {
+        obj.points.push([X.call(this, pair[1]), Y.call(this, pair[2])]);
+      }
     }
     if (options) {
       Object.assign(obj, parseOptions(options));

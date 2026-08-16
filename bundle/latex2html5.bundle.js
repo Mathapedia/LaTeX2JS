@@ -3862,14 +3862,18 @@ const psgraph = {
                 .style('stroke-dasharray', '9,5')
                 .style('stroke-opacity', 1);
         }
-        if (this.linestyle.match(/dotted/)) {
-            dotted(this.x1, this.y1, this.x2, this.y2);
-        }
-        else if (this.linestyle.match(/dashed/)) {
-            dashed(this.x1, this.y1, this.x2, this.y2);
-        }
-        else {
-            solid(this.x1, this.y1, this.x2, this.y2);
+        // Every segment of the polyline. A two-point line is the same drawing it
+        // always was; anything past the second point used to be dropped.
+        const pts = this.points && this.points.length >= 2
+            ? this.points
+            : [[this.x1, this.y1], [this.x2, this.y2]];
+        const draw = this.linestyle.match(/dotted/)
+            ? dotted
+            : this.linestyle.match(/dashed/)
+                ? dashed
+                : solid;
+        for (let i = 0; i < pts.length - 1; i++) {
+            draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
         }
         if (this.dots[0]) {
             svg
@@ -3943,14 +3947,18 @@ const psgraph = {
                 .style('stroke-dasharray', '9,5')
                 .style('stroke-opacity', 1);
         }
-        if (this.linestyle.match(/dotted/)) {
-            dotted(this.x1, this.y1, this.x2, this.y2);
-        }
-        else if (this.linestyle.match(/dashed/)) {
-            dashed(this.x1, this.y1, this.x2, this.y2);
-        }
-        else {
-            solid(this.x1, this.y1, this.x2, this.y2);
+        // Every segment of the polyline. A two-point line is the same drawing it
+        // always was; anything past the second point used to be dropped.
+        const pts = this.points && this.points.length >= 2
+            ? this.points
+            : [[this.x1, this.y1], [this.x2, this.y2]];
+        const draw = this.linestyle.match(/dotted/)
+            ? dotted
+            : this.linestyle.match(/dashed/)
+                ? dashed
+                : solid;
+        for (let i = 0; i < pts.length - 1; i++) {
+            draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
         }
         if (this.dots[0]) {
             svg
@@ -4632,7 +4640,7 @@ exports.Expressions = {
         utils_1.RE.squiggle +
         utils_1.RE.squiggle +
         utils_1.RE.squiggle),
-    psline: new RegExp('\\\\psline\\*?' + utils_1.RE.options + utils_1.RE.type + utils_1.RE.coords + utils_1.RE.coordsOpt),
+    psline: new RegExp('\\\\psline\\*?' + utils_1.RE.options + utils_1.RE.type + utils_1.RE.coords + utils_1.RE.coordsOpt + '((?:\\s*\\([^)]*\\))*)'),
     userline: new RegExp('\\\\userline' +
         utils_1.RE.options +
         utils_1.RE.type +
@@ -4955,6 +4963,15 @@ exports.Functions = {
             obj.y1 = utils_1.Y.call(this, 0);
             obj.x2 = utils_1.X.call(this, m[3]);
             obj.y2 = utils_1.Y.call(this, m[4]);
+        }
+        // \psline takes any number of points, not two. Everything past the second
+        // was dropped, so a polyline silently rendered as its first segment.
+        obj.points = [[obj.x1, obj.y1], [obj.x2, obj.y2]];
+        const extra = m[8];
+        if (extra) {
+            for (const pair of String(extra).matchAll(/\(\s*([^,()]*),([^,()]*)\s*\)/g)) {
+                obj.points.push([utils_1.X.call(this, pair[1]), utils_1.Y.call(this, pair[2])]);
+            }
         }
         if (options) {
             Object.assign(obj, (0, utils_1.parseOptions)(options));

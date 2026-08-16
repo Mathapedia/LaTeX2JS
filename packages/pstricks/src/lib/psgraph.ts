@@ -660,12 +660,18 @@ const psgraph: any = {
         .style('stroke-opacity', 1);
     }
 
-    if (this.linestyle.match(/dotted/)) {
-      dotted(this.x1, this.y1, this.x2, this.y2);
-    } else if (this.linestyle.match(/dashed/)) {
-      dashed(this.x1, this.y1, this.x2, this.y2);
-    } else {
-      solid(this.x1, this.y1, this.x2, this.y2);
+    // Every segment of the polyline. A two-point line is the same drawing it
+    // always was; anything past the second point used to be dropped.
+    const pts = this.points && this.points.length >= 2
+      ? this.points
+      : [[this.x1, this.y1], [this.x2, this.y2]];
+    const draw = this.linestyle.match(/dotted/)
+      ? dotted
+      : this.linestyle.match(/dashed/)
+        ? dashed
+        : solid;
+    for (let i = 0; i < pts.length - 1; i++) {
+      draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
     }
 
     if (this.dots[0]) {
@@ -752,12 +758,18 @@ const psgraph: any = {
         .style('stroke-opacity', 1);
     }
 
-    if (this.linestyle.match(/dotted/)) {
-      dotted(this.x1, this.y1, this.x2, this.y2);
-    } else if (this.linestyle.match(/dashed/)) {
-      dashed(this.x1, this.y1, this.x2, this.y2);
-    } else {
-      solid(this.x1, this.y1, this.x2, this.y2);
+    // Every segment of the polyline. A two-point line is the same drawing it
+    // always was; anything past the second point used to be dropped.
+    const pts = this.points && this.points.length >= 2
+      ? this.points
+      : [[this.x1, this.y1], [this.x2, this.y2]];
+    const draw = this.linestyle.match(/dotted/)
+      ? dotted
+      : this.linestyle.match(/dashed/)
+        ? dashed
+        : solid;
+    for (let i = 0; i < pts.length - 1; i++) {
+      draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
     }
 
     if (this.dots[0]) {
