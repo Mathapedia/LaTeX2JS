@@ -219,6 +219,43 @@ function resolveStroke(ctx: any, fallback?: string): string {
   return (ctx && ctx.linecolor) || fallback || 'black';
 }
 
+/** PSTricks' own defaults for the two broken-line styles, in points. */
+const DASH_DEFAULT = '5pt 3pt';
+const DOTSEP_DEFAULT = 3;
+
+/**
+ * The SVG dash pattern for a shape's linestyle, or `none` when it draws solid.
+ *
+ * `linestyle=dashed` and `linestyle=dotted` were honoured by psline and
+ * pspolygon and ignored by every other shape, and where they were honoured
+ * both emitted the same `9,5` — so a dotted line rendered as a dashed one and
+ * neither followed the `dash` or `dotsep` the author set.
+ *
+ * @param ctx - the shape's parsed data, carrying linestyle, dash and dotsep
+ * @returns an SVG stroke-dasharray value
+ */
+function dashArray(ctx: any): string {
+  const style: string = (ctx && ctx.linestyle) || 'solid';
+  const round = (n: number) => Math.round(n * 1000) / 1000;
+  if (style === 'dotted') {
+    // A zero-length dash under a round cap is how SVG draws a round dot; the
+    // gap is dotsep plus the width the cap itself occupies.
+    const sep = dimension(ctx.dotsep, DOTSEP_DEFAULT);
+    return '0,' + round(sep + (Number(ctx.linewidth) || 0));
+  }
+  if (style !== 'dashed') return 'none';
+  // `dash=5pt 3pt` names the black length then the white one.
+  const parts = String(ctx.dash ?? DASH_DEFAULT).trim().split(/\s+/);
+  const on = dimension(parts[0], 5);
+  const off = dimension(parts[1] ?? parts[0], 3);
+  return round(on) + ',' + round(off);
+}
+
+/** Round caps are what turn a zero-length dash into a dot. */
+function dashCap(ctx: any): string {
+  return ctx && ctx.linestyle === 'dotted' ? 'round' : 'butt';
+}
+
 /**
  * Whether a command's geometry can be drawn.
  *
@@ -255,11 +292,19 @@ function drawable(ctx: any, depth = 0): boolean {
  * @param angleB - end angle in radians
  * @returns the sweep span plus SVG's large-arc and sweep flags
  */
-function arcFlags(angleA: number, angleB: number): { delta: number; large: number; sweep: number } {
-  let delta = angleB - angleA;
-  if (!isFinite(delta)) delta = 0;
-  delta = ((delta % TAU) + TAU) % TAU;
-  return { delta, large: delta > Math.PI ? 1 : 0, sweep: 0 };
+function arcFlags(
+  angleA: number,
+  angleB: number
+): { delta: number; large: number; sweep: number; full: boolean } {
+  let raw = angleB - angleA;
+  if (!isFinite(raw)) raw = 0;
+  // A span of a full turn or more paints the whole circle: PSTricks keeps
+  // sweeping past 360 and simply overlaps itself, so \psarc{0}{450} is a
+  // circle, not the 90 degrees the modulo below leaves behind. Reducing first
+  // and asking afterwards is what lost the extra turn.
+  const full = Math.abs(raw) >= TAU - 1e-9;
+  const delta = ((raw % TAU) + TAU) % TAU;
+  return { delta, large: delta > Math.PI ? 1 : 0, sweep: 0, full };
 }
 
 /**
@@ -288,6 +333,8 @@ function curveRenderer(this: any, svg: any): void {
     .attr('d', d)
     .style('stroke-width', this.linewidth)
     .style('stroke', resolveStroke(this))
+    .style('stroke-dasharray', dashArray(this))
+    .style('stroke-linecap', dashCap(this))
     .style('stroke-opacity', 1)
     .style('fill', resolveFill(this, svg));
 }
@@ -333,6 +380,8 @@ const psgraph: any = {
       .attr('y2', this.y1)
       .style('stroke-width', 2)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -343,6 +392,8 @@ const psgraph: any = {
       .attr('y2', this.y2)
       .style('stroke-width', 2)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -353,6 +404,8 @@ const psgraph: any = {
       .attr('y2', this.y2)
       .style('stroke-width', 2)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1);
 
     svg
@@ -363,6 +416,8 @@ const psgraph: any = {
       .attr('y2', this.y1)
       .style('stroke-width', 2)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1);
   },
 
@@ -374,6 +429,8 @@ const psgraph: any = {
       .attr('cy', this.cy)
       .attr('r', this.r)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('fill', resolveFill(this, svg))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1);
@@ -426,7 +483,9 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
-      .style('stroke', resolveStroke(this));
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this));
   },
 
   pspolygon(svg: any): void {
@@ -448,16 +507,18 @@ const psgraph: any = {
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
       // Was hardcoded black, so linecolor and linestyle=none were both ignored.
-      .style('stroke', resolveStroke(this));
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this));
   },
 
   psarc(svg: any): void {
-    const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
+    const { delta, large, sweep, full } = arcFlags(this.angleA, this.angleB);
     const filled = hasFill(this);
     const arc =
       ' A ' + this.r + ' ' + this.r + ' 0 ' + large + ' ' + sweep +
       ' ' + this.B.x + ' ' + this.B.y;
-    const d = delta === 0
+    const d = full || delta === 0
       ? fullCirclePath(this.cx, this.cy, this.r)
       : filled
         ? 'M ' + this.cx + ' ' + this.cy + ' L ' + this.A.x + ' ' + this.A.y + arc + ' Z'
@@ -468,7 +529,9 @@ const psgraph: any = {
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg))
-      .style('stroke', resolveStroke(this));
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this));
   },
 
   psaxes(svg: any): void {
@@ -631,32 +694,19 @@ const psgraph: any = {
       // below are inner functions and cannot reach the shape through `this`.
       linecolor = resolveStroke(this);
 
-    function solid(x1: number, y1: number, x2: number, y2: number) {
+    // One drawing function for all three styles. There used to be three, and
+    // `dashed` and `dotted` were byte-identical — both hardcoded `9,5` — so a
+    // dotted line rendered as a dashed one.
+    const dash = dashArray(this);
+    const cap = dashCap(this);
+    function draw(x1: number, y1: number, x2: number, y2: number) {
       svg
         .append('svg:path')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', linewidth)
         .style('stroke', linecolor)
-        .style('stroke-opacity', 1);
-    }
-
-    function dashed(x1: number, y1: number, x2: number, y2: number) {
-      svg
-        .append('svg:path')
-        .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-        .style('stroke-width', linewidth)
-        .style('stroke', linecolor)
-        .style('stroke-dasharray', '9,5')
-        .style('stroke-opacity', 1);
-    }
-
-    function dotted(x1: number, y1: number, x2: number, y2: number) {
-      svg
-        .append('svg:path')
-        .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-        .style('stroke-width', linewidth)
-        .style('stroke', linecolor)
-        .style('stroke-dasharray', '9,5')
+        .style('stroke-dasharray', dash)
+        .style('stroke-linecap', cap)
         .style('stroke-opacity', 1);
     }
 
@@ -665,11 +715,6 @@ const psgraph: any = {
     const pts = this.points && this.points.length >= 2
       ? this.points
       : [[this.x1, this.y1], [this.x2, this.y2]];
-    const draw = this.linestyle.match(/dotted/)
-      ? dotted
-      : this.linestyle.match(/dashed/)
-        ? dashed
-        : solid;
     for (let i = 0; i < pts.length - 1; i++) {
       draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
     }
@@ -726,35 +771,18 @@ const psgraph: any = {
       // below are inner functions and cannot reach the shape through `this`.
       linecolor = resolveStroke(this);
 
-    function solid(x1: number, y1: number, x2: number, y2: number) {
+    // One drawing function for all three styles; see the note in psline.
+    const dash = dashArray(this);
+    const cap = dashCap(this);
+    function draw(x1: number, y1: number, x2: number, y2: number) {
       svg
         .append('svg:path')
         .attr('class', 'userline')
         .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
         .style('stroke-width', linewidth)
         .style('stroke', linecolor)
-        .style('stroke-opacity', 1);
-    }
-
-    function dashed(x1: number, y1: number, x2: number, y2: number) {
-      svg
-        .append('svg:path')
-        .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-        .attr('class', 'userline')
-        .style('stroke-width', linewidth)
-        .style('stroke', linecolor)
-        .style('stroke-dasharray', '9,5')
-        .style('stroke-opacity', 1);
-    }
-
-    function dotted(x1: number, y1: number, x2: number, y2: number) {
-      svg
-        .append('svg:path')
-        .attr('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-        .attr('class', 'userline')
-        .style('stroke-width', linewidth)
-        .style('stroke', linecolor)
-        .style('stroke-dasharray', '9,5')
+        .style('stroke-dasharray', dash)
+        .style('stroke-linecap', cap)
         .style('stroke-opacity', 1);
     }
 
@@ -763,11 +791,6 @@ const psgraph: any = {
     const pts = this.points && this.points.length >= 2
       ? this.points
       : [[this.x1, this.y1], [this.x2, this.y2]];
-    const draw = this.linestyle.match(/dotted/)
-      ? dotted
-      : this.linestyle.match(/dashed/)
-        ? dashed
-        : solid;
     for (let i = 0; i < pts.length - 1; i++) {
       draw(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
     }
@@ -1201,6 +1224,8 @@ const psgraph: any = {
       .attr('rx', this.rx)
       .attr('ry', this.ry)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-width', this.linewidth)
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
@@ -1219,6 +1244,8 @@ const psgraph: any = {
       .attr('d', d)
       .style('stroke-width', this.linewidth)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },
@@ -1231,6 +1258,8 @@ const psgraph: any = {
       .attr('d', d)
       .style('stroke-width', this.linewidth)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },
@@ -1239,8 +1268,8 @@ const psgraph: any = {
   psccurve: curveRenderer,
 
   pswedge(svg: any): void {
-    const { delta, large, sweep } = arcFlags(this.angleA, this.angleB);
-    const d = delta === 0
+    const { delta, large, sweep, full } = arcFlags(this.angleA, this.angleB);
+    const d = full || delta === 0
       ? fullCirclePath(this.cx, this.cy, this.r)
       : 'M ' + this.cx + ' ' + this.cy +
         ' L ' + this.A.x + ' ' + this.A.y +
@@ -1251,6 +1280,8 @@ const psgraph: any = {
       .attr('d', d)
       .style('stroke-width', this.linewidth)
       .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },
@@ -1311,7 +1342,11 @@ const psgraph: any = {
       .append('svg:path')
       .attr('d', d)
       .style('stroke-width', this.linewidth)
-      .style('stroke', this.linestyle === 'none' ? 'none' : this.linecolor)
+      // Spelled inline here rather than through the resolver, which is how this
+      // one site kept missing the sweeps that fixed the others.
+      .style('stroke', resolveStroke(this))
+      .style('stroke-dasharray', dashArray(this))
+      .style('stroke-linecap', dashCap(this))
       .style('stroke-opacity', 1)
       .style('fill', resolveFill(this, svg));
   },

@@ -81,8 +81,23 @@ describe('pspicture component (SVG rendering)', () => {
     document.body.appendChild(div);
 
     const path = div.querySelector('svg path')!;
-    expect(path.style.strokeDasharray).toBe('9,5');
+    // PSTricks' default dash is `5pt 3pt`; this used to be a hardcoded `9,5`
+    // that ignored the setting and made dotted lines look dashed too.
+    const [on, off] = path.style.strokeDasharray.split(',').map(Number);
+    expect(on / off).toBeCloseTo(5 / 3, 3);
     expect(path.style.stroke).toBe('red');
+  });
+
+  it('draws a dotted line differently from a dashed one', () => {
+    const dash = (style: string) => {
+      const div = pspicture(parsePspicture(
+        `\\begin{pspicture}(0,0)(4,4)\n\\psline[linestyle=${style}](0,0)(1,1)\n\\end{pspicture}`
+      ));
+      document.body.appendChild(div);
+      return div.querySelector('svg path')!.style.strokeDasharray;
+    };
+    expect(dash('dotted')).not.toBe(dash('dashed'));
+    expect(dash('dotted')).toMatch(/^0,/);
   });
 
   it('re-renders psplot when a slider changes', () => {
