@@ -2214,6 +2214,47 @@ function applyPsset(data, style, raw) {
     }
 }
 /**
+ * The environment a command's coordinates should be computed against, once the
+ * `\psset` above it has changed the units.
+ *
+ * A picture fixes its units when `\begin{pspicture}` is read, so a later
+ * `\psset{xunit=2}` inside it had no effect at all — `\psellipse(0,0)(1,1.5)`
+ * came out taller than wide where PSTricks draws it wider than tall.
+ *
+ * The picture's origin does not move when the units change: the box was laid
+ * out with the units in force at `\begin`, and only the coordinates written
+ * after the declaration are rescaled. `X(v)` is `(w - x1) * xunit + v * xunit`,
+ * so holding the first term at its original value while the second takes the
+ * new unit means solving for the `w` that keeps the offset — which is what the
+ * adjusted bounds below do.
+ *
+ * @param env - the picture environment, carrying the units from \begin
+ * @param units - the units in force where the command was written
+ * @returns `env` itself when nothing changed, else a rescaled copy
+ */
+function envForUnits(env, units) {
+    if (!env || !units)
+        return env;
+    const xunit = Number(units.xunit);
+    const yunit = Number(units.yunit);
+    const sameX = !isFinite(xunit) || xunit === env.xunit;
+    const sameY = !isFinite(yunit) || yunit === env.yunit;
+    if (sameX && sameY)
+        return env;
+    const scaled = { ...env };
+    if (!sameX && xunit > 0) {
+        const originX = (env.w - env.x1) * env.xunit;
+        scaled.xunit = xunit;
+        scaled.w = originX / xunit + env.x1;
+    }
+    if (!sameY && yunit > 0) {
+        const originY = env.y1 * env.yunit;
+        scaled.yunit = yunit;
+        scaled.y1 = originY / yunit;
+    }
+    return scaled;
+}
+/**
  * The brace group of an `\rput`, matched by depth rather than by regex.
  *
  * The rput expression ends in `\{(.*)\}`, which is greedy and brace-blind: on
@@ -2526,6 +2567,9 @@ class Parser {
                 // in the picture the last \psset rather than the one above it.
                 if (inPspicture) {
                     node.settings = { ...this.style };
+                    // Units are snapshotted separately: they are not style defaults to
+                    // copy onto a shape, they change how its coordinates are computed.
+                    node.units = { xunit: this.settings.xunit, yunit: this.settings.yunit };
                     this.environment.commands.push(node);
                 }
                 else
@@ -2717,7 +2761,9 @@ class Parser {
                 this.diagnose('warning', `could not parse \\${k}: ${JSON.stringify(node.raw)}`, node.loc);
                 return;
             }
-            const data = this.PSTricks.Functions[k].call(env, m);
+            // Units declared inside the picture rescale what comes after them.
+            const cmdEnv = envForUnits(env, node.units);
+            const data = this.PSTricks.Functions[k].call(cmdEnv, m);
             applyPsset(data, node.settings, node.raw);
             // \multido{var=start+step}{count}{body} — expand and recurse.
             if (k === 'multido') {
@@ -2727,7 +2773,7 @@ class Parser {
             // \pscustom{...} — pre-extract the inner commands into pixel data so
             // the renderer can build a single filled/stroked path.
             if (k === 'pscustom' && data.body) {
-                data.commands = this.extractCustomBody(data.body, env);
+                data.commands = this.extractCustomBody(data.body, cmdEnv);
             }
             // \rput(x,y){...} places its contents at (x,y). The contents are usually
             // a label, and were assumed to be one — so a graphics command inside an
@@ -2736,12 +2782,12 @@ class Parser {
             // them in document order among the other shapes rather than in the
             // separate DOM pass the labels go through.
             if (k === 'rput') {
-                const children = this.extractCustomBody(braceGroup(node.raw), env);
+                const children = this.extractCustomBody(braceGroup(node.raw), cmdEnv);
                 if (children.length) {
                     // The contents' own origin lands on (x,y), so the offset is the
                     // command's position measured from where (0,0) falls.
-                    const originX = (env.w - env.x1) * env.xunit;
-                    const originY = env.y1 * env.yunit;
+                    const originX = (cmdEnv.w - cmdEnv.x1) * cmdEnv.xunit;
+                    const originY = cmdEnv.y1 * cmdEnv.yunit;
                     elements.push({
                         name: 'rputgroup',
                         data: { dx: data.x - originX, dy: data.y - originY, children },

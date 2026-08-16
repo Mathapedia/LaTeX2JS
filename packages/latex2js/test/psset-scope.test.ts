@@ -202,3 +202,48 @@ describe('rput places graphics, not only labels', () => {
     expect(els.find((e: any) => e.name === 'rput')).toBeDefined();
   });
 });
+
+describe('units declared inside a picture rescale what follows', () => {
+  // A picture fixes its units when \begin{pspicture} is read, so a later
+  // \psset{xunit=2} had no effect at all: \psellipse(0,0)(1,1.5) came out
+  // taller than wide where PSTricks draws it wider than tall.
+  const ellipse = (tex: string) => shapes(tex, 'psellipse')[0];
+
+  it('stretches a later shape along the changed axis', () => {
+    const e = ellipse('\\psset{xunit=2,yunit=1}\n\\psellipse(0,0)(1,1.5)');
+    expect(e.rx).toBeGreaterThan(e.ry);
+  });
+
+  it('leaves a shape written above the declaration alone', () => {
+    const [before, after] = shapes(
+      '\\psellipse(0,0)(1,1.5)\n\\psset{xunit=2}\n\\psellipse(0,0)(1,1.5)',
+      'psellipse'
+    );
+    expect(before.rx).toBeLessThan(before.ry);
+    expect(after.rx).toBeGreaterThan(after.ry);
+  });
+
+  it('holds the picture origin still while the coordinates rescale', () => {
+    // The box was laid out with the units in force at \begin; only the
+    // coordinates written after the declaration take the new unit. A shape at
+    // the origin must therefore not move when the units change.
+    const at = (tex: string) => shapes(tex, 'pscircle')[0];
+    const plain = at('\\pscircle(0,0){0.5}');
+    const scaled = at('\\psset{xunit=2}\n\\pscircle(0,0){0.5}');
+    expect(scaled.cx).toBeCloseTo(plain.cx, 3);
+    expect(scaled.cy).toBeCloseTo(plain.cy, 3);
+  });
+
+  it('moves a coordinate away from the origin by the new unit', () => {
+    const at = (tex: string) => shapes(tex, 'pscircle')[0];
+    const plain = at('\\pscircle(1,0){0.5}');
+    const origin = at('\\pscircle(0,0){0.5}');
+    const scaled = at('\\psset{xunit=2}\n\\pscircle(1,0){0.5}');
+    expect(scaled.cx - origin.cx).toBeCloseTo(2 * (plain.cx - origin.cx), 3);
+  });
+
+  it('scales a radius with the unit too', () => {
+    const r = (tex: string) => shapes(tex, 'pscircle')[0].r;
+    expect(r('\\psset{xunit=2}\n\\pscircle(0,0){1}')).toBeCloseTo(2 * r('\\pscircle(0,0){1}'), 3);
+  });
+});
