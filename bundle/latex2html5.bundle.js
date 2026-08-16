@@ -2239,9 +2239,15 @@ function envForUnits(env, units) {
     const yunit = Number(units.yunit);
     const sameX = !isFinite(xunit) || xunit === env.xunit;
     const sameY = !isFinite(yunit) || yunit === env.yunit;
-    if (sameX && sameY)
+    const sameR = !isFinite(Number(units.runit)) || Number(units.runit) === env.runit;
+    if (sameX && sameY && sameR)
         return env;
     const scaled = { ...env };
+    // A radius follows runit, and needs no origin correction: it is a length,
+    // not a position.
+    const runit = Number(units.runit);
+    if (isFinite(runit) && runit > 0)
+        scaled.runit = runit;
     if (!sameX && xunit > 0) {
         const originX = (env.w - env.x1) * env.xunit;
         scaled.xunit = xunit;
@@ -2569,7 +2575,11 @@ class Parser {
                     node.settings = { ...this.style };
                     // Units are snapshotted separately: they are not style defaults to
                     // copy onto a shape, they change how its coordinates are computed.
-                    node.units = { xunit: this.settings.xunit, yunit: this.settings.yunit };
+                    node.units = {
+                        xunit: this.settings.xunit,
+                        yunit: this.settings.yunit,
+                        runit: this.settings.runit
+                    };
                     this.environment.commands.push(node);
                 }
                 else
@@ -2713,6 +2723,11 @@ class Parser {
                 }
                 if (typeof this.environment.env.yunit === 'undefined') {
                     this.environment.env.yunit = this.settings.yunit;
+                }
+                // A radius is scaled by runit, not by xunit, so it has to reach the
+                // env too or every circle falls back to the coordinate unit.
+                if (typeof this.environment.env.runit === 'undefined') {
+                    this.environment.env.runit = this.settings.runit;
                 }
                 // Renderers read the dialect for the handful of semantics it changes.
                 this.environment.env.dialect = this.dialect;
@@ -4905,6 +4920,21 @@ const settings_1 = __importDefault(require("@latex2js/settings"));
  * Parse a PSTricks linewidth value: a bare number is used as-is (SVG px),
  * a `pt` value is converted to px (1pt ≈ 1.333px).
  */
+/**
+ * The unit a radius is measured in.
+ *
+ * PSTricks scales a radius by `runit` and a coordinate by `xunit`/`yunit`, so
+ * `\psset{xunit=2}` stretches where a circle sits without changing how big it
+ * is. Reading the radius through xunit made `\pscircle(0,0){1}` twice the size
+ * the reference draws it. `runit` shares the same default, so this only parts
+ * company from the old reading once a document sets the axes independently.
+ */
+function radiusUnit(ctx) {
+    const r = Number(ctx && ctx.runit);
+    if (isFinite(r) && r > 0)
+        return r;
+    return Number(ctx && ctx.xunit);
+}
 function parseLinewidth(value) {
     const m = value.trim().match(/^([\d.]+)\s*(pt)?$/);
     if (!m)
@@ -5054,7 +5084,7 @@ exports.Functions = {
             cy: utils_1.Y.call(this, m[2]),
             // A radius is a magnitude. PSTricks draws the same circle for a negative
             // one; SVG rejects it outright, so the shape vanished with a console error.
-            r: Math.abs(this.xunit * Number(m[3])),
+            r: Math.abs(radiusUnit(this) * Number(m[3])),
             linecolor: 'black',
             linestyle: 'solid',
             fillstyle: 'none',
@@ -5258,7 +5288,7 @@ exports.Functions = {
             obj.cy = utils_1.Y.call(this, m[4]);
         }
         // choose x units over y, no reason...
-        obj.r = Math.abs(Number(m[5]) * this.xunit);
+        obj.r = Math.abs(Number(m[5]) * radiusUnit(this));
         obj.angleA = (Number(m[6]) * Math.PI) / 180;
         obj.angleB = (Number(m[7]) * Math.PI) / 180;
         Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
@@ -5603,7 +5633,7 @@ exports.Functions = {
             Object.assign(obj, (0, utils_1.parseOptions)(m[1]));
         obj.cx = utils_1.X.call(this, m[2]);
         obj.cy = utils_1.Y.call(this, m[3]);
-        obj.r = Math.abs(Number(m[4]) * this.xunit);
+        obj.r = Math.abs(Number(m[4]) * radiusUnit(this));
         obj.angleA = (Number(m[5]) * Math.PI) / 180;
         obj.angleB = (Number(m[6]) * Math.PI) / 180;
         Object.assign(obj, arcEndpoints.call(this, m[2], m[3], m[4], obj.angleA, obj.angleB));

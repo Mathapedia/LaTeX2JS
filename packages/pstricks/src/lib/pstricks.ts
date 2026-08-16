@@ -16,6 +16,21 @@ import Settings from '@latex2js/settings';
  * Parse a PSTricks linewidth value: a bare number is used as-is (SVG px),
  * a `pt` value is converted to px (1pt ≈ 1.333px).
  */
+/**
+ * The unit a radius is measured in.
+ *
+ * PSTricks scales a radius by `runit` and a coordinate by `xunit`/`yunit`, so
+ * `\psset{xunit=2}` stretches where a circle sits without changing how big it
+ * is. Reading the radius through xunit made `\pscircle(0,0){1}` twice the size
+ * the reference draws it. `runit` shares the same default, so this only parts
+ * company from the old reading once a document sets the axes independently.
+ */
+function radiusUnit(ctx: any): number {
+  const r = Number(ctx && ctx.runit);
+  if (isFinite(r) && r > 0) return r;
+  return Number(ctx && ctx.xunit);
+}
+
 function parseLinewidth(value: string): number {
   const m = value.trim().match(/^([\d.]+)\s*(pt)?$/);
   if (!m) return 2;
@@ -203,7 +218,7 @@ export const Functions = {
       cy: Y.call(this, m[2]),
       // A radius is a magnitude. PSTricks draws the same circle for a negative
       // one; SVG rejects it outright, so the shape vanished with a console error.
-      r: Math.abs(this.xunit * Number(m[3])),
+      r: Math.abs(radiusUnit(this) * Number(m[3])),
       linecolor: 'black',
       linestyle: 'solid',
       fillstyle: 'none',
@@ -398,7 +413,7 @@ export const Functions = {
       obj.cy = Y.call(this, m[4]);
     }
     // choose x units over y, no reason...
-    obj.r = Math.abs(Number(m[5]) * this.xunit);
+    obj.r = Math.abs(Number(m[5]) * radiusUnit(this));
     obj.angleA = (Number(m[6]) * Math.PI) / 180;
     obj.angleB = (Number(m[7]) * Math.PI) / 180;
     Object.assign(obj, arcEndpoints.call(this, m[3], m[4], m[5], obj.angleA, obj.angleB));
@@ -734,7 +749,7 @@ export const Functions = {
     if (m[1]) Object.assign(obj, parseOptions(m[1]));
     obj.cx = X.call(this, m[2]);
     obj.cy = Y.call(this, m[3]);
-    obj.r = Math.abs(Number(m[4]) * this.xunit);
+    obj.r = Math.abs(Number(m[4]) * radiusUnit(this));
     obj.angleA = (Number(m[5]) * Math.PI) / 180;
     obj.angleB = (Number(m[6]) * Math.PI) / 180;
     Object.assign(obj, arcEndpoints.call(this, m[2], m[3], m[4], obj.angleA, obj.angleB));

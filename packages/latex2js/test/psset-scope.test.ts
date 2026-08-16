@@ -242,8 +242,31 @@ describe('units declared inside a picture rescale what follows', () => {
     expect(scaled.cx - origin.cx).toBeCloseTo(2 * (plain.cx - origin.cx), 3);
   });
 
-  it('scales a radius with the unit too', () => {
+  it('leaves a radius alone when only the coordinate units change', () => {
+    // A radius is a dimension scaled by runit; xunit and yunit scale
+    // coordinates. Reading it through xunit made \pscircle(0,0){1} twice the
+    // size the reference draws it under \psset{xunit=2}.
     const r = (tex: string) => shapes(tex, 'pscircle')[0].r;
-    expect(r('\\psset{xunit=2}\n\\pscircle(0,0){1}')).toBeCloseTo(2 * r('\\pscircle(0,0){1}'), 3);
+    expect(r('\\psset{xunit=2,yunit=1}\n\\pscircle(0,0){1}')).toBeCloseTo(r('\\pscircle(0,0){1}'), 3);
+  });
+
+  it('scales a radius with runit', () => {
+    const r = (tex: string) => shapes(tex, 'pscircle')[0].r;
+    expect(r('\\psset{runit=2}\n\\pscircle(0,0){1}')).toBeCloseTo(2 * r('\\pscircle(0,0){1}'), 3);
+  });
+
+  it('scales a radius with unit, which sets all three', () => {
+    const r = (tex: string) => shapes(tex, 'pscircle')[0].r;
+    expect(r('\\psset{unit=2}\n\\pscircle(0,0){1}')).toBeCloseTo(2 * r('\\pscircle(0,0){1}'), 3);
+  });
+
+  it('scales an arc and a wedge radius the same way', () => {
+    const arcR = (tex: string) => shapes(tex, 'psarc')[0].r;
+    const wedgeR = (tex: string) => shapes(tex, 'pswedge')[0].r;
+    expect(arcR('\\psset{xunit=2}\n\\psarc(0,0){1}{0}{90}')).toBeCloseTo(arcR('\\psarc(0,0){1}{0}{90}'), 3);
+    expect(wedgeR('\\psset{xunit=2}\n\\pswedge(0,0){1}{0}{90}')).toBeCloseTo(
+      wedgeR('\\pswedge(0,0){1}{0}{90}'),
+      3
+    );
   });
 });

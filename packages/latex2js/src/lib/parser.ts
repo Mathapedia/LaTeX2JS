@@ -30,7 +30,7 @@ interface CommandNode {
   /** The \psset state where this command was written, attached during the walk. */
   settings?: any;
   /** The units in force there, which rescale the command's coordinates. */
-  units?: { xunit: number; yunit: number };
+  units?: { xunit: number; yunit: number; runit: number };
 }
 
 interface EnvNode {
@@ -135,9 +135,14 @@ function envForUnits(env: any, units: any): any {
   const yunit = Number(units.yunit);
   const sameX = !isFinite(xunit) || xunit === env.xunit;
   const sameY = !isFinite(yunit) || yunit === env.yunit;
-  if (sameX && sameY) return env;
+  const sameR = !isFinite(Number(units.runit)) || Number(units.runit) === env.runit;
+  if (sameX && sameY && sameR) return env;
 
   const scaled = { ...env };
+  // A radius follows runit, and needs no origin correction: it is a length,
+  // not a position.
+  const runit = Number(units.runit);
+  if (isFinite(runit) && runit > 0) scaled.runit = runit;
   if (!sameX && xunit > 0) {
     const originX = (env.w - env.x1) * env.xunit;
     scaled.xunit = xunit;
@@ -484,7 +489,11 @@ class Parser {
           node.settings = { ...this.style };
           // Units are snapshotted separately: they are not style defaults to
           // copy onto a shape, they change how its coordinates are computed.
-          node.units = { xunit: this.settings.xunit, yunit: this.settings.yunit };
+          node.units = {
+            xunit: this.settings.xunit,
+            yunit: this.settings.yunit,
+            runit: this.settings.runit
+          };
           this.environment.commands.push(node);
         }
         else this.pushMathLine(node.raw);
@@ -637,6 +646,11 @@ class Parser {
         }
         if (typeof this.environment.env.yunit === 'undefined') {
           this.environment.env.yunit = this.settings.yunit;
+        }
+        // A radius is scaled by runit, not by xunit, so it has to reach the
+        // env too or every circle falls back to the coordinate unit.
+        if (typeof this.environment.env.runit === 'undefined') {
+          this.environment.env.runit = this.settings.runit;
         }
         // Renderers read the dialect for the handful of semantics it changes.
         this.environment.env.dialect = this.dialect;
