@@ -240,6 +240,13 @@ class Parser {
   counters: Counters;
   /** Style defaults declared by \psset, kept apart from `settings`. */
   style: { [key: string]: any };
+  /**
+   * True after walking a command or environment node: neither consumes the
+   * newline that ends the source line it closes on, so the next empty Line
+   * node is that EOL — not a blank line — and must not become a paragraph
+   * break.
+   */
+  pendingEol = false;
 
   constructor(LaTeX2JS: any) {
     this.Ignore = LaTeX2JS.Ignore;
@@ -339,6 +346,7 @@ class Parser {
   walk(segments: Segment[]): void {
     this.objects = [];
     this.environment = { type: 'math', lines: [] };
+    this.pendingEol = false;
     segments.forEach((seg) => this.walkSegment(seg));
     this.newEnvironment('math');
   }
@@ -379,10 +387,12 @@ class Parser {
       const inPspicture = this.inPspicture();
       if (inPspicture) this.pushLine(env.begin.raw);
       else this.pushMathLine(env.begin.raw);
+      this.pendingEol = true;
       env.content.forEach((c) => this.walkContent(c));
       if (env.end) {
         if (inPspicture) this.pushLine(env.end.raw);
         else this.pushMathLine(env.end.raw);
+        this.pendingEol = true;
       } else {
         this.diagnose('warning', `unclosed \\begin{${name}}`, env.begin.loc);
       }
@@ -442,16 +452,25 @@ class Parser {
       if (node.kind === 'env') {
         flush();
         this.walkEnv(node);
+        // The env did not consume the newline that ends the line it closes
+        // on; the empty Line node carrying it is that EOL, not a paragraph
+        // break.
+        this.pendingEol = true;
         return;
       }
 
       // An empty Line is the newline itself: it closes the line being built,
       // or is a genuine paragraph break when there is nothing to close.
       if (node.kind === 'line' && node.parts.length === 0) {
+        if (this.pendingEol && !pending.length) {
+          this.pendingEol = false;
+          return;
+        }
         if (pending.length) flush();
         else this.pushBlankLine(false);
         return;
       }
+      this.pendingEol = false;
 
       const at = node.loc && node.loc.line;
       const open = pending.length ? pending[0].loc && pending[0].loc.line : at;
@@ -480,9 +499,16 @@ class Parser {
           node.parts.length > 0 && node.parts.every((p: any) => p.kind === 'comment');
         if (allComments) return;
         if (node.parts.length === 0) {
+          // A command or env does not consume the newline ending its line;
+          // the first empty Line after one is that EOL, not a blank line.
+          if (this.pendingEol) {
+            this.pendingEol = false;
+            return;
+          }
           this.pushBlankLine(inPspicture);
           return;
         }
+        this.pendingEol = false;
         const text = this.lineToString(node);
         if (inPspicture) this.pushLine(text);
         else this.pushMathLine(text);
@@ -508,11 +534,15 @@ class Parser {
           };
           this.environment.commands.push(node);
         }
-        else this.pushMathLine(node.raw);
+        else {
+          this.pushMathLine(node.raw);
+          this.pendingEol = true;
+        }
         break;
       }
       case 'env':
         this.walkEnv(node);
+        this.pendingEol = true;
         break;
       default:
         break;
