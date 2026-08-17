@@ -1,6 +1,6 @@
 {
   "name": "mathjaxjs",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "MathJax loading utilities",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",

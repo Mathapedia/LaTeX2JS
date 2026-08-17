@@ -1,6 +1,6 @@
 {
   "name": "@latex2js/playground",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "Live editing playground for LaTeX2JS — dev loop and future website sandbox",
