@@ -1,6 +1,6 @@
 {
   "name": "latex2vue",
-  "version": "4.0.5",
+  "version": "4.0.6",
   "description": "Vue components for LaTeX2JS",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
