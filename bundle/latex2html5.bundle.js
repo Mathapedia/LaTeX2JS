@@ -86,11 +86,16 @@ function render(_that) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = render;
+/**
+ * A block, not an inline span: the parser now emits real paragraphs, and a
+ * `<p>` inside a `<span>` is invalid nesting that a browser silently hoists
+ * out, taking the text with it.
+ */
 function render(that) {
-    const span = document.createElement('span');
-    span.className = 'math';
-    span.innerHTML = that.lines.join('\n');
-    return span;
+    const div = document.createElement('div');
+    div.className = 'math';
+    div.innerHTML = that.lines.join('\n');
+    return div;
 }
 
 },{}],5:[function(require,module,exports){
@@ -2684,39 +2689,62 @@ class Parser {
         return this.isIgnored('\\begin{' + name + '}');
     }
     /**
-     * A blank source line becomes a `<br>`, but a heading already carries its own
-     * margins, so a `<br>` next to one stacks two gaps where the author asked for
-     * one. Dropping the adjacent break leaves the heading's own spacing to do the
-     * work — and a run of breaks collapses to a single paragraph gap.
+     * Groups lines into paragraphs, the way TeX does.
+     *
+     * TeX has no concept of a blank line as vertical space: a run of them, of
+     * any length, is a single `\par`, and the gap between paragraphs comes from
+     * `\parskip` — a style, set once for the document, not something an author
+     * dials in by pressing return more times. Two blank lines and one are the
+     * same input.
+     *
+     * This used to emit one `<br>` per blank line, so the gap was however many
+     * times the author happened to hit return, and no stylesheet could adjust
+     * it. Paragraphs are real elements now and the spacing is theirs, which is
+     * both what TeX means and the only version a theme can restyle.
+     *
+     * Block elements are passed through untouched: a heading, list or picture is
+     * not part of a paragraph and brings its own margins.
+     *
+     * @param lines - the environment's rendered lines
+     * @returns the lines with runs of text wrapped in paragraphs
      */
-    collapseBreaks(lines) {
-        const isBlock = (l) => /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote)\b/i.test(l);
+    paragraphize(lines) {
+        const isBlock = (l) => /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
         const out = [];
+        let para = [];
+        const flush = () => {
+            if (!para.length)
+                return;
+            out.push('<p class="para">' + para.join('\n') + '</p>');
+            para = [];
+        };
         for (const line of lines) {
-            if (line !== '<br>') {
-                while (isBlock(line) && out[out.length - 1] === '<br>')
-                    out.pop();
+            // Any run of these ends the paragraph, and a run is one break however
+            // long it is — consecutive flushes after the first do nothing.
+            if (line === '<br>') {
+                flush();
+                continue;
+            }
+            if (isBlock(line)) {
+                flush();
                 out.push(line);
                 continue;
             }
-            if (!out.length)
-                continue;
-            if (isBlock(out[out.length - 1]))
-                continue;
-            if (out[out.length - 1] === '<br>')
-                continue;
-            out.push(line);
+            para.push(line);
         }
-        while (out[out.length - 1] === '<br>')
-            out.pop();
+        flush();
         return out;
     }
     newEnvironment(type) {
         if (this.environment &&
             (this.environment.lines.length || this.environment.type !== 'math')) {
             this.environment.settings = { ...this.settings };
-            if (!this.environment.type.match(/pspicture|verbatim/)) {
-                this.environment.lines = this.collapseBreaks(this.environment.lines);
+            // Only the plain text environment. A list keeps its \item lines for its
+            // own component to turn into <li>, verbatim is literal, a picture is
+            // commands, and a nicebox is a single inline run — wrapping any of those
+            // in paragraphs breaks the element that consumes them.
+            if (this.environment.type === 'math') {
+                this.environment.lines = this.paragraphize(this.environment.lines);
             }
             this.objects.push(this.environment);
         }

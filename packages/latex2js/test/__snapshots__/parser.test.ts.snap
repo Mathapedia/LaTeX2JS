@@ -4,7 +4,7 @@ exports[`Parser parse 1`] = `
 [
   {
     "lines": [
-      "Let's get to the point. The core of PSTricks is graphics!",
+      "<p class="para">Let's get to the point. The core of PSTricks is graphics!</p>",
     ],
     "settings": {
       "fillstyle": "none",
@@ -732,7 +732,7 @@ exports[`Parser parse 1`] = `
   },
   {
     "lines": [
-      "which can be produced using the following $\\TeX$:",
+      "<p class="para">which can be produced using the following $\\TeX$:</p>",
     ],
     "settings": {
       "fillstyle": "none",
@@ -805,7 +805,7 @@ exports[`Parser parser 1`] = `
 [
   {
     "lines": [
-      "Let's get to the point. The core of PSTricks is graphics!",
+      "<p class="para">Let's get to the point. The core of PSTricks is graphics!</p>",
     ],
     "settings": {
       "fillstyle": "none",
@@ -1533,7 +1533,7 @@ exports[`Parser parser 1`] = `
   },
   {
     "lines": [
-      "which can be produced using the following $\\TeX$:",
+      "<p class="para">which can be produced using the following $\\TeX$:</p>",
     ],
     "settings": {
       "fillstyle": "none",
