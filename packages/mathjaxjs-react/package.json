@@ -23,7 +23,7 @@
     "component"
   ],
   "scripts": {
-    "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
+    "copy": "copyfiles -f ../../LICENSE README.md dist && node ../../tools/write-dist-manifest.mjs",
     "clean": "rimraf dist",
     "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
     "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",

@@ -27,7 +27,7 @@
     "vue.js"
   ],
   "scripts": {
-    "copy": "copyfiles -f ../../LICENSE README.md package.json dist && copyfiles -u 1 src/latex.vue src/components/**/* dist/",
+    "copy": "copyfiles -f ../../LICENSE README.md dist && node ../../tools/write-dist-manifest.mjs && copyfiles -u 1 src/latex.vue src/components/**/* dist/",
     "clean": "rimraf dist",
     "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
     "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",

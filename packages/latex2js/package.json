@@ -29,7 +29,7 @@
     "math diagrams"
   ],
   "scripts": {
-    "copy": "copyfiles -f ../../LICENSE README.md package.json latex2js.css latex2js.mathapedia.css dist",
+    "copy": "copyfiles -f ../../LICENSE README.md latex2js.css latex2js.mathapedia.css dist && node ../../tools/write-dist-manifest.mjs",
     "copy:grammar": "mkdir -p dist/grammar dist/esm/grammar && cp src/grammar/parser.js src/grammar/parser.d.ts src/grammar/grammar.pegjs dist/grammar/ && cp src/grammar/parser.js dist/esm/grammar/",
     "clean": "rimraf dist",
     "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run copy:grammar && cp latex2js.css ../../bundle/latex2js.css",
