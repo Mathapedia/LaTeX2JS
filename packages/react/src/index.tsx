@@ -1,6 +1,7 @@
 import * as React from 'react';
 const { Component, createElement } = React;
 import LaTeX2HTML5 from 'latex2js';
+import macroStr from '@latex2js/macros';
 
 import nicebox from './components/nicebox';
 import enumerate from './components/enumerate';
@@ -78,6 +79,15 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
         }
       });
 
-    return <div className="latex-container" ref={this.containerRef}>{children}</div>;
+    return (
+      <div className="latex-container" ref={this.containerRef}>
+        {/* The default macro set (\R, \bydef, transform pairs, …) has to be in
+            the typeset container ahead of the content so MathJax's newcommand
+            package defines them before any math that uses them — the same
+            hidden-div approach the html5 and vue renderers use. */}
+        <div className="latex-macros" style={{ display: 'none' }}>{macroStr}</div>
+        {children}
+      </div>
+    );
   }
 }

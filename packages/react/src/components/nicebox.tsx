@@ -1,18 +1,19 @@
 import React from 'react';
 
 interface NiceboxProps {
-  children?: React.ReactNode;
+  lines?: string[];
   [key: string]: any;
 }
 
-export default ({ children }: NiceboxProps) => (
-  <div className="nicebox" style={{ 
-    border: '1px solid #ccc', 
-    padding: '10px', 
-    margin: '10px 0',
-    borderRadius: '4px',
-    backgroundColor: '#f9f9f9'
-  }}>
-    {children}
-  </div>
+/**
+ * The parser hands nicebox elements their content as `lines`, the same shape
+ * the html5 renderer consumes. A block element, not a span: the lines can hold
+ * real paragraphs. Visual styling comes from the .nicebox rules in
+ * latex2js.css.
+ */
+export default ({ lines = [] }: NiceboxProps) => (
+  <div
+    className="math nicebox"
+    dangerouslySetInnerHTML={{ __html: lines.join('\n') }}
+  />
 );

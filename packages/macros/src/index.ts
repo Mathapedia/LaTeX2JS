@@ -73,9 +73,9 @@ export default String.raw`
   \newcommand{\I}{\mathbb{I}}
   \newcommand{\Th}[1]{\mathop\mathrm{Th(#1)}}
   \newcommand{\intersect}{\cap}
-  \newcommand{\\union}{\cup}
+  \newcommand{\union}{\cup}
   \newcommand{\intersectop}{\bigcap}
-  \newcommand{\\unionop}{\bigcup}
+  \newcommand{\unionop}{\bigcup}
   \newcommand{\setdiff}{\backslash}
   \newcommand{\iso}{\cong}
   \newcommand{\aut}[1]{\mathop{\mathrm{Aut(#1)}}}
@@ -110,9 +110,9 @@ export default String.raw`
   \newcommand{\rmk}[1]{\begin{remark} #1 \end{remark}}
   \newcommand{\defn}[1]{\begin{definition} #1 \end{definition}}
 
-  \newcommand{\ifff}{\LeftRightArrow}
+  \newcommand{\ifff}{\Leftrightarrow}
 
-  <!-- For the set of reals and integers -->
+  % For the set of reals and integers
   \newcommand{\rr}{\R}
   \newcommand{\reals}{\R}
   \newcommand{\ii}{\Z}
@@ -120,19 +120,10 @@ export default String.raw`
   \newcommand{\nn}{\N}
   \newcommand{\nats}{\N}
 
-  <!-- For terms being indexed.
-  Puts them in standard font face and creates an index entry.
-  arg: The term being defined.
-  \newcommand{\pointer}[1]{#1\index{#1}} -->
-
-  <!-- For bold terms to be index, but defined elsewhere
-  Puts them in bold face and creates an index entry.
-  arg: The term being defined. -->
+  % For bold terms to be indexed, but defined elsewhere.
   \newcommand{\strong}[1]{\textbf{#1}}
 
-  <!-- For set names.
-  Puts them in italics. In math mode, yields decent spacing.
-  arg: The name of the set. -->
+  % For set names: italics; in math mode, yields decent spacing.
   \newcommand{\set}[1]{\textit{#1}}
 
   $$

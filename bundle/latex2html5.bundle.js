@@ -2710,8 +2710,16 @@ class Parser {
      */
     paragraphize(lines) {
         const isBlock = (l) => /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
+        // Display-math environments MathJax recognizes in running text. One is a
+        // single unit however many lines it spans: splitting it across paragraph
+        // elements breaks the begin/end into separate text nodes, and MathJax can
+        // only match them within one node — the environment then renders as raw
+        // source.
+        const mathEnvBegin = /\\begin\{(align\*?|alignat\*?|equation\*?|eqnarray\*?|gather\*?|multline\*?)\}/;
         const out = [];
         let para = [];
+        let mathEnv = null;
+        let mathEnvName = '';
         const flush = () => {
             if (!para.length)
                 return;
@@ -2719,6 +2727,24 @@ class Parser {
             para = [];
         };
         for (const line of lines) {
+            if (mathEnv) {
+                // Blank lines cannot occur inside a TeX math environment; dropping
+                // them keeps the source contiguous for MathJax.
+                if (line !== '<br>')
+                    mathEnv.push(line);
+                if (line.includes('\\end{' + mathEnvName + '}')) {
+                    out.push(mathEnv.join('\n'));
+                    mathEnv = null;
+                }
+                continue;
+            }
+            const begin = line.match(mathEnvBegin);
+            if (begin && !line.includes('\\end{' + begin[1] + '}')) {
+                flush();
+                mathEnvName = begin[1];
+                mathEnv = [line];
+                continue;
+            }
             // Any run of these ends the paragraph, and a run is one break however
             // long it is — consecutive flushes after the first do nothing.
             if (line === '<br>') {
@@ -2732,6 +2758,10 @@ class Parser {
             }
             para.push(line);
         }
+        // An unclosed environment is author error; emit what we have rather than
+        // dropping it.
+        if (mathEnv)
+            out.push(mathEnv.join('\n'));
         flush();
         return out;
     }
@@ -3309,9 +3339,9 @@ exports.default = String.raw `
   \newcommand{\I}{\mathbb{I}}
   \newcommand{\Th}[1]{\mathop\mathrm{Th(#1)}}
   \newcommand{\intersect}{\cap}
-  \newcommand{\\union}{\cup}
+  \newcommand{\union}{\cup}
   \newcommand{\intersectop}{\bigcap}
-  \newcommand{\\unionop}{\bigcup}
+  \newcommand{\unionop}{\bigcup}
   \newcommand{\setdiff}{\backslash}
   \newcommand{\iso}{\cong}
   \newcommand{\aut}[1]{\mathop{\mathrm{Aut(#1)}}}
@@ -3346,9 +3376,9 @@ exports.default = String.raw `
   \newcommand{\rmk}[1]{\begin{remark} #1 \end{remark}}
   \newcommand{\defn}[1]{\begin{definition} #1 \end{definition}}
 
-  \newcommand{\ifff}{\LeftRightArrow}
+  \newcommand{\ifff}{\Leftrightarrow}
 
-  <!-- For the set of reals and integers -->
+  % For the set of reals and integers
   \newcommand{\rr}{\R}
   \newcommand{\reals}{\R}
   \newcommand{\ii}{\Z}
@@ -3356,19 +3386,10 @@ exports.default = String.raw `
   \newcommand{\nn}{\N}
   \newcommand{\nats}{\N}
 
-  <!-- For terms being indexed.
-  Puts them in standard font face and creates an index entry.
-  arg: The term being defined.
-  \newcommand{\pointer}[1]{#1\index{#1}} -->
-
-  <!-- For bold terms to be index, but defined elsewhere
-  Puts them in bold face and creates an index entry.
-  arg: The term being defined. -->
+  % For bold terms to be indexed, but defined elsewhere.
   \newcommand{\strong}[1]{\textbf{#1}}
 
-  <!-- For set names.
-  Puts them in italics. In math mode, yields decent spacing.
-  arg: The name of the set. -->
+  % For set names: italics; in math mode, yields decent spacing.
   \newcommand{\set}[1]{\textit{#1}}
 
   $$
@@ -3439,6 +3460,19 @@ function deepMerge(base, override) {
     return out;
 }
 let mathJaxInstance = null;
+/**
+ * Callers that arrive while the script is still loading. Invoking their
+ * callbacks immediately was a real bug: a component would call
+ * `typesetPromise` before it existed, silently typeset nothing, and its math
+ * stayed raw. They wait here until the ready hook (or a load failure) drains
+ * them.
+ */
+let pendingCallbacks = [];
+const drainPendingCallbacks = () => {
+    const callbacks = pendingCallbacks;
+    pendingCallbacks = [];
+    callbacks.forEach((cb) => cb());
+};
 const getMathJax = () => mathJaxInstance || globalThis.MathJax;
 exports.getMathJax = getMathJax;
 const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG) => {
@@ -3458,9 +3492,11 @@ const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG
         return;
     }
     // Someone has already asked for the script; wait for that one rather than
-    // adding a second copy.
+    // adding a second copy. Waiting means queuing until the ready hook fires —
+    // not calling back now, which would hand the caller a MathJax that cannot
+    // typeset yet.
     if (typeof document !== 'undefined' && document.getElementById('MathJax-script')) {
-        callback();
+        pendingCallbacks.push(callback);
         return;
     }
     // scriptURL is a loader concern, not a MathJax one: keep it out of the
@@ -3486,6 +3522,7 @@ const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG
                         merged.startup.ready();
                     }
                     callback();
+                    drainPendingCallbacks();
                 }
             }
         };
@@ -3498,7 +3535,9 @@ const loadMathJax = async (callback = () => { }, config = exports.DEFAULT_CONFIG
         };
         script.onerror = () => {
             console.error('Failed to load MathJax v3 from CDN');
+            // Waiters must not hang forever on a script that will never arrive.
             callback();
+            drainPendingCallbacks();
         };
         document.head.appendChild(script);
     }

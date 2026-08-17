@@ -88,6 +88,21 @@ function deepMerge(base: any, override: any): any {
 
 let mathJaxInstance: any = null;
 
+/**
+ * Callers that arrive while the script is still loading. Invoking their
+ * callbacks immediately was a real bug: a component would call
+ * `typesetPromise` before it existed, silently typeset nothing, and its math
+ * stayed raw. They wait here until the ready hook (or a load failure) drains
+ * them.
+ */
+let pendingCallbacks: Array<() => void> = [];
+
+const drainPendingCallbacks = () => {
+  const callbacks = pendingCallbacks;
+  pendingCallbacks = [];
+  callbacks.forEach((cb) => cb());
+};
+
 export const getMathJax = () => mathJaxInstance || (globalThis as any).MathJax;
 
 export const loadMathJax = async (
@@ -112,9 +127,11 @@ export const loadMathJax = async (
   }
 
   // Someone has already asked for the script; wait for that one rather than
-  // adding a second copy.
+  // adding a second copy. Waiting means queuing until the ready hook fires —
+  // not calling back now, which would hand the caller a MathJax that cannot
+  // typeset yet.
   if (typeof document !== 'undefined' && document.getElementById('MathJax-script')) {
-    callback();
+    pendingCallbacks.push(callback);
     return;
   }
 
@@ -146,6 +163,7 @@ export const loadMathJax = async (
             merged.startup.ready();
           }
           callback();
+          drainPendingCallbacks();
         }
       }
     };
@@ -159,7 +177,9 @@ export const loadMathJax = async (
     };
     script.onerror = () => {
       console.error('Failed to load MathJax v3 from CDN');
+      // Waiters must not hang forever on a script that will never arrive.
       callback();
+      drainPendingCallbacks();
     };
 
     document.head.appendChild(script);

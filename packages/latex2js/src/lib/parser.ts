@@ -612,8 +612,16 @@ class Parser {
   paragraphize(lines: string[]): string[] {
     const isBlock = (l: string) =>
       /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
+    // Display-math environments MathJax recognizes in running text. One is a
+    // single unit however many lines it spans: splitting it across paragraph
+    // elements breaks the begin/end into separate text nodes, and MathJax can
+    // only match them within one node — the environment then renders as raw
+    // source.
+    const mathEnvBegin = /\\begin\{(align\*?|alignat\*?|equation\*?|eqnarray\*?|gather\*?|multline\*?)\}/;
     const out: string[] = [];
     let para: string[] = [];
+    let mathEnv: string[] | null = null;
+    let mathEnvName = '';
 
     const flush = (): void => {
       if (!para.length) return;
@@ -622,6 +630,23 @@ class Parser {
     };
 
     for (const line of lines) {
+      if (mathEnv) {
+        // Blank lines cannot occur inside a TeX math environment; dropping
+        // them keeps the source contiguous for MathJax.
+        if (line !== '<br>') mathEnv.push(line);
+        if (line.includes('\\end{' + mathEnvName + '}')) {
+          out.push(mathEnv.join('\n'));
+          mathEnv = null;
+        }
+        continue;
+      }
+      const begin = line.match(mathEnvBegin);
+      if (begin && !line.includes('\\end{' + begin[1] + '}')) {
+        flush();
+        mathEnvName = begin[1];
+        mathEnv = [line];
+        continue;
+      }
       // Any run of these ends the paragraph, and a run is one break however
       // long it is — consecutive flushes after the first do nothing.
       if (line === '<br>') {
@@ -635,6 +660,9 @@ class Parser {
       }
       para.push(line);
     }
+    // An unclosed environment is author error; emit what we have rather than
+    // dropping it.
+    if (mathEnv) out.push(mathEnv.join('\n'));
     flush();
     return out;
   }
