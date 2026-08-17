@@ -453,3 +453,66 @@ a &= b
     expect(text).toContain('\\end{align}');
   });
 });
+
+/**
+ * TeX has no concept of a blank line as vertical space. A run of them, of any
+ * length, is a single `\par`, and the gap between paragraphs comes from
+ * `\parskip` — a document style, not something an author dials in by pressing
+ * return more times.
+ *
+ * This used to emit one `<br>` per blank line, so the gap was however many
+ * times the author happened to hit return and no stylesheet could adjust it.
+ */
+describe('blank lines separate paragraphs, as they do in TeX', () => {
+  const lines = (tex: string): string[] => {
+    const l = new LaTeX2JS();
+    const parsed: any = l.parse(tex);
+    return parsed.flatMap((o: any) => o.lines || []);
+  };
+  const paras = (out: string[]) => out.filter((x) => /^<p class="para">/.test(x));
+
+  it('makes two paragraphs out of text either side of a blank line', () => {
+    const out = lines('First.\n\nSecond.\n');
+    expect(paras(out)).toHaveLength(2);
+    expect(out.join('')).toContain('First.');
+    expect(out.join('')).toContain('Second.');
+  });
+
+  it('treats any number of blank lines as one break', () => {
+    // The property that makes this TeX rather than a text editor: pressing
+    // return more times does not make a bigger gap.
+    const one = lines('First.\n\nSecond.\n');
+    const two = lines('First.\n\n\nSecond.\n');
+    const many = lines('First.\n\n\n\n\n\nSecond.\n');
+    expect(two).toEqual(one);
+    expect(many).toEqual(one);
+  });
+
+  it('emits no break elements for blank lines at all', () => {
+    // The gap is the paragraph's margin now, which a stylesheet can reach.
+    expect(lines('First.\n\n\nSecond.\n').filter((x) => x === '<br>')).toHaveLength(0);
+  });
+
+  it('keeps consecutive lines inside one paragraph', () => {
+    const out = lines('One line.\nStill the same paragraph.\n\nA new one.\n');
+    const p = paras(out);
+    expect(p).toHaveLength(2);
+    expect(p[0]).toContain('One line.');
+    expect(p[0]).toContain('Still the same paragraph.');
+  });
+
+  it('does not wrap a heading in a paragraph', () => {
+    // A heading is a block with its own margins, not part of a paragraph.
+    const out = lines('Text.\n\n\\section{Heading}\n\nMore text.\n');
+    const heading = out.find((x) => /<h[1-6]/.test(x));
+    expect(heading).toBeDefined();
+    expect(heading).not.toMatch(/^<p class="para">/);
+    expect(paras(out)).toHaveLength(2);
+  });
+
+  it('leaves no empty paragraph for a document that ends in blank lines', () => {
+    const out = lines('Only line.\n\n\n');
+    expect(paras(out)).toHaveLength(1);
+    expect(out.join('')).not.toContain('<p class="para"></p>');
+  });
+});

@@ -36,7 +36,11 @@ describe('list items stay on one line', () => {
   });
 
   it('matches how the same text renders outside a list', () => {
-    expect(lines('Some \\textbf{bold} text here\n')).toEqual(['Some <b>bold</b> text here']);
+    // Outside a list the text is a paragraph, so the transform is compared
+    // through that wrapper rather than against a bare line.
+    expect(lines('Some \\textbf{bold} text here\n')).toEqual([
+      '<p class="para">Some <b>bold</b> text here</p>',
+    ]);
   });
 
   it('keeps a blank line between items as a paragraph break', () => {

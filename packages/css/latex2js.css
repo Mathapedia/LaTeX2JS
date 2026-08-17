@@ -7,9 +7,19 @@ svg {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
+/*
+ * The gap TeX calls \parskip: the space between paragraphs, and between a
+ * paragraph and a figure. One value, set once, because that is what it is in
+ * TeX — a document-level style, not something an author adjusts by pressing
+ * return more times.
+ */
+:root {
+  --latex2js-parskip: 1.6em;
+}
+
 .pspicture {
   position: relative;
-  margin: auto;
+  margin: var(--latex2js-parskip) auto;
 }
 
 .enumerate {
@@ -130,4 +140,20 @@ h4.theorem-head::after {
 
 pre {
   overflow: auto;
+}
+/*
+ * Paragraph spacing. A run of blank lines is one \par however long it is, so
+ * the gap belongs to the document rather than to how many times the author hit
+ * return. Setting it here is what makes it adjustable at all: it used to be
+ * one <br> per blank line, which no stylesheet could reach.
+ *
+ * Bottom margin only, so the value is the gap. Adjacent margins would collapse
+ * to the larger of the two and the arithmetic would stop being obvious.
+ */
+.math > p.para {
+  margin: 0 0 var(--latex2js-parskip);
+}
+
+.math > p.para:last-child {
+  margin-bottom: 0;
 }

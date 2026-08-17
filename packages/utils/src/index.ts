@@ -80,6 +80,77 @@ const BASE_COLORS: { [name: string]: [number, number, number] } = {
   violet: [128, 0, 128], olive: [128, 128, 0],
 };
 
+
+/**
+ * Colours the document defined for itself with `\definecolor`.
+ *
+ * Kept apart from the xcolor base set so a document can shadow a built-in name
+ * — which is how a page written against browser colours can keep the exact
+ * shade it wants while staying valid LaTeX, instead of relying on a name
+ * xcolor never defined.
+ */
+const DEFINED_COLORS: { [name: string]: [number, number, number] } = {};
+
+/** Clears the document-defined colours. Called once per parse. */
+export const resetDefinedColors = function (): void {
+  for (const name of Object.keys(DEFINED_COLORS)) delete DEFINED_COLORS[name];
+};
+
+const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+
+/**
+ * Records a `\definecolor{name}{model}{spec}`.
+ *
+ * The models are xcolor's: `rgb` and `cmyk` take fractions, `RGB` takes
+ * 0-255, `gray` a single fraction, and `HTML` six hex digits.
+ *
+ * @param name - the colour's name
+ * @param model - the colour model the spec is written in
+ * @param spec - the model's components, comma separated
+ * @returns true when the definition was understood
+ */
+export const defineColor = function (name: string, model: string, spec: string): boolean {
+  const key = String(name ?? '').trim().toLowerCase();
+  if (!key) return false;
+  const parts = String(spec ?? '').split(',').map((p) => Number(p.trim()));
+  const m = String(model ?? '').trim();
+
+  if (m === 'rgb' && parts.length >= 3 && parts.every(isFinite)) {
+    DEFINED_COLORS[key] = [clamp255(parts[0] * 255), clamp255(parts[1] * 255), clamp255(parts[2] * 255)];
+    return true;
+  }
+  if (m === 'RGB' && parts.length >= 3 && parts.every(isFinite)) {
+    DEFINED_COLORS[key] = [clamp255(parts[0]), clamp255(parts[1]), clamp255(parts[2])];
+    return true;
+  }
+  if (m === 'gray' && parts.length >= 1 && isFinite(parts[0])) {
+    const g = clamp255(parts[0] * 255);
+    DEFINED_COLORS[key] = [g, g, g];
+    return true;
+  }
+  if (m === 'cmyk' && parts.length >= 4 && parts.every(isFinite)) {
+    const [c, y2, y3, k] = parts;
+    DEFINED_COLORS[key] = [
+      clamp255(255 * (1 - Math.min(1, c + k))),
+      clamp255(255 * (1 - Math.min(1, y2 + k))),
+      clamp255(255 * (1 - Math.min(1, y3 + k))),
+    ];
+    return true;
+  }
+  if (m === 'HTML') {
+    const hex = String(spec ?? '').trim().replace(/^#/, '');
+    if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+      DEFINED_COLORS[key] = [
+        parseInt(hex.slice(0, 2), 16),
+        parseInt(hex.slice(2, 4), 16),
+        parseInt(hex.slice(4, 6), 16),
+      ];
+      return true;
+    }
+  }
+  return false;
+};
+
 /**
  * Resolves an xcolor tint expression to a CSS colour.
  *
@@ -94,8 +165,10 @@ const BASE_COLORS: { [name: string]: [number, number, number] } = {
 export const resolveColor = function (value: string): string {
   const parts = String(value).split('!').map((p) => p.trim());
 
+  // A document's own \definecolor wins over the built-in of the same name,
+  // as it does in xcolor.
   const rgb = (name: string): [number, number, number] | null =>
-    BASE_COLORS[name.toLowerCase()] ?? null;
+    DEFINED_COLORS[name.toLowerCase()] ?? BASE_COLORS[name.toLowerCase()] ?? null;
 
   // A plain name resolves too. Nine of xcolor's base colours name a different
   // colour in CSS, so handing `green` straight to the browser drew the dark
