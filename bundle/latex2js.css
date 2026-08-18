@@ -66,6 +66,16 @@ h4.theorem-head::after {
   content: '.';
 }
 
+/*
+ * The statement runs in after the label, the way amsthm sets it: "Claim 3.
+ * The difference of..." is one sentence, not a heading and a paragraph. Only
+ * the first paragraph runs in; display math inside it still breaks onto its
+ * own line, which is also what LaTeX does.
+ */
+.theorem-env > h4.theorem-head + p.para {
+  display: inline;
+}
+
 .theorem-env--theorem,
 .theorem-env--lemma,
 .theorem-env--corollary,
