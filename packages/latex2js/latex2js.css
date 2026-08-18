@@ -7,9 +7,19 @@ svg {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
+/*
+ * The gap TeX calls \parskip: the space between paragraphs, and between a
+ * paragraph and a figure. One value, set once, because that is what it is in
+ * TeX — a document-level style, not something an author adjusts by pressing
+ * return more times.
+ */
+:root {
+  --latex2js-parskip: 1.6em;
+}
+
 .pspicture {
   position: relative;
-  margin: auto;
+  margin: var(--latex2js-parskip) auto;
 }
 
 .enumerate {
@@ -25,6 +35,63 @@ p.quotation {
   padding: 0 0 0 15px;
   margin: 0 0 20px;
   font-size: 10pt;
+}
+
+/* End-of-proof tombstone, set flush right as amsthm places it. */
+span.qed {
+  display: block;
+  text-align: right;
+}
+
+/*
+ * Theorem-like environments, set the way LaTeX sets them: the label runs into
+ * the statement as part of the sentence rather than sitting above it as a
+ * heading, and the body of a theorem is italic while a remark or a proof is
+ * not. The markup keeps a real heading element, so the structure survives for
+ * anything reading the document rather than looking at it.
+ */
+.theorem-env {
+  margin: 1em 0;
+}
+
+h4.theorem-head {
+  display: inline;
+  margin: 0;
+  font-size: inherit;
+  font-style: normal;
+  font-weight: bold;
+}
+
+h4.theorem-head::after {
+  content: '.';
+}
+
+.theorem-env--theorem,
+.theorem-env--lemma,
+.theorem-env--corollary,
+.theorem-env--proposition,
+.theorem-env--definition,
+.theorem-env--axiom,
+.theorem-env--claim {
+  font-style: italic;
+}
+
+/* amsthm leaves these upright even though they are numbered alongside. */
+.theorem-env--remark,
+.theorem-env--note,
+.theorem-env--example,
+.theorem-env--exercise,
+.theorem-env--question,
+.theorem-env--problem,
+.theorem-env--solution,
+.theorem-env--proof {
+  font-style: normal;
+}
+
+/* The proof label is italic where a theorem label is bold. */
+.theorem-env--proof > h4.theorem-head {
+  font-weight: normal;
+  font-style: italic;
 }
 
 .nicebox {
@@ -59,6 +126,7 @@ p.quotation {
     padding-right: 20px;
     padding-left: 20px;
   }
+
   .latex-container {
     width: auto;
   }
@@ -72,4 +140,20 @@ p.quotation {
 
 pre {
   overflow: auto;
+}
+/*
+ * Paragraph spacing. A run of blank lines is one \par however long it is, so
+ * the gap belongs to the document rather than to how many times the author hit
+ * return. Setting it here is what makes it adjustable at all: it used to be
+ * one <br> per blank line, which no stylesheet could reach.
+ *
+ * Bottom margin only, so the value is the gap. Adjacent margins would collapse
+ * to the larger of the two and the arithmetic would stop being obvious.
+ */
+.math > p.para {
+  margin: 0 0 var(--latex2js-parskip);
+}
+
+.math > p.para:last-child {
+  margin-bottom: 0;
 }

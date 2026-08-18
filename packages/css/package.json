@@ -19,6 +19,7 @@
     "css"
   ],
   "scripts": {
+    "build": "pnpm run copy",
     "copy": "copyfiles latex2js.css latex2js.mathapedia.css ../latex2js"
   },
   "bugs": {

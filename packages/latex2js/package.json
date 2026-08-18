@@ -45,6 +45,7 @@
     "@latex2js/utils": "workspace:^"
   },
   "devDependencies": {
+    "@mathapedia/css": "workspace:^",
     "peggy": "^5.1.0"
   },
   "bugs": {
