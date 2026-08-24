@@ -29,11 +29,11 @@
     "math diagrams"
   ],
   "scripts": {
-    "copy": "copyfiles -f ../../LICENSE README.md latex2js.css latex2js.mathapedia.css dist && node ../../tools/write-dist-manifest.mjs",
     "copy:grammar": "mkdir -p dist/grammar dist/esm/grammar && cp src/grammar/parser.js src/grammar/parser.d.ts src/grammar/grammar.pegjs dist/grammar/ && cp src/grammar/parser.js dist/esm/grammar/",
-    "clean": "rimraf dist",
-    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run copy:grammar && cp latex2js.css ../../bundle/latex2js.css",
-    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy && pnpm run copy:grammar",
+    "clean": "makage clean",
+    "prepack": "pnpm run build && makage check-publish",
+    "build": "makage clean && makage build-ts && makage assets && makage copy latex2js.css latex2js.mathapedia.css dist --flat && pnpm run copy:grammar && cp latex2js.css ../../bundle/latex2js.css",
+    "build:dev": "makage clean && makage build-ts --dev && makage assets && makage copy latex2js.css latex2js.mathapedia.css dist --flat && pnpm run copy:grammar",
     "grammar": "peggy -o src/grammar/parser.js --dts src/grammar/grammar.pegjs",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -45,6 +45,7 @@
     "@latex2js/utils": "workspace:^"
   },
   "devDependencies": {
+    "makage": "^0.6.0",
     "@mathapedia/css": "workspace:^",
     "peggy": "^5.1.0"
   },

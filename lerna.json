@@ -1,5 +1,20 @@
 {
   "$schema": "node_modules/lerna/schemas/lerna-schema.json",
   "version": "independent",
-  "npmClient": "pnpm"
+  "npmClient": "pnpm",
+  "registry": "https://registry.npmjs.org",
+  "packages": [
+    "packages/*",
+    "playground"
+  ],
+  "command": {
+    "version": {
+      "syncWorkspaceLock": true
+    },
+    "publish": {
+      "allowBranch": "main",
+      "message": "chore(release): publish",
+      "conventionalCommits": true
+    }
+  }
 }
