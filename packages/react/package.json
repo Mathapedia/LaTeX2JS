@@ -26,10 +26,10 @@
     "react"
   ],
   "scripts": {
-    "copy": "copyfiles -f ../../LICENSE README.md dist && node ../../tools/write-dist-manifest.mjs",
-    "clean": "rimraf dist",
-    "build": "pnpm run clean && tsc && tsc -p tsconfig.esm.json && pnpm run copy",
-    "build:dev": "pnpm run clean && tsc --declarationMap && tsc -p tsconfig.esm.json && pnpm run copy",
+    "clean": "makage clean",
+    "prepack": "pnpm run build",
+    "build": "makage build",
+    "build:dev": "makage build --dev",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand"
@@ -39,7 +39,8 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0"
+    "@types/react-dom": "^18.2.0",
+    "makage": "^0.6.0"
   },
   "dependencies": {
     "@latex2js/macros": "workspace:^",
