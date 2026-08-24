@@ -1,6 +1,6 @@
 {
   "name": "latex2js",
-  "version": "4.2.0",
+  "version": "4.3.0",
   "description": "LaTeX and PSTricks rendering & components for the Web",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "homepage": "https://github.com/Mathapedia/LaTeX2JS",
@@ -45,8 +45,8 @@
     "@latex2js/utils": "workspace:^"
   },
   "devDependencies": {
-    "makage": "^0.6.0",
     "@mathapedia/css": "workspace:^",
+    "makage": "^0.6.0",
     "peggy": "^5.1.0"
   },
   "bugs": {

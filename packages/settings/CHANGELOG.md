@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.2.0](https://github.com/Mathapedia/LaTeX2JS/compare/@latex2js/settings@4.1.0...@latex2js/settings@4.2.0) (2026-08-24)
+
+**Note:** Version bump only for package @latex2js/settings
+
 # 3.0.0 (2025-07-05)
 
 **Note:** Version bump only for package @latex2js/settings

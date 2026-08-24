@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.3.0](https://github.com/Mathapedia/LaTeX2JS/compare/latex2vue@4.2.0...latex2vue@4.3.0) (2026-08-24)
+
+**Note:** Version bump only for package latex2vue
+
 # 3.0.0 (2025-07-05)
 
 **Note:** Version bump only for package latex2vue
