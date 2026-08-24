@@ -151,6 +151,14 @@ h4.theorem-head::after {
 pre {
   overflow: auto;
 }
+
+/* Verbatim blocks render as plain, page-coloured code — no gray box, padding,
+   or rounding. Consumers who want a code-block look override this rule. */
+pre.verbatim {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
 /*
  * Paragraph spacing. A run of blank lines is one \par however long it is, so
  * the gap belongs to the document rather than to how many times the author hit
