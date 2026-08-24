@@ -11,7 +11,9 @@
     "dev": "pnpm --filter @latex2js/playground dev",
     "dev:build": "pnpm --filter @latex2js/playground build",
     "e2e": "pnpm --filter @latex2js/playground e2e",
-    "test": "lerna run test -- --passWithNoTests"
+    "test": "lerna run test -- --passWithNoTests",
+    "bundle": "node tools/build-bundle.mjs",
+    "bundle:watch": "node tools/build-bundle.mjs --watch"
   },
   "devDependencies": {
     "copyfiles": "^2.4.1",
@@ -24,7 +26,8 @@
     "jest-environment-jsdom": "^29.7.0",
     "lerna": "^8.2.3",
     "typescript": "^5.2.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "esbuild": "^0.28.0"
   },
   "workspaces": [
     "packages/*",
