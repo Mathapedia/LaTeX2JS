@@ -27,7 +27,7 @@ for (const name of readdirSync(packagesDir)) {
     );
   }
 
-  for (const field of ['main', 'types']) {
+  for (const field of ['main', 'module', 'types']) {
     const target = distJson[field];
     const resolvedTarget = typeof target === 'string' ? resolve(distDir, target) : '';
     if (

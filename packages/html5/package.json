@@ -18,9 +18,9 @@
   },
   "scripts": {
     "clean": "makage clean",
-    "prepack": "pnpm run build",
-    "build": "makage build && node ../../tools/build-bundle.mjs --dist",
-    "build:dev": "makage build --dev && node ../../tools/build-bundle.mjs --dist",
+    "prepack": "pnpm run build && makage check-publish",
+    "build": "makage clean && makage build-ts && makage assets && node ../../tools/build-bundle.mjs --dist",
+    "build:dev": "makage clean && makage build-ts --dev && makage assets && node ../../tools/build-bundle.mjs --dist",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand"

@@ -20,7 +20,6 @@
   ],
   "scripts": {
     "build": "pnpm run copy",
-    "prepack": "pnpm run build",
     "copy": "makage copy latex2js.css latex2js.mathapedia.css ../latex2js"
   },
   "devDependencies": {

@@ -28,9 +28,9 @@
   ],
   "scripts": {
     "clean": "makage clean",
-    "prepack": "pnpm run build",
-    "build": "makage build && mkdir -p dist/components && cp src/latex.vue dist/latex.vue && cp src/components/* dist/components/",
-    "build:dev": "makage build --dev && mkdir -p dist/components && cp src/latex.vue dist/latex.vue && cp src/components/* dist/components/",
+    "prepack": "pnpm run build && makage check-publish",
+    "build": "makage clean && makage build-ts && makage assets && mkdir -p dist/components && cp src/latex.vue dist/latex.vue && cp src/components/* dist/components/",
+    "build:dev": "makage clean && makage build-ts --dev && makage assets && mkdir -p dist/components && cp src/latex.vue dist/latex.vue && cp src/components/* dist/components/",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand"
