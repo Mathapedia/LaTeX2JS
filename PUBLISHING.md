@@ -16,7 +16,9 @@ Notes:
   the current package version. No manual build step is needed.
 - A plain local build leaves `workspace:` dependency specs in `dist` because
   Lerna resolves those specs in the package-root manifest immediately before
-  packing. The packed manifest therefore contains concrete versions.
+  packing. The packed manifest therefore contains concrete versions, and
+  `prepack` runs `makage check-publish` after the build to fail the publish if
+  an unresolved `workspace:` spec would ever reach a tarball.
 - npm permanently blocks reusing a version number that was unpublished. If a
   release goes out broken, bump and publish a new patch; do not unpublish and
   retry the same version.
