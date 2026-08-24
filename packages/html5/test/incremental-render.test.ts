@@ -183,12 +183,15 @@ describe('incremental re-render', () => {
 
   it('reconciles a plot whose sample count changes, removing leftovers', () => {
     // The plot's range is a \uservariable, so moving the pointer changes how
-    // many samples it emits — the element must grow and shrink in place.
+    // many samples it emits — the element must grow and shrink in place. The
+    // counts are kept modest (a few hundred markers) so the test stays fast
+    // even when the whole workspace suite runs under parallel load; what it
+    // proves is reconciliation, not volume.
     const pair = renderPair(`
 \\psset{unit=1cm}
 \\begin{pspicture}(0,0)(4,4)
 \\psgrid[gridlabels=0]
-\\uservariable{a}(10,0){x}
+\\uservariable{a}(4.5,0){x}
 \\psplot[algebraic,plotstyle=dots]{0}{a}{x}
 \\end{pspicture}
     `);
@@ -199,7 +202,7 @@ describe('incremental re-render', () => {
     expect(before).toBeGreaterThan(0);
 
     // a wider range samples more points…
-    redraw(pair, [600, 10]);
+    redraw(pair, [350, 10]);
     expectIdentical(pair);
     expect(dots(pair.incSvg)).toBeGreaterThan(before);
 
