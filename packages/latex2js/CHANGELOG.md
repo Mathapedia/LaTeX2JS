@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.1](https://github.com/Mathapedia/LaTeX2JS/compare/latex2js@4.3.0...latex2js@4.3.1) (2026-08-25)
+
+### Bug Fixes
+
+- preserve math in pspicture labels ([47c23d4](https://github.com/Mathapedia/LaTeX2JS/commit/47c23d43d0c1f2fb1f56e8d75b70e0b5239ed870))
+- transform pspicture label text ([3bad46e](https://github.com/Mathapedia/LaTeX2JS/commit/3bad46ee5eab18af823542c18e2c8d2a792f1c2b))
+
 # [4.3.0](https://github.com/Mathapedia/LaTeX2JS/compare/latex2js@4.2.0...latex2js@4.3.0) (2026-08-24)
 
 **Note:** Version bump only for package latex2js
