@@ -40,6 +40,13 @@ blockquote.quotation {
   padding: 0 0 0 15px;
   margin: 0 0 20px;
   font-size: 10pt;
+  font-style: italic;
+}
+
+blockquote.quotation .math,
+blockquote.quotation .MathJax,
+blockquote.quotation mjx-container {
+  font-style: normal;
 }
 
 /* End-of-proof tombstone, set flush right as amsthm places it. */
