@@ -2086,10 +2086,10 @@ var LaTeX2HTML5 = (() => {
       return contents;
     },
     img: matchrepl(/\\img\{([^}]*)\}/, function(m) {
-      return '<div style="width: 100%;text-align: center;"><img src="' + m[1] + '"></div>';
+      return '<div class="latex2js-figure"><img src="' + m[1] + '"></div>';
     }),
     youtube: matchrepl(/\\youtube\{([^}]*)\}/, function(m) {
-      return '<div style="width: 100%;text-align: center;"><iframe width="560" height="315" src="https://www.youtube.com/embed/' + m[1] + '" frameborder="0" allowfullscreen></iframe></div>';
+      return '<div class="latex2js-figure"><iframe width="560" height="315" src="https://www.youtube.com/embed/' + m[1] + '" frameborder="0" allowfullscreen></iframe></div>';
     }),
     href: matchrepl(/\\href\{([^}]*)\}\{([^}]*)\}/, function(m) {
       return '<a href="' + m[1] + '">' + m[2] + "</a>";

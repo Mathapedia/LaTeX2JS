@@ -90,14 +90,14 @@ export const Functions = {
   },
   img: matchrepl(/\\img\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return (
-      '<div style="width: 100%;text-align: center;"><img src="' +
+      '<div class="latex2js-figure"><img src="' +
       m[1] +
       '"></div>'
     );
   }),
   youtube: matchrepl(/\\youtube\{([^}]*)\}/, function(m: RegExpMatchArray) {
     return (
-      '<div style="width: 100%;text-align: center;"><iframe width="560" height="315" src="https://www.youtube.com/embed/' +
+      '<div class="latex2js-figure"><iframe width="560" height="315" src="https://www.youtube.com/embed/' +
       m[1] +
       '" frameborder="0" allowfullscreen></iframe></div>'
     );
