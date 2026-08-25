@@ -5,6 +5,7 @@ import LaTeX2HTML5 from 'latex2js';
 import nicebox from '../src/components/nicebox';
 import enumerate from '../src/components/enumerate';
 import math from '../src/components/math';
+import { LaTeX } from '../src';
 
 describe('nicebox', () => {
   it('renders the parser-provided lines, not children', () => {
@@ -80,5 +81,31 @@ In DFS, $\omega_0 = 2\pi/p$.
     const html = renderToStaticMarkup(React.createElement(nicebox, el));
     expect(html).toContain('align*');
     expect(html).toContain('In DFS');
+  });
+});
+
+describe('LaTeX', () => {
+  it('reuses the parsed document when content is unchanged', () => {
+    const source = String.raw`\begin{nicebox}content\end{nicebox}`;
+    const instance = new LaTeX({ content: source });
+    (instance as any).state = { mathJaxLoaded: true };
+    const parse = jest.spyOn(LaTeX2HTML5.prototype, 'parse');
+
+    instance.render();
+    instance.render();
+
+    expect(parse).toHaveBeenCalledTimes(1);
+    parse.mockRestore();
+  });
+
+  it('typesets after an update when MathJax is loaded', () => {
+    const instance = new LaTeX({ content: 'content' });
+    (instance as any).state = { mathJaxLoaded: true };
+    const typesetMath = jest.spyOn(instance, 'typesetMath').mockImplementation(() => {});
+
+    instance.componentDidUpdate();
+
+    expect(typesetMath).toHaveBeenCalledTimes(1);
+    typesetMath.mockRestore();
   });
 });

@@ -28,6 +28,9 @@ interface LaTeXState {
 
 export class LaTeX extends Component<LaTeXProps, LaTeXState> {
   private containerRef = React.createRef<HTMLDivElement>();
+  private parsedContent: string | null = null;
+  private parsed: any = null;
+  private children: React.ReactElement[] = [];
 
   constructor(props: LaTeXProps) {
     super(props);
@@ -38,14 +41,12 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
 
   componentDidMount() {
     loadMathJax(() => {
-      this.setState({ mathJaxLoaded: true }, () => {
-        this.typesetMath();
-      });
+      this.setState({ mathJaxLoaded: true });
     });
   }
 
-  componentDidUpdate(prevProps: LaTeXProps) {
-    if (prevProps.content !== this.props.content && this.state.mathJaxLoaded) {
+  componentDidUpdate() {
+    if (this.state.mathJaxLoaded) {
       this.typesetMath();
     }
   }
@@ -64,20 +65,22 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
       return <div className="latex-container">Loading...</div>;
     }
 
-    const latex = new LaTeX2HTML5();
-    const parsed = latex.parse(this.props.content);
+    if (this.parsedContent !== this.props.content) {
+      const latex = new LaTeX2HTML5();
+      this.parsed = latex.parse(this.props.content);
+      this.parsedContent = this.props.content;
 
-    const children: React.ReactElement[] = [];
-
-    parsed &&
-      parsed.forEach &&
-      parsed.forEach((el: any) => {
-        if (ELEMENTS.hasOwnProperty(el.type)) {
-          const elementType = el.type as keyof typeof ELEMENTS;
-          const Component = ELEMENTS[elementType];
-          children.push(createElement(Component as any, { ...el, key: children.length }));
-        }
-      });
+      this.children = [];
+      this.parsed &&
+        this.parsed.forEach &&
+        this.parsed.forEach((el: any) => {
+          if (ELEMENTS.hasOwnProperty(el.type)) {
+            const elementType = el.type as keyof typeof ELEMENTS;
+            const Component = ELEMENTS[elementType];
+            this.children.push(createElement(Component as any, { ...el, key: this.children.length }));
+          }
+        });
+    }
 
     return (
       <div className="latex-container" ref={this.containerRef}>
@@ -86,7 +89,7 @@ export class LaTeX extends Component<LaTeXProps, LaTeXState> {
             package defines them before any math that uses them — the same
             hidden-div approach the html5 and vue renderers use. */}
         <div className="latex-macros" style={{ display: 'none' }}>{macroStr}</div>
-        {children}
+        {this.children}
       </div>
     );
   }
