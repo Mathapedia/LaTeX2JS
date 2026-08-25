@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.4.1](https://github.com/Mathapedia/LaTeX2JS/compare/@mathapedia/css@4.4.0...@mathapedia/css@4.4.1) (2026-08-25)
+
+### Bug Fixes
+
+- restore quotation inset ([9ff42a3](https://github.com/Mathapedia/LaTeX2JS/commit/9ff42a36c007f80299a2ea8963595567b1cf9798))
+
 # [4.4.0](https://github.com/Mathapedia/LaTeX2JS/compare/@mathapedia/css@4.3.0...@mathapedia/css@4.4.0) (2026-08-25)
 
 ### Bug Fixes
