@@ -174,6 +174,31 @@ describe('Peggy grammar parser (new)', () => {
     expect(env.plot.rput[0].data.text).toBe('$a--b$');
   });
 
+  it('applies text transforms to rput labels', () => {
+    const parsed = latex.parse(`
+\\begin{pspicture}(0,0)(4,4)
+\\rput(1.5,1){\\LaTeX}
+\\rput(2,1){\\TeX}
+\\rput(0.3,3.75){ $Im$ }
+\\end{pspicture}
+    `);
+
+    const env = parsed.find((e: any) => e.type === 'pspicture');
+    const labels = env.plot.rput.map((rput: any) => rput.data.text);
+    expect(labels).toEqual(['$\\LaTeX$', '$\\TeX$', ' $Im$ ']);
+  });
+
+  it('transforms non-math parts of mixed rput labels', () => {
+    const parsed = latex.parse(`
+\\begin{pspicture}(0,0)(4,4)
+\\rput(1,1){{\\LaTeX\\ vs $a--b$}}
+\\end{pspicture}
+    `);
+
+    const env = parsed.find((e: any) => e.type === 'pspicture');
+    expect(env.plot.rput[0].data.text).toBe('{$\\LaTeX$ vs $a--b$}');
+  });
+
   it('collects diagnostics for unknown commands', () => {
     const parsed = latex.parse(`
 \\begin{pspicture}(0,0)(4,4)

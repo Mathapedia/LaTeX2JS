@@ -4785,6 +4785,9 @@ var LaTeX2HTML5 = (() => {
             });
             return;
           }
+          if (typeof data.text === "string") {
+            data.text = this.parseLabel(data.text);
+          }
         }
         plot[k].push({ data, env, match: m, fn: this.PSTricks.Functions[k] });
         if (this.dialect === "pstricks") {
@@ -4906,12 +4909,40 @@ var LaTeX2HTML5 = (() => {
       return contents;
     }
     parseText(line) {
+      var contents = this.parseTextTransforms(line);
+      Object.entries(this.Headers.Expressions).forEach(([k, exp]) => {
+        contents = this.parseHeadersExpression(line, exp, k, contents);
+      });
+      return contents;
+    }
+    parseLabel(line) {
+      var contents = "";
+      var textStart = 0;
+      var mathStart = -1;
+      for (var i = 0; i < line.length; i++) {
+        if (line[i] !== "$") {
+          continue;
+        }
+        if (mathStart === -1) {
+          contents += this.parseTextTransforms(line.slice(textStart, i));
+          mathStart = i;
+        } else {
+          contents += line.slice(mathStart, i + 1);
+          textStart = i + 1;
+          mathStart = -1;
+        }
+      }
+      if (mathStart === -1) {
+        contents += this.parseTextTransforms(line.slice(textStart));
+      } else {
+        contents += this.parseTextTransforms(line.slice(mathStart));
+      }
+      return contents;
+    }
+    parseTextTransforms(line) {
       var contents = line;
       Object.entries(this.Text.Expressions).forEach(([k, exp]) => {
         contents = this.parseTextExpression(line, exp, k, contents);
-      });
-      Object.entries(this.Headers.Expressions).forEach(([k, exp]) => {
-        contents = this.parseHeadersExpression(line, exp, k, contents);
       });
       return contents;
     }
