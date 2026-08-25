@@ -162,7 +162,7 @@ describe('Peggy grammar parser (new)', () => {
     expect(env.plot.pscircle).toHaveLength(2);
   });
 
-  it('does not corrupt pspicture content with text transforms', () => {
+  it('applies text transforms to delimited rput labels', () => {
     const parsed = latex.parse(`
 \\begin{pspicture}(0,0)(4,4)
 \\rput(1,1){$a--b$}
@@ -170,8 +170,21 @@ describe('Peggy grammar parser (new)', () => {
     `);
 
     const env = parsed.find((e: any) => e.type === 'pspicture');
-    // the old parser turned `--` into &ndash; inside the rput math
-    expect(env.plot.rput[0].data.text).toBe('$a--b$');
+    expect(env.plot.rput[0].data.text).toBe('$a&ndash;b$');
+  });
+
+  it('applies text transforms to rput labels', () => {
+    const parsed = latex.parse(`
+\\begin{pspicture}(0,0)(4,4)
+\\rput(1.5,1){\\LaTeX}
+\\rput(2,1){\\TeX}
+\\rput(0.3,3.75){ $Im$ }
+\\end{pspicture}
+    `);
+
+    const env = parsed.find((e: any) => e.type === 'pspicture');
+    const labels = env.plot.rput.map((rput: any) => rput.data.text);
+    expect(labels).toEqual(['$\\LaTeX$', '$\\TeX$', ' $Im$ ']);
   });
 
   it('collects diagnostics for unknown commands', () => {

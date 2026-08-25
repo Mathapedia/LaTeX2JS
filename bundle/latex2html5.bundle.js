@@ -4785,6 +4785,9 @@ var LaTeX2HTML5 = (() => {
             });
             return;
           }
+          if (typeof data.text === "string") {
+            data.text = this.parseLabel(data.text);
+          }
         }
         plot[k].push({ data, env, match: m, fn: this.PSTricks.Functions[k] });
         if (this.dialect === "pstricks") {
@@ -4906,12 +4909,16 @@ var LaTeX2HTML5 = (() => {
       return contents;
     }
     parseText(line) {
+      var contents = this.parseLabel(line);
+      Object.entries(this.Headers.Expressions).forEach(([k, exp]) => {
+        contents = this.parseHeadersExpression(line, exp, k, contents);
+      });
+      return contents;
+    }
+    parseLabel(line) {
       var contents = line;
       Object.entries(this.Text.Expressions).forEach(([k, exp]) => {
         contents = this.parseTextExpression(line, exp, k, contents);
-      });
-      Object.entries(this.Headers.Expressions).forEach(([k, exp]) => {
-        contents = this.parseHeadersExpression(line, exp, k, contents);
       });
       return contents;
     }

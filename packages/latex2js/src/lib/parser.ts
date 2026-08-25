@@ -882,6 +882,9 @@ class Parser {
           });
           return;
         }
+        if (typeof data.text === 'string') {
+          data.text = this.parseLabel(data.text);
+        }
       }
 
       plot[k].push({ data: data, env: env, match: m, fn: this.PSTricks.Functions[k] });
@@ -1032,15 +1035,21 @@ class Parser {
   }
 
   parseText(line: string): string {
-    var contents = line;
-    // TEXT
-    Object.entries(this.Text.Expressions).forEach(([k, exp]: [string, any]) => {
-      contents = this.parseTextExpression(line, exp, k, contents);
-    });
+    var contents = this.parseLabel(line);
 
     // HEADERS
     Object.entries(this.Headers.Expressions).forEach(([k, exp]: [string, any]) => {
       contents = this.parseHeadersExpression(line, exp, k, contents);
+    });
+
+    return contents;
+  }
+
+  parseLabel(line: string): string {
+    var contents = line;
+    // TEXT
+    Object.entries(this.Text.Expressions).forEach(([k, exp]: [string, any]) => {
+      contents = this.parseTextExpression(line, exp, k, contents);
     });
 
     return contents;
