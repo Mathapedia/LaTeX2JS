@@ -22,6 +22,11 @@ svg {
   margin: var(--latex2js-parskip) auto;
 }
 
+.latex2js-figure {
+  margin: var(--latex2js-parskip) auto;
+  text-align: center;
+}
+
 .enumerate {
   list-style: circle;
   padding: 12px;
