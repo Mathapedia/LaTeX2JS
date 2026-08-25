@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.4.3](https://github.com/Mathapedia/LaTeX2JS/compare/latex2react@4.4.2...latex2react@4.4.3) (2026-08-25)
+
+### Bug Fixes
+
+- re-typeset LaTeX content after updates ([656fddd](https://github.com/Mathapedia/LaTeX2JS/commit/656fddda68fd1cb7494280ec184bef44a8b1f770))
+
 ## [4.4.2](https://github.com/Mathapedia/LaTeX2JS/compare/latex2react@4.4.1...latex2react@4.4.2) (2026-08-25)
 
 **Note:** Version bump only for package latex2react
