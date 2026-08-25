@@ -1035,7 +1035,7 @@ class Parser {
   }
 
   parseText(line: string): string {
-    var contents = this.parseLabel(line);
+    var contents = this.parseTextTransforms(line);
 
     // HEADERS
     Object.entries(this.Headers.Expressions).forEach(([k, exp]: [string, any]) => {
@@ -1046,8 +1046,35 @@ class Parser {
   }
 
   parseLabel(line: string): string {
+    var contents = '';
+    var textStart = 0;
+    var mathStart = -1;
+
+    for (var i = 0; i < line.length; i++) {
+      if (line[i] !== '$') {
+        continue;
+      }
+      if (mathStart === -1) {
+        contents += this.parseTextTransforms(line.slice(textStart, i));
+        mathStart = i;
+      } else {
+        contents += line.slice(mathStart, i + 1);
+        textStart = i + 1;
+        mathStart = -1;
+      }
+    }
+
+    if (mathStart === -1) {
+      contents += this.parseTextTransforms(line.slice(textStart));
+    } else {
+      contents += this.parseTextTransforms(line.slice(mathStart));
+    }
+
+    return contents;
+  }
+
+  parseTextTransforms(line: string): string {
     var contents = line;
-    // TEXT
     Object.entries(this.Text.Expressions).forEach(([k, exp]: [string, any]) => {
       contents = this.parseTextExpression(line, exp, k, contents);
     });
