@@ -35,9 +35,9 @@ var LaTeX2HTML5 = (() => {
   ));
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-  // ../latex2js/src/grammar/parser.js
+  // packages/latex2js/src/grammar/parser.js
   var require_parser = __commonJS({
-    "../latex2js/src/grammar/parser.js"(exports, module) {
+    "packages/latex2js/src/grammar/parser.js"(exports, module) {
       "use strict";
       var peg$SyntaxError = class extends SyntaxError {
         constructor(message, expected, found, location2) {
@@ -1417,7 +1417,7 @@ var LaTeX2HTML5 = (() => {
     }
   });
 
-  // src/index.ts
+  // packages/html5/src/index.ts
   var index_exports = {};
   __export(index_exports, {
     DEFAULT_CONFIG: () => DEFAULT_CONFIG,
@@ -1432,7 +1432,7 @@ var LaTeX2HTML5 = (() => {
     verbatim: () => render5
   });
 
-  // ../utils/src/expression.ts
+  // packages/utils/src/expression.ts
   var ExpressionError = class extends Error {
     constructor(message, position) {
       super(message);
@@ -1711,7 +1711,7 @@ var LaTeX2HTML5 = (() => {
     };
   }
 
-  // ../utils/src/svg-utils.ts
+  // packages/utils/src/svg-utils.ts
   var SVGSelection = class _SVGSelection {
     constructor(elements) {
       if (elements instanceof Element) {
@@ -1793,7 +1793,7 @@ var LaTeX2HTML5 = (() => {
     return new SVGSelection(selector);
   }
 
-  // ../utils/src/index.ts
+  // packages/utils/src/index.ts
   var simplerepl = function(regex, replace) {
     return function(_m, contents) {
       return contents.replace(regex, replace);
@@ -2022,7 +2022,7 @@ var LaTeX2HTML5 = (() => {
     return this.y1 - Number(v) / this.yunit;
   };
 
-  // ../latex2js/src/lib/text.ts
+  // packages/latex2js/src/lib/text.ts
   var Expressions = {
     emph: /\\emph\{[^}]*\}/g,
     bf: /\{*\\bf [^}]*\}/g,
@@ -2177,7 +2177,7 @@ var LaTeX2HTML5 = (() => {
     Functions
   };
 
-  // ../latex2js/src/lib/headers.ts
+  // packages/latex2js/src/lib/headers.ts
   var Expressions2 = {
     bq: /\\begin\{quotation\}/,
     claim: /\\begin\{claim\*?\}/,
@@ -2222,7 +2222,7 @@ var LaTeX2HTML5 = (() => {
     return "</div>";
   }
   var Functions2 = {
-    bq: () => '<p class="quotation">',
+    bq: () => '<blockquote class="quotation">',
     claim(m) {
       return headed("Claim", "claim", this, m);
     },
@@ -2267,7 +2267,7 @@ var LaTeX2HTML5 = (() => {
     endproblem: () => closed(),
     endsolution: () => closed(),
     endtheorem: () => closed(),
-    eq: () => "</p>",
+    eq: () => "</blockquote>",
     example(m) {
       return headed("Example", "example", this, m);
     },
@@ -2291,7 +2291,7 @@ var LaTeX2HTML5 = (() => {
     Functions: Functions2
   };
 
-  // ../settings/src/index.ts
+  // packages/settings/src/index.ts
   function normalizeDialect(value) {
     const v = String(value ?? "").trim().toLowerCase();
     if (v === "pstricks") return "pstricks";
@@ -2358,7 +2358,7 @@ var LaTeX2HTML5 = (() => {
     Functions: Functions3
   };
 
-  // ../pstricks/src/lib/pstricks.ts
+  // packages/pstricks/src/lib/pstricks.ts
   function radiusUnit(ctx) {
     const r = Number(ctx && ctx.runit);
     if (isFinite(r) && r > 0) return r;
@@ -3033,7 +3033,7 @@ var LaTeX2HTML5 = (() => {
     Functions: Functions4
   };
 
-  // ../pstricks/src/lib/psgraph.ts
+  // packages/pstricks/src/lib/psgraph.ts
   var MATHJAX_READY_TIMEOUT_MS = 1e4;
   function mathJaxWhenReady() {
     const usable = (mj) => mj && typeof mj.typesetPromise === "function" ? mj : null;
@@ -4058,11 +4058,11 @@ var LaTeX2HTML5 = (() => {
   };
   var psgraph_default = psgraph;
 
-  // ../latex2js/src/lib/environments.ts
+  // packages/latex2js/src/lib/environments.ts
   var environments = ["pspicture", "verbatim", "enumerate", "print", "nicebox", "itemize", "description"];
   var environments_default = environments;
 
-  // ../latex2js/src/lib/ignore.ts
+  // packages/latex2js/src/lib/ignore.ts
   var ignore = [
     /^\%/,
     /\\begin\{document\}/,
@@ -4086,10 +4086,10 @@ var LaTeX2HTML5 = (() => {
   ];
   var ignore_default = ignore;
 
-  // ../latex2js/src/lib/parser.ts
+  // packages/latex2js/src/lib/parser.ts
   var pegParser = __toESM(require_parser());
 
-  // ../latex2js/src/lib/dialect.ts
+  // packages/latex2js/src/lib/dialect.ts
   var CSS_ONLY_COLORS = ["lightblue", "lightgray", "lightgrey", "lightgreen", "darkblue", "darkgreen", "pink", "gold", "silver", "navy", "teal", "lime", "aqua", "fuchsia"];
   var LATEX2JS_ONLY_COMMANDS = {
     userline: "draws a line the reader can drag; PSTricks has no interactive graphics",
@@ -4161,7 +4161,7 @@ var LaTeX2HTML5 = (() => {
     return uses;
   }
 
-  // ../latex2js/src/lib/counters.ts
+  // packages/latex2js/src/lib/counters.ts
   var SECTION_LEVELS = ["section", "subsection", "subsubsection"];
   var Counters = class {
     constructor() {
@@ -4204,7 +4204,7 @@ var LaTeX2HTML5 = (() => {
     }
   };
 
-  // ../latex2js/src/lib/parser.ts
+  // packages/latex2js/src/lib/parser.ts
   var PSSET_NON_STYLE = /* @__PURE__ */ new Set(["unit", "runit", "xunit", "yunit", "dialect"]);
   var DEFINECOLOR_RE = /\\definecolor\s*\{([^}]*)\}\s*\{([^}]*)\}\s*\{([^}]*)\}/;
   function pssetStyle(declared) {
@@ -4603,7 +4603,7 @@ var LaTeX2HTML5 = (() => {
      * @returns the lines with runs of text wrapped in paragraphs
      */
     paragraphize(lines) {
-      const isBlock = (l) => /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
+      const isBlock = (l) => /^\s*<\/?(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
       const mathEnvBegin = /\\begin\{(align\*?|alignat\*?|equation\*?|eqnarray\*?|gather\*?|multline\*?)\}/;
       const out = [];
       let para = [];
@@ -4960,7 +4960,7 @@ var LaTeX2HTML5 = (() => {
   };
   var parser_default = Parser2;
 
-  // ../latex2js/src/index.ts
+  // packages/latex2js/src/index.ts
   var LaTeX2HTML5 = class {
     constructor(Text = text_default, Headers = headers_default, Environments = environments_default, Ignore = ignore_default, PSTricks = pstricks_default, Views = {}) {
       this.lastDiagnostics = [];
@@ -5030,7 +5030,7 @@ var LaTeX2HTML5 = (() => {
     }
   };
 
-  // ../mathjaxjs/src/index.ts
+  // packages/mathjaxjs/src/index.ts
   var DEFAULT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-chtml.js";
   var DEFAULT_CONFIG = {
     tex: {
@@ -5129,7 +5129,7 @@ var LaTeX2HTML5 = (() => {
     }
   };
 
-  // src/components/pspicture.ts
+  // packages/html5/src/components/pspicture.ts
   function render(that) {
     const size = psgraph_default.getSize.call(that);
     const width = `${size.width}px`;
@@ -5190,7 +5190,7 @@ var LaTeX2HTML5 = (() => {
     return div;
   }
 
-  // src/components/nicebox.ts
+  // packages/html5/src/components/nicebox.ts
   function render2(that) {
     const span = document.createElement("span");
     span.className = "math nicebox";
@@ -5198,7 +5198,7 @@ var LaTeX2HTML5 = (() => {
     return span;
   }
 
-  // src/components/enumerate.ts
+  // packages/html5/src/components/enumerate.ts
   function render3(that) {
     const lines = that.lines.map((line) => {
       var m = line.match(/\\item (.*)/);
@@ -5214,7 +5214,7 @@ var LaTeX2HTML5 = (() => {
     return ul;
   }
 
-  // src/components/list.ts
+  // packages/html5/src/components/list.ts
   function itemizeLine(line) {
     var m = line.match(/\\item (.*)/);
     if (m) return "<li>" + m[1] + "</li>";
@@ -5249,7 +5249,7 @@ var LaTeX2HTML5 = (() => {
     return el;
   }
 
-  // src/components/verbatim.ts
+  // packages/html5/src/components/verbatim.ts
   function render5(that) {
     var pre = document.createElement("pre");
     pre.className = "verbatim";
@@ -5257,7 +5257,7 @@ var LaTeX2HTML5 = (() => {
     return pre;
   }
 
-  // src/components/math.ts
+  // packages/html5/src/components/math.ts
   function render6(that) {
     const div = document.createElement("div");
     div.className = "math";
@@ -5265,7 +5265,7 @@ var LaTeX2HTML5 = (() => {
     return div;
   }
 
-  // ../macros/src/index.ts
+  // packages/macros/src/index.ts
   var src_default2 = String.raw`
   $$
   % create the definition symbol
@@ -5397,7 +5397,7 @@ var LaTeX2HTML5 = (() => {
   $$
   `;
 
-  // src/components/macros.ts
+  // packages/html5/src/components/macros.ts
   function render7(_that) {
     var div = document.createElement("div");
     div.id = "latex-macros";
@@ -5407,7 +5407,7 @@ var LaTeX2HTML5 = (() => {
     return div;
   }
 
-  // src/index.ts
+  // packages/html5/src/index.ts
   var ELEMENTS = { pspicture: render, nicebox: render2, enumerate: render3, itemize: render4, description: render4, verbatim: render5, math: render6, macros: render7 };
   function render8(tex, resolve, config) {
     const done = () => {
