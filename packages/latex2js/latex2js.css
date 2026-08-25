@@ -36,7 +36,7 @@ span.tt {
   font-family: courier;
 }
 
-p.quotation {
+blockquote.quotation {
   padding: 0 0 0 15px;
   margin: 0 0 20px;
   font-size: 10pt;
