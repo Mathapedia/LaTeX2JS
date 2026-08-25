@@ -2222,7 +2222,7 @@ var LaTeX2HTML5 = (() => {
     return "</div>";
   }
   var Functions2 = {
-    bq: () => '<p class="quotation">',
+    bq: () => '<blockquote class="quotation">',
     claim(m) {
       return headed("Claim", "claim", this, m);
     },
@@ -2267,7 +2267,7 @@ var LaTeX2HTML5 = (() => {
     endproblem: () => closed(),
     endsolution: () => closed(),
     endtheorem: () => closed(),
-    eq: () => "</p>",
+    eq: () => "</blockquote>",
     example(m) {
       return headed("Example", "example", this, m);
     },
@@ -4603,7 +4603,7 @@ var LaTeX2HTML5 = (() => {
      * @returns the lines with runs of text wrapped in paragraphs
      */
     paragraphize(lines) {
-      const isBlock = (l) => /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
+      const isBlock = (l) => /^\s*<\/?(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
       const mathEnvBegin = /\\begin\{(align\*?|alignat\*?|equation\*?|eqnarray\*?|gather\*?|multline\*?)\}/;
       const out = [];
       let para = [];

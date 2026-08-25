@@ -641,7 +641,7 @@ class Parser {
    */
   paragraphize(lines: string[]): string[] {
     const isBlock = (l: string) =>
-      /^\s*<(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
+      /^\s*<\/?(h[1-6]|ul|ol|li|p|div|table|blockquote|pre|figure)\b/i.test(l);
     // Display-math environments MathJax recognizes in running text. One is a
     // single unit however many lines it spans: splitting it across paragraph
     // elements breaks the begin/end into separate text nodes, and MathJax can

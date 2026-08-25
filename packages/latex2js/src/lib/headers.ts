@@ -71,7 +71,7 @@ function closed(): string {
 }
 
 export const Functions = {
-  bq: () => '<p class="quotation">',
+  bq: () => '<blockquote class="quotation">',
   claim(this: any, m?: any) { return headed('Claim', 'claim', this, m); },
   corollary(this: any, m?: any) { return headed('Corollary', 'corollary', this, m); },
   definition(this: any, m?: any) { return headed('Definition', 'definition', this, m); },
@@ -96,7 +96,7 @@ export const Functions = {
   endproblem: () => closed(),
   endsolution: () => closed(),
   endtheorem: () => closed(),
-  eq: () => '</p>',
+  eq: () => '</blockquote>',
   example(this: any, m?: any) { return headed('Example', 'example', this, m); },
   problem(this: any, m?: any) { return headed('Problem', 'problem', this, m); },
   proof: () => '<div class="theorem-env theorem-env--proof"><h4 class="theorem-head">Proof</h4> ',

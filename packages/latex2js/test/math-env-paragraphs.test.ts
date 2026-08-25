@@ -62,4 +62,19 @@ After.
     expect(paras.some((l: string) => l.includes('Before.'))).toBe(true);
     expect(paras.some((l: string) => l.includes('After.'))).toBe(true);
   });
+
+  it('nests quotation paragraphs inside the quotation wrapper', () => {
+    const parsed = latex.parse(`
+\\begin{quotation}
+Quoted text.
+\\end{quotation}
+    `);
+    const math = parsed.find((el: any) => el.type === 'math');
+    const output = math.lines.join('\n');
+
+    expect(output).toContain('<blockquote class="quotation">');
+    expect(output).toContain('<p class="para">Quoted text.');
+    expect(output).toMatch(/<p class="para">Quoted text\.<\/p>\s*<\/blockquote>/);
+    expect(output).not.toContain('<blockquote class="quotation">\n</blockquote>');
+  });
 });
