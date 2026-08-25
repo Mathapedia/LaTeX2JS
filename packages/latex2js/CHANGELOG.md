@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.5.0](https://github.com/Mathapedia/LaTeX2JS/compare/latex2js@4.4.1...latex2js@4.5.0) (2026-08-25)
+
+### Features
+
+- italicize quotation environments ([a6caf48](https://github.com/Mathapedia/LaTeX2JS/commit/a6caf48b6cccb7d4cfdae07669fb3022926128d9))
+
 ## [4.4.1](https://github.com/Mathapedia/LaTeX2JS/compare/latex2js@4.4.0...latex2js@4.4.1) (2026-08-25)
 
 ### Bug Fixes
