@@ -35,17 +35,14 @@ export default (props: PspictureProps) => {
   }, [props]);
 
   const handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
-    const coords = [event.nativeEvent.offsetX || 0, event.nativeEvent.offsetY || 0];
-    userEventHandler(coords);
+    userEventHandler(psgraph.pointerCoords(svgRef.current, event.clientX, event.clientY));
   };
 
   const handleTouchMove = (event: React.TouchEvent<SVGSVGElement>) => {
     event.preventDefault();
     const touch = event.touches[0];
     if (touch && svgRef.current) {
-      const rect = svgRef.current.getBoundingClientRect();
-      const coords = [touch.clientX - rect.left, touch.clientY - rect.top];
-      userEventHandler(coords);
+      userEventHandler(psgraph.pointerCoords(svgRef.current, touch.clientX, touch.clientY));
     }
   };
 

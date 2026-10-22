@@ -583,6 +583,24 @@ class PatchSelection {
 }
 
 const psgraph: any = {
+  /**
+   * Maps a pointer's client position into the picture's own pixel space. A
+   * page may draw the svg smaller than its natural size (CSS `zoom` or a
+   * transform to fit a phone screen), and neither `offsetX` nor a raw
+   * `clientX - rect.left` accounts for that, so divide out the drawn scale.
+   * Measuring the svg itself, not the event target, also keeps a pointer over
+   * a child path from reading coordinates relative to that path.
+   */
+  pointerCoords(svg: Element | null, clientX: number, clientY: number): number[] {
+    if (!svg) return [0, 0];
+    const rect = svg.getBoundingClientRect();
+    const width = parseFloat(svg.getAttribute('width') || '') || rect.width;
+    const height = parseFloat(svg.getAttribute('height') || '') || rect.height;
+    const scaleX = rect.width && width ? rect.width / width : 1;
+    const scaleY = rect.height && height ? rect.height / height : 1;
+    return [(clientX - rect.left) / scaleX, (clientY - rect.top) / scaleY];
+  },
+
   env: null as any,
   getSize(): { width: number; height: number } {
     const padding = 20;
@@ -1596,17 +1614,15 @@ const psgraph: any = {
       function (this: any, event: any) {
         event.preventDefault();
         var touch = event.touches ? event.touches[0] : null;
-        var rect = event.target.getBoundingClientRect();
-        var touchcoords = touch ? [touch.clientX - rect.left, touch.clientY - rect.top] : [0, 0];
-        drawLayer(touchcoords, { pointer: true });
+        if (!touch) return;
+        drawLayer(psgraph.pointerCoords(svg.node(), touch.clientX, touch.clientY), { pointer: true });
       }
     );
 
     svg.on(
       'mousemove',
       function (this: any, event: any) {
-        var coords = [event.offsetX || 0, event.offsetY || 0];
-        drawLayer(coords, { pointer: true });
+        drawLayer(psgraph.pointerCoords(svg.node(), event.clientX, event.clientY), { pointer: true });
       }
     );
 

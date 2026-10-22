@@ -180,6 +180,31 @@ describe('pspicture component (SVG rendering)', () => {
     expect(shapeOrder(svg)).toEqual(before);
   });
 
+  it('maps the pointer into picture space when the svg is drawn scaled down', () => {
+    // A page fitting a 200px picture onto a phone draws it at 100px (CSS zoom
+    // or a transform). The pointer's screen offset must be divided back out,
+    // or a dragged vector lands at half the distance from the finger.
+    const env = parsePspicture(`
+\\begin{pspicture}(0,0)(4,4)
+\\userline[linewidth=2pt]{->}(0,0)(2,2)
+\\end{pspicture}
+    `);
+
+    const div = pspicture(env);
+    document.body.appendChild(div);
+    const svg = div.querySelector('svg')!;
+    const natural = parseFloat(svg.getAttribute('width')!);
+    svg.getBoundingClientRect = () =>
+      ({ left: 10, top: 20, width: natural / 2, height: natural / 2, right: 0, bottom: 0, x: 10, y: 20 }) as DOMRect;
+
+    svg.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 10 + natural / 4, clientY: 20 + natural / 8 }));
+
+    const d = svg.querySelector('path')!.getAttribute('d')!;
+    const [x2, y2] = d.trim().split(/[\s,LM]+/).filter(Boolean).slice(-2).map(Number);
+    expect(x2).toBeCloseTo(natural / 2);
+    expect(y2).toBeCloseTo(natural / 4);
+  });
+
   it('renders psdots as small circles', () => {
     const env = parsePspicture(`
 \\begin{pspicture}(0,0)(4,4)
