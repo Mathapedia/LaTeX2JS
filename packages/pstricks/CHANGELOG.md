@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.2.1](https://github.com/Mathapedia/LaTeX2JS/compare/@latex2js/pstricks@4.2.0...@latex2js/pstricks@4.2.1) (2026-10-22)
+
+### Bug Fixes
+
+- **pstricks:** map pointer coordinates through the svg's drawn scale ([526bad9](https://github.com/Mathapedia/LaTeX2JS/commit/526bad9f61813f28bb65a1c39629e00a815b9b9d))
+
 # [4.2.0](https://github.com/Mathapedia/LaTeX2JS/compare/@latex2js/pstricks@4.1.0...@latex2js/pstricks@4.2.0) (2026-08-24)
 
 **Note:** Version bump only for package @latex2js/pstricks

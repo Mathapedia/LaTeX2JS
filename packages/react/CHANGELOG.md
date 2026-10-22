@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.4.4](https://github.com/Mathapedia/LaTeX2JS/compare/latex2react@4.4.3...latex2react@4.4.4) (2026-10-22)
+
+### Bug Fixes
+
+- **pstricks:** map pointer coordinates through the svg's drawn scale ([526bad9](https://github.com/Mathapedia/LaTeX2JS/commit/526bad9f61813f28bb65a1c39629e00a815b9b9d))
+
 ## [4.4.3](https://github.com/Mathapedia/LaTeX2JS/compare/latex2react@4.4.2...latex2react@4.4.3) (2026-08-25)
 
 ### Bug Fixes

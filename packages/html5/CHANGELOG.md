@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.3](https://github.com/Mathapedia/LaTeX2JS/compare/latex2html5@4.5.2...latex2html5@4.5.3) (2026-10-22)
+
+### Bug Fixes
+
+- **pstricks:** map pointer coordinates through the svg's drawn scale ([526bad9](https://github.com/Mathapedia/LaTeX2JS/commit/526bad9f61813f28bb65a1c39629e00a815b9b9d))
+
 ## [4.5.2](https://github.com/Mathapedia/LaTeX2JS/compare/latex2html5@4.5.1...latex2html5@4.5.2) (2026-08-25)
 
 **Note:** Version bump only for package latex2html5
