@@ -169,3 +169,11 @@ And now for a great diagram:
   LaTeX2HTML5.init(); // Renders all LaTeX content
 </script>
 ```
+
+## Credits
+
+Part of [LaTeX2JS](https://github.com/Mathapedia/LaTeX2JS), the frontend of [Mathapedia](https://mathapedia.com), the original project.
+
+Originated as a UC Berkeley EECS master's project co-advised by Prof. Edward A. Lee and Prof. Babak Ayazifar (https://wiki.eecs.berkeley.edu/ptexternal/Main/Mathapedia).
+
+Math rendering powered by [MathJax](https://www.mathjax.org).
