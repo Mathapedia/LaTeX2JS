@@ -63,6 +63,6 @@ Internal utilities for extending functionality:
 
 LaTeX2JS is the frontend of [Mathapedia](https://mathapedia.com), the original project.
 
-Originated as a UC Berkeley EECS [master's project](https://wiki.eecs.berkeley.edu/ptexternal/Main/Mathapedia) co-advised by Prof. Babak Ayazifar and Prof. Edward A. Lee.
+Originated as a UC Berkeley EECS master's project co-advised by [Prof. Babak Ayazifar](https://mathapedia.com/about#babak-ayazifar) and [Prof. Edward A. Lee](https://mathapedia.com/about#edward-a-lee).
 
 As always, BIG thanks to [MathJax](https://www.mathjax.org)
