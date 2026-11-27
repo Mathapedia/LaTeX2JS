@@ -90,3 +90,11 @@ import { LaTeX } from 'latex2react';
 - **style** (object, optional): React style object
 - **onRender** (function, optional): Called after successful rendering
 - **onError** (function, optional): Called if rendering fails
+
+## Credits
+
+Part of [LaTeX2JS](https://github.com/Mathapedia/LaTeX2JS), the frontend of [Mathapedia](https://mathapedia.com), the original project.
+
+Originated as a UC Berkeley EECS master's project co-advised by [Prof. Babak Ayazifar](https://mathapedia.com/about#babak-ayazifar) and [Prof. Edward A. Lee](https://mathapedia.com/about#edward-a-lee).
+
+Math rendering powered by [MathJax](https://www.mathjax.org).
